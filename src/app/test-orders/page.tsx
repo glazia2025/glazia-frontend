@@ -43,7 +43,7 @@ export default function TestOrdersPage() {
       }
 
       console.log('🧪 Testing direct API call...');
-      const response = await fetch('http://localhost:5555/api/user/getOrders?limit=10&page=1&sortOrder=desc&sortKey=createdAt', {
+      const response = await fetch('https://api.glazia.in/api/user/getOrders?limit=10&page=1&sortOrder=desc&sortKey=createdAt', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',

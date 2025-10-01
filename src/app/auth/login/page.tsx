@@ -42,7 +42,7 @@ export default function LoginPage() {
     
     // Simulate API call to send OTP
     try {
-      const response = await axios.post("http://localhost:5555/api/auth/send-otp", { phoneNumber });
+      const response = await axios.post("https://api.glazia.in/api/auth/send-otp", { phoneNumber });
       setStep('otp');
       setCountdown(30);
       startCountdown();
@@ -82,7 +82,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5555/api/auth/verify-otp", { phoneNumber, otp: otpValue });
+      const response = await axios.post("https://api.glazia.in/api/auth/verify-otp", { phoneNumber, otp: otpValue });
       const { userExists, token, existingUser } = response.data;
 
       console.log('🔐 Verify OTP Response:', response.data);
@@ -282,7 +282,7 @@ export default function LoginPage() {
         completeAddress
       };
 
-      const response = await axios.post("http://localhost:5555/api/auth/register", registrationData);
+      const response = await axios.post("https://api.glazia.in/api/auth/register", registrationData);
 
       if (response.data.success) {
         // Generate and download partner agreement

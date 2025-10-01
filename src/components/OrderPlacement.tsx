@@ -111,7 +111,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
       console.log('🔑 Using auth token:', authToken.substring(0, 20) + '...');
 
       // Make API call
-      const response = await fetch('http://localhost:5555/api/user/pi-generate', {
+      const response = await fetch('https://api.glazia.in/api/user/pi-generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
