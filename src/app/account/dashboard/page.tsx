@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -23,10 +23,51 @@ import { useAuth, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
 
-export default function DashboardPage() {
+// Component to handle search params with Suspense
+function WelcomeBanner({ onClose }: { onClose: () => void }) {
   const searchParams = useSearchParams();
   const isWelcome = searchParams.get('welcome') === 'true';
   const [showWelcome, setShowWelcome] = useState(isWelcome);
+
+  useEffect(() => {
+    if (isWelcome) {
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+        onClose();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isWelcome, onClose]);
+
+  if (!showWelcome) return null;
+
+  return (
+    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <CheckCircle className="w-8 h-8 mr-3" />
+            <div>
+              <h2 className="text-xl font-bold">Welcome to Glazia!</h2>
+              <p className="text-blue-100">Your account has been created successfully. Start exploring our windoors products.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setShowWelcome(false);
+              onClose();
+            }}
+            className="text-blue-100 hover:text-white"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardContent() {
   const { user: authUser, isAuthenticated } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -38,13 +79,6 @@ export default function DashboardPage() {
       window.location.href = '/auth/login';
     }
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (isWelcome) {
-      const timer = setTimeout(() => setShowWelcome(false), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [isWelcome]);
 
   // Load real orders from API
   useEffect(() => {
@@ -127,28 +161,10 @@ export default function DashboardPage() {
       {/* Main Site Header */}
       <Header />
 
-      {/* Welcome Banner */}
-      {showWelcome && (
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <CheckCircle className="w-8 h-8 mr-3" />
-                <div>
-                  <h2 className="text-xl font-bold">Welcome to Glazia!</h2>
-                  <p className="text-blue-100">Your account has been created successfully. Start exploring our windoors products.</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowWelcome(false)}
-                className="text-blue-100 hover:text-white"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Welcome Banner with Suspense */}
+      <Suspense fallback={null}>
+        <WelcomeBanner onClose={() => {}} />
+      </Suspense>
 
       {/* Page Header */}
       <div className="bg-white border-b">
@@ -358,5 +374,21 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main export component with Suspense wrapper
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-sm text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }
