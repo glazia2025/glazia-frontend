@@ -19,11 +19,25 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Shipping discount calculation based on order value slabs
+  const calculateShippingDiscount = (orderValue: number) => {
+    if (orderValue >= 2000000) {
+      return 20000; // 20L+ gets 20,000 off
+    } else if (orderValue >= 1000000) {
+      return 10000; // 10L-19.99L gets 10,000 off
+    } else if (orderValue >= 500000) {
+      return 5000; // 5L-9.99L gets 5,000 off
+    } else if (orderValue >= 1) {
+      return 2500; // 1-4.99L gets 2,500 off
+    }
+    return 0;
+  };
+
   // Calculate totals
   const subtotal = cart.total;
-  const shippingCost = cart.total >= 10000 ? 0 : 150;
+  const shippingDiscount = calculateShippingDiscount(cart.total);
   const tax = Math.round(cart.total * 0.18);
-  const finalTotal = cart.total + shippingCost + tax;
+  const finalTotal = cart.total + tax; // Keep product total separate from shipping discount
 
   // Generate QR Code for payment
   const qrCodeDataURL = generateGlaziaPaymentQR(finalTotal, `GLZ-${Date.now()}`);
@@ -347,10 +361,6 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
             <span>₹{subtotal.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
-            <span>Shipping</span>
-            <span>{shippingCost === 0 ? 'Free' : `₹${shippingCost}`}</span>
-          </div>
-          <div className="flex justify-between">
             <span>Tax (18% GST)</span>
             <span>₹{tax.toLocaleString()}</span>
           </div>
@@ -358,6 +368,12 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
             <span>Total</span>
             <span>₹{finalTotal.toLocaleString()}</span>
           </div>
+          {shippingDiscount > 0 && (
+            <div className="flex justify-between border-t pt-2">
+              <span className="text-green-700 font-medium">Shipping Discount</span>
+              <span className="text-green-700 font-medium">₹{shippingDiscount.toLocaleString()}</span>
+            </div>
+          )}
         </div>
       </div>
 

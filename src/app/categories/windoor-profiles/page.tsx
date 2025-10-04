@@ -10,7 +10,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export default function CategoryPage() {
-  const { addToCart } = useCartState();
+  const { addToCart, getCartItem, cart } = useCartState();
 
   const pathname = usePathname();
   const { loadProfileOptions } = useProfilesData();
@@ -124,6 +124,13 @@ export default function CategoryPage() {
     setSearchQuery('');
   };
 
+  // Get cart quantity for a product
+  const getCartQuantityForProduct = (product: ProfileProduct): number => {
+    const cartItemId = `${product.sapCode}-${activeCategory}-${activeSubCategory}`;
+    const cartItem = getCartItem(cartItemId);
+    return cartItem ? cartItem.quantity : 0;
+  };
+
   // Handle quantity change (similar to your handleQuantityChange)
   const handleQuantityChange = (category: string, subCategory: string, id: number, value: string) => {
     setQuantities((prev) => ({
@@ -152,7 +159,10 @@ export default function CategoryPage() {
         originalPrice: apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0,
         image: product.image || '/api/placeholder/300/300',
         inStock: product.isEnabled,
-        category: `${activeCategory} - ${activeSubCategory}`
+        category: `${activeCategory} - ${activeSubCategory}`,
+        kgm: product.kgm,
+        length: product.length,
+        per: product.per,
       };
 
       // Add to cart with the specified quantity
@@ -322,7 +332,9 @@ export default function CategoryPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {productsToDisplay?.map((product: ProfileProduct) => {
                   const key = `${activeCategory}-${activeSubCategory}-${product.id}`;
-                  const quantity = quantities[key]?.quantity || 0;
+                  const localQuantity = quantities[key]?.quantity || 0;
+                  const cartQuantity = getCartQuantityForProduct(product);
+                  const quantity = localQuantity || cartQuantity; // Show local quantity if set, otherwise show cart quantity
                   const rate = apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0;
 
                   return (
@@ -364,6 +376,11 @@ export default function CategoryPage() {
                         <div className="mb-3">
                           <h3 className="font-medium text-gray-900 text-sm mb-1">{product.description}</h3>
                           <p className="text-xs text-gray-600">SAP Code: {product.sapCode}</p>
+                          {cartQuantity > 0 && (
+                            <p className="text-xs text-blue-600 font-medium">
+                              ✓ {cartQuantity} in cart
+                            </p>
+                          )}
                         </div>
 
                         <div className="mb-3">
@@ -416,7 +433,10 @@ export default function CategoryPage() {
                           >
                             <ShoppingCart className="w-4 h-4" />
                             <span className="font-medium">
-                              {quantity > 0 ? 'Add to Cart' : 'Enter Quantity'}
+                              {quantity > 0
+                                ? (cartQuantity > 0 ? 'Update Cart' : 'Add to Cart')
+                                : 'Enter Quantity'
+                              }
                             </span>
                           </button>
                         </div>

@@ -19,7 +19,7 @@ const HARDWARE_CATEGORIES = [
 ];
 
 export default function HardwarePage() {
-  const { addToCart, cart } = useCartState();
+  const { addToCart, cart, getCartItem } = useCartState();
 
   // State management
   const [loading, setLoading] = useState(false);
@@ -80,6 +80,13 @@ export default function HardwarePage() {
 
     fetchHardwareData();
   }, [activeCategory]); // Re-fetch when category changes
+
+  // Get cart quantity for a product
+  const getCartQuantityForProduct = (product: any): number => {
+    const productId = product.id || product.sapCode;
+    const cartItem = getCartItem(productId);
+    return cartItem ? cartItem.quantity : 0;
+  };
 
   // Quantity control functions
   const handleQuantityChange = (id: string, value: string) => {
@@ -304,8 +311,14 @@ export default function HardwarePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredProducts.map((product: any, index: number) => (
-                      <div key={product.id || product.sapCode || index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  {filteredProducts.map((product: any, index: number) => {
+                    const productId = product.id || product.sapCode;
+                    const localQuantity = quantities[productId] || 0;
+                    const cartQuantity = getCartQuantityForProduct(product);
+                    const displayQuantity = localQuantity || cartQuantity;
+
+                    return (
+                      <div key={productId || index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div className="space-y-3">
 
                           {/* Product Image */}
@@ -331,6 +344,11 @@ export default function HardwarePage() {
                               <p className="text-sm text-gray-600">System: {product.system}</p>
                               <p className="text-sm text-gray-600">MOQ: {product.moq}</p>
                             </div>
+                            {cartQuantity > 0 && (
+                              <p className="text-xs text-blue-600 font-medium mt-1">
+                                ✓ {cartQuantity} in cart
+                              </p>
+                            )}
                           </div>
 
                           <div className="text-center">
@@ -342,7 +360,7 @@ export default function HardwarePage() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2">
                                 <button
-                                  onClick={() => handleQuantityDecrement(product.id || product.sapCode)}
+                                  onClick={() => handleQuantityDecrement(productId)}
                                   className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
                                 >
                                   <Minus className="w-4 h-4" />
@@ -350,21 +368,21 @@ export default function HardwarePage() {
                                 <input
                                   type="number"
                                   min="0"
-                                  value={quantities[product.id || product.sapCode] || ""}
-                                  onChange={(e) => handleQuantityChange(product.id || product.sapCode, e.target.value)}
+                                  value={displayQuantity || ""}
+                                  onChange={(e) => handleQuantityChange(productId, e.target.value)}
                                   className="w-16 text-center border border-gray-300 rounded px-2 py-1 text-sm"
                                 />
                                 <button
-                                  onClick={() => handleQuantityIncrement(product.id || product.sapCode)}
+                                  onClick={() => handleQuantityIncrement(productId)}
                                   className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
                                 >
                                   <Plus className="w-4 h-4" />
                                 </button>
                               </div>
 
-                              {quantities[product.id || product.sapCode] > 0 && (
+                              {displayQuantity > 0 && (
                                 <span className="text-sm text-gray-600">
-                                  Qty: {quantities[product.id || product.sapCode]}
+                                  Qty: {displayQuantity}
                                 </span>
                               )}
                             </div>
@@ -373,23 +391,27 @@ export default function HardwarePage() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleProductSelect(product)}
-                                disabled={(quantities[product.id || product.sapCode] || 0) <= 0}
+                                disabled={displayQuantity <= 0}
                                 className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-colors ${
-                                  (quantities[product.id || product.sapCode] || 0) > 0
+                                  displayQuantity > 0
                                     ? 'bg-blue-600 text-white hover:bg-blue-700'
                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 }`}
                               >
                                 <ShoppingCart className="w-3 h-3" />
                                 <span className="font-medium">
-                                  {(quantities[product.id || product.sapCode] || 0) > 0 ? 'Add to Cart' : 'Enter Quantity'}
+                                  {displayQuantity > 0
+                                    ? (cartQuantity > 0 ? 'Update Cart' : 'Add to Cart')
+                                    : 'Enter Quantity'
+                                  }
                                 </span>
                               </button>
                             </div>
                           </div>
                         </div>
                       </div>
-                    ))}
+                    );
+                  })}
                   </div>
               )}
             </div>

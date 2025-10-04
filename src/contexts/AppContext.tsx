@@ -72,12 +72,15 @@ export interface CartItem {
   id: string;
   name: string;
   brand: string;
-  price: number;
+  price: string;
   originalPrice?: number;
   image: string;
   quantity: number;
   inStock: boolean;
   category: string;
+  length: string;
+  per: string;
+  kgm: number;
 }
 
 
@@ -203,7 +206,7 @@ const initialState: AppState = {
 // ============================================================================
 
 const calculateCartTotal = (items: CartItem[]): number => {
-  return items.reduce((total, item) => total + (item.price * item.quantity), 0);
+  return items.reduce((total, item) => total + ((parseInt(item.price, 10) + 75) * item.quantity * (parseInt(item.length, 10) / 1000) * item.kgm), 0);
 };
 
 const calculateCartItemCount = (items: CartItem[]): number => {

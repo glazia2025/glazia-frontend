@@ -14,8 +14,71 @@ const CartSidebar: React.FC = () => {
   const [showOrderPlacement, setShowOrderPlacement] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
+  // Shipping discount calculation based on order value slabs
+  const calculateShippingDiscount = (orderValue: number) => {
+    if (orderValue >= 2000000) {
+      // 20L+ gets 20,000 off
+      return 20000;
+    } else if (orderValue >= 1000000) {
+      // 10L-19.99L gets 10,000 off
+      return 10000;
+    } else if (orderValue >= 500000) {
+      // 5L-9.99L gets 5,000 off
+      return 5000;
+    } else if (orderValue >= 1) {
+      // 1-4.99L gets 2,500 off
+      return 2500;
+    }
+    return 0;
+  };
+
+  // Get shipping discount info
+  const getShippingInfo = (orderValue: number) => {
+    const discount = calculateShippingDiscount(orderValue);
+
+    if (orderValue >= 2000000) {
+      return {
+        discount,
+        message: "🎉 Maximum shipping discount applied!",
+        nextTier: null,
+        color: "green"
+      };
+    } else if (orderValue >= 1000000) {
+      return {
+        discount,
+        message: `₹${discount.toLocaleString()} shipping discount applied!`,
+        nextTier: { amount: 2000000, discount: 20000 },
+        color: "green"
+      };
+    } else if (orderValue >= 500000) {
+      return {
+        discount,
+        message: `₹${discount.toLocaleString()} shipping discount applied!`,
+        nextTier: { amount: 1000000, discount: 10000 },
+        color: "green"
+      };
+    } else if (orderValue >= 1) {
+      return {
+        discount,
+        message: `₹${discount.toLocaleString()} shipping discount applied!`,
+        nextTier: { amount: 500000, discount: 5000 },
+        color: "green"
+      };
+    } else {
+      return {
+        discount: 0,
+        message: "Add items to get shipping discount",
+        nextTier: { amount: 1, discount: 2500 },
+        color: "gray"
+      };
+    }
+  };
+
+  const shippingInfo = getShippingInfo(cart.total);
+
   // Lock body scroll when cart is open
   useEffect(() => {
+    console.log(cart);
     if (cart.isOpen) {
       // Save current scroll position
       const scrollY = window.scrollY;
@@ -175,7 +238,7 @@ const CartSidebar: React.FC = () => {
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <span className="text-sm font-semibold text-gray-900">
-                        ₹{(item.price * item.quantity).toLocaleString()}
+                        ₹{((parseInt(item.price, 10) + 75) * item.quantity * (parseInt(item.length, 10) / 1000) * item.kgm).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -189,16 +252,32 @@ const CartSidebar: React.FC = () => {
             <div className="border-t p-4 space-y-4">
               {/* Subtotal */}
               <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-900">Subtotal:</span>
+                <span className="text-lg font-semibold text-gray-900">Total:</span>
                 <span className="text-lg font-bold text-gray-900">₹{cart.total.toLocaleString()}</span>
               </div>
 
+              {/* Shipping Discount */}
+              {shippingInfo.discount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Shipping Discount:</span>
+                  <span className="text-sm font-medium text-green-600">₹{shippingInfo.discount.toLocaleString()}</span>
+                </div>
+              )}
+
               {/* Shipping Info */}
-              <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
-                {cart.total >= 10000 ? (
-                  <p className="text-green-600 font-medium">🎉 Free shipping on this order!</p>
-                ) : (
-                  <p>Add ₹{(10000 - cart.total).toLocaleString()} more for free shipping</p>
+              <div className={`text-sm p-3 rounded-lg ${
+                shippingInfo.color === 'green' ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'
+              }`}>
+                <p className={`font-medium ${
+                  shippingInfo.color === 'green' ? 'text-green-700' : 'text-blue-700'
+                }`}>
+                  {shippingInfo.message}
+                </p>
+
+                {shippingInfo.nextTier && (
+                  <p className="text-xs text-gray-600 mt-1">
+                    Add ₹{(shippingInfo.nextTier.amount - cart.total).toLocaleString()} more to get ₹{shippingInfo.nextTier.discount.toLocaleString()} shipping discount
+                  </p>
                 )}
               </div>
               
