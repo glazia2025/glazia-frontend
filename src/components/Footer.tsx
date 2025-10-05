@@ -21,7 +21,7 @@ export default function Footer() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 p-3 rounded-lg">
+              <div className="bg-[#124657} p-3 rounded-lg">
                 <Truck className="w-6 h-6" />
               </div>
               <div>
@@ -30,7 +30,7 @@ export default function Footer() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 p-3 rounded-lg">
+              <div className="bg-[#124657} p-3 rounded-lg">
                 <Clock className="w-6 h-6" />
               </div>
               <div>
@@ -39,7 +39,7 @@ export default function Footer() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 p-3 rounded-lg">
+              <div className="p-3 rounded-lg" style={{ backgroundColor: '#124657' }}>
                 <Shield className="w-6 h-6" />
               </div>
               <div>
@@ -48,7 +48,7 @@ export default function Footer() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 p-3 rounded-lg">
+              <div className="p-3 rounded-lg" style={{ backgroundColor: '#124657' }}>
                 <CreditCard className="w-6 h-6" />
               </div>
               <div>
@@ -160,7 +160,7 @@ export default function Footer() {
                 placeholder="Enter your email"
                 className="flex-1 px-4 py-3 rounded-l-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <button className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-r-lg font-medium transition-colors">
+              <button className="bg-[#124657} hover:bg-blue-700 px-6 py-3 rounded-r-lg font-medium transition-colors">
                 Subscribe
               </button>
             </div>

@@ -123,7 +123,7 @@ function RegisterContent() {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div>
-          <Link href="/auth/login" className="flex items-center text-blue-600 hover:text-blue-700 mb-8">
+          <Link href="/auth/login" className="flex items-center text-[#124657} hover:text-blue-700 mb-8">
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Login
           </Link>
@@ -178,7 +178,7 @@ function RegisterContent() {
               <button
                 type="submit"
                 disabled={isLoading || otp.join('').length !== 6}
-                className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#124657} hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Shield className="w-5 h-5 mr-2" />
                 {isLoading ? 'Verifying...' : 'Verify OTP'}
@@ -195,7 +195,7 @@ function RegisterContent() {
                     type="button"
                     onClick={resendOtp}
                     disabled={isLoading}
-                    className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                    className="text-sm text-[#124657} hover:underline disabled:opacity-50"
                   >
                     Resend OTP
                   </button>
@@ -385,7 +385,7 @@ function RegisterContent() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#124657} hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Creating Account...' : 'Create Account'}
                 </button>
@@ -393,11 +393,11 @@ function RegisterContent() {
 
               <div className="text-center text-sm text-gray-600">
                 By creating an account, you agree to our{' '}
-                <Link href="/terms" className="text-blue-600 hover:underline">
+                <Link href="/terms" className="text-[#124657} hover:underline">
                   Terms of Service
                 </Link>{' '}
                 and{' '}
-                <Link href="/privacy" className="text-blue-600 hover:underline">
+                <Link href="/privacy" className="text-[#124657} hover:underline">
                   Privacy Policy
                 </Link>
               </div>
@@ -415,7 +415,7 @@ export default function RegisterPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#124657} mx-auto mb-2"></div>
           <p className="text-sm text-gray-600">Loading registration...</p>
         </div>
       </div>

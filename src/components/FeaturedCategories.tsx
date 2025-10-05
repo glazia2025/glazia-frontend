@@ -17,7 +17,7 @@ const categories = [
     description: "UPVC, aluminum, and composite window & door profiles",
     icon: RectangleHorizontal,
     link: "/categories/windoor-profiles",
-    color: "bg-blue-500",
+    color: "#124657",
     products: "1,500+ Products"
   },
   {
@@ -26,7 +26,7 @@ const categories = [
     description: "Complete hardware solutions for windows and doors",
     icon: Settings,
     link: "/categories/hardware",
-    color: "bg-green-600",
+    color: "#359496",
     products: "2,100+ Products"
   }
 ];
@@ -54,28 +54,34 @@ export default function FeaturedCategories() {
               <Link
                 key={category.id}
                 href={category.link}
-                className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200"
+                className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover-primary-border"
               >
                 <div className="p-6">
                   {/* Icon */}
-                  <div className={`${category.color} w-16 h-16 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                  <div
+                    className="w-16 h-16 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300"
+                    style={{ backgroundColor: category.color }}
+                  >
                     <IconComponent className="w-8 h-8 text-white" />
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2 transition-colors group-hover:text-[#124657}">
                     {category.name}
                   </h3>
                   <p className="text-gray-600 text-sm mb-3 leading-relaxed">
                     {category.description}
                   </p>
-                  <div className="text-blue-600 text-sm font-medium">
+                  <div className="text-sm font-medium" style={{ color: category.color }}>
                     {category.products}
                   </div>
                 </div>
 
                 {/* Hover Effect */}
-                <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                <div
+                  className="h-1 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"
+                  style={{ background: `linear-gradient(90deg, ${category.color}, ${category.color}dd)` }}
+                ></div>
               </Link>
             );
           })}
@@ -85,7 +91,8 @@ export default function FeaturedCategories() {
         <div className="text-center mt-12">
           <Link
             href="/categories"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+            className="inline-block text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300 hover-primary-bg-dark"
+            style={{ backgroundColor: '#124657' }}
           >
             View All Categories
           </Link>

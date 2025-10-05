@@ -9,25 +9,29 @@ import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#D2D7DA' }}>
       <Header />
       <Hero />
       <FeaturedCategories />
       <FeaturedProducts />
 
       {/* Call to Action for Complete Windoors Solutions */}
-      <section className="py-16 bg-blue-600 text-white">
+      <section className="py-16 text-white" style={{ backgroundColor: '#124657' }}>
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Explore Our Complete Windoors Range
           </h2>
-          <p className="text-xl mb-8 text-blue-100 max-w-2xl mx-auto">
+          <p className="text-xl mb-8 max-w-2xl mx-auto" style={{ color: '#E6F0FF' }}>
             Discover our comprehensive collection of windoor profiles and hardware solutions
             designed for modern construction needs.
           </p>
           <Link
             href="/windoors"
-            className="inline-block bg-white text-blue-600 font-semibold py-4 px-8 rounded-lg hover:bg-blue-50 transition-colors"
+            className="inline-block font-semibold py-4 px-8 rounded-lg transition-colors hover:bg-blue-50"
+            style={{
+              backgroundColor: 'white',
+              color: '#124657'
+            }}
           >
             View Complete Windoors Solutions
           </Link>

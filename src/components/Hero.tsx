@@ -56,8 +56,8 @@ export default function Hero() {
           }`}
         >
           {/* Background Image */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-blue-600/60">
-            <div className="w-full h-full bg-gradient-to-r from-gray-900/50 to-transparent"></div>
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, #35875C, #7FB549)' }}>
+            <div className="w-full h-full bg-gradient-to-r from-gray-900/30 to-transparent"></div>
           </div>
           
           {/* Content */}
@@ -66,7 +66,7 @@ export default function Hero() {
               <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
                 {slide.title}
               </h1>
-              <h2 className="text-xl md:text-2xl mb-6 text-blue-100">
+              <h2 className="text-xl md:text-2xl mb-6 text-green-100">
                 {slide.subtitle}
               </h2>
               <p className="text-lg mb-8 text-gray-200 leading-relaxed">
@@ -74,7 +74,8 @@ export default function Hero() {
               </p>
               <Link
                 href={slide.link}
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg transition-colors duration-300 text-lg"
+                className="inline-block text-white font-semibold py-4 px-8 rounded-lg transition-colors duration-300 text-lg hover-primary-bg-dark"
+                style={{ backgroundColor: '#124657' }}
               >
                 {slide.cta}
               </Link>
@@ -115,19 +116,19 @@ export default function Hero() {
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-blue-600">5,000+</div>
+              <div className="text-2xl font-bold" style={{ color: '#124657' }}>5,000+</div>
               <div className="text-sm text-gray-600">Windoors Products</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-blue-600">150+</div>
+              <div className="text-2xl font-bold" style={{ color: '#124657' }}>150+</div>
               <div className="text-sm text-gray-600">Profile Systems</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-blue-600">25,000+</div>
+              <div className="text-2xl font-bold" style={{ color: '#124657' }}>25,000+</div>
               <div className="text-sm text-gray-600">Projects Completed</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-blue-600">15+</div>
+              <div className="text-2xl font-bold" style={{ color: '#124657' }}>15+</div>
               <div className="text-sm text-gray-600">Years Experience</div>
             </div>
           </div>

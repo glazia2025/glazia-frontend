@@ -121,7 +121,7 @@ export default function TechnicalSpecs() {
                     <div key={idx} className="border-b border-gray-200 pb-2 last:border-b-0">
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-sm font-medium text-gray-700">{item.label}</span>
-                        <span className="text-sm font-bold text-blue-600">{item.value}</span>
+                        <span className="text-sm font-bold text-[#124657}">{item.value}</span>
                       </div>
                       <p className="text-xs text-gray-500">{item.description}</p>
                     </div>
@@ -143,7 +143,7 @@ export default function TechnicalSpecs() {
               return (
                 <div key={index} className="text-center">
                   <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <IconComponent className="w-8 h-8 text-blue-600" />
+                    <IconComponent className="w-8 h-8 text-[#124657}" />
                   </div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-2">
                     {feature.title}
@@ -186,10 +186,10 @@ export default function TechnicalSpecs() {
               installation guides, and performance data.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+              <button className="bg-[#124657} hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">
                 Download Technical Sheets
               </button>
-              <button className="border border-blue-600 text-blue-600 hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-colors">
+              <button className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-colors">
                 Request Custom Specifications
               </button>
             </div>

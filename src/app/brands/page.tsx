@@ -139,7 +139,7 @@ export default function BrandsPage() {
                 </div>
                 
                 <div className="bg-gray-50 px-6 py-3">
-                  <button className="w-full text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors">
+                  <button className="w-full text-[#124657} hover:text-blue-700 font-medium text-sm transition-colors">
                     View Products →
                   </button>
                 </div>
@@ -164,7 +164,7 @@ export default function BrandsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-8 h-8 text-[#124657}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>

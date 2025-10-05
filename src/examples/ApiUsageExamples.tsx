@@ -230,7 +230,7 @@ export const HardwareProductsExample = () => {
         <div className="mb-4">
           <button 
             onClick={handleGetQuote}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-[#124657} text-white px-4 py-2 rounded"
           >
             Get Quote for {selectedProducts.length} items
           </button>

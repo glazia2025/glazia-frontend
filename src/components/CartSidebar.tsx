@@ -188,7 +188,7 @@ const CartSidebar: React.FC = () => {
                 <Link
                   href="/categories"
                   onClick={closeCart}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  className="bg-[#124657} hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                 >
                   Browse Products
                 </Link>
@@ -293,14 +293,16 @@ const CartSidebar: React.FC = () => {
                 {isAuthenticated ? (
                   <button
                     onClick={handleQuickOrder}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    className="w-full text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
+                    style={{ backgroundColor: '#124657' }}
                   >
                     <span>Checkout</span>
                   </button>
                 ) : (
                   <button
                     onClick={handleQuickOrder}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    className="w-full text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
+                    style={{ backgroundColor: '#124657' }}
                   >
                     <LogIn className="w-4 h-4" />
                     <span>Login to Checkout</span>
@@ -322,8 +324,11 @@ const CartSidebar: React.FC = () => {
           <div className="fixed inset-0 z-70 flex items-center justify-center p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
               <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-                  <LogIn className="h-6 w-6 text-blue-600" />
+                <div
+                  className="mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4"
+                  style={{ backgroundColor: '#E6F0FF' }}
+                >
+                  <LogIn className="h-6 w-6" style={{ color: '#124657' }} />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Login Required</h3>
                 <p className="text-sm text-gray-600 mb-6">
@@ -338,7 +343,8 @@ const CartSidebar: React.FC = () => {
                   </button>
                   <button
                     onClick={handleLoginRedirect}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    className="flex-1 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
+                    style={{ backgroundColor: '#124657' }}
                   >
                     <LogIn className="w-4 h-4" />
                     <span>Login</span>

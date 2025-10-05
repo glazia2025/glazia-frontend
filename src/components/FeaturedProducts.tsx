@@ -116,7 +116,7 @@ export default function FeaturedProducts() {
   };
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16" style={{ backgroundColor: '#D2D7DA' }}>
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-12">
@@ -132,7 +132,10 @@ export default function FeaturedProducts() {
         {/* Loading State */}
         {loading && (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div
+              className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+              style={{ borderBottomColor: '#124657' }}
+            ></div>
             <p className="text-gray-600">Loading products...</p>
           </div>
         )}
@@ -179,7 +182,7 @@ export default function FeaturedProducts() {
 
               {/* Product Info */}
               <div className="p-4">
-                <div className="text-sm text-blue-600 font-medium mb-1">
+                <div className="text-sm text-[#124657} font-medium mb-1">
                   {product.brand}
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
@@ -233,7 +236,7 @@ export default function FeaturedProducts() {
                           <span className="w-8 text-center font-medium">{cartItem.quantity}</span>
                           <button
                             onClick={() => updateProductQuantity(product.id, cartItem.quantity + 1)}
-                            className="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
+                            className="w-8 h-8 flex items-center justify-center bg-[#124657} hover:bg-blue-700 text-white rounded-full transition-colors"
                           >
                             <Plus className="w-4 h-4" />
                           </button>
@@ -251,7 +254,7 @@ export default function FeaturedProducts() {
                       <button
                         onClick={() => handleAddToCart(product)}
                         disabled={!product.inStock}
-                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center space-x-2"
+                        className="w-full bg-[#124657} hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center space-x-2"
                       >
                         <ShoppingCart className="w-4 h-4" />
                         <span>Add to Cart</span>

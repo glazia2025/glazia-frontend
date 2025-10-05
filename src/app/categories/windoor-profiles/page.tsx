@@ -193,14 +193,24 @@ export default function CategoryPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen" style={{ backgroundColor: '#D2D7DA' }}>
         {/* Breadcrumb */}
         <div className="bg-white border-b">
           <div className="container mx-auto px-4 py-4">
             <nav className="text-sm text-gray-600">
-              <Link href="/" className="hover:text-blue-600">Home</Link>
+              <Link
+                href="/"
+                className="transition-colors hover-primary"
+              >
+                Home
+              </Link>
               <span className="mx-2">/</span>
-              <Link href="/categories" className="hover:text-blue-600">Categories</Link>
+              <Link
+                href="/categories"
+                className="transition-colors hover-primary"
+              >
+                Categories
+              </Link>
               <span className="mx-2">/</span>
               <span className="text-gray-900">{isHardwarePage ? 'Hardware' : 'Windoor Profiles'}</span>
             </nav>
@@ -243,11 +253,15 @@ export default function CategoryPage() {
                     {categories.map((category) => (
                       <button
                         key={category}
-                        className={`px-4 py-2 rounded-lg border ${
+                        className={`px-4 py-2 rounded-lg border transition-colors ${
                           activeCategory === category
-                            ? 'bg-blue-600 text-white border-blue-600'
+                            ? 'text-white'
                             : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                         }`}
+                        style={activeCategory === category ? {
+                          backgroundColor: '#124657',
+                          borderColor: '#124657'
+                        } : {}}
                         onClick={() => {
                           setActiveCategory(category);
                           // Set first option as active when category changes
@@ -271,11 +285,15 @@ export default function CategoryPage() {
                       {apiData[activeCategory].options.map((option: string) => (
                         <button
                           key={option}
-                          className={`px-4 py-2 rounded-lg border text-sm ${
+                          className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
                             activeSubCategory === option
-                              ? 'bg-blue-600 text-white border-blue-600'
+                              ? 'text-white'
                               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                           }`}
+                          style={activeSubCategory === option ? {
+                            backgroundColor: '#124657',
+                            borderColor: '#124657'
+                          } : {}}
                           onClick={() => setActiveSubCategory(option)}
                         >
                           {option}
@@ -322,7 +340,8 @@ export default function CategoryPage() {
                   </div>
                   <button
                     onClick={handleClearSearch}
-                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="mt-4 px-4 py-2 text-white rounded-lg transition-colors hover-primary-bg-dark"
+                    style={{ backgroundColor: '#124657' }}
                   >
                     Clear Search
                   </button>
@@ -377,7 +396,7 @@ export default function CategoryPage() {
                           <h3 className="font-medium text-gray-900 text-sm mb-1">{product.description}</h3>
                           <p className="text-xs text-gray-600">SAP Code: {product.sapCode}</p>
                           {cartQuantity > 0 && (
-                            <p className="text-xs text-blue-600 font-medium">
+                            <p className="text-xs font-medium" style={{ color: '#124657' }}>
                               ✓ {cartQuantity} in cart
                             </p>
                           )}
@@ -427,9 +446,10 @@ export default function CategoryPage() {
                             disabled={!product.isEnabled || quantity <= 0}
                             className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-colors ${
                               product.isEnabled && quantity > 0
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                ? 'text-white hover-primary-bg-dark'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
+                            style={product.isEnabled && quantity > 0 ? { backgroundColor: '#124657' } : {}}
                           >
                             <ShoppingCart className="w-4 h-4" />
                             <span className="font-medium">

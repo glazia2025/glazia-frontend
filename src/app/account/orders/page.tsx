@@ -50,7 +50,7 @@ export default function OrdersPage() {
       case 'delivered':
         return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'shipped':
-        return <Truck className="w-5 h-5 text-blue-600" />;
+        return <Truck className="w-5 h-5 text-[#124657}" />;
       case 'processing':
         return <Clock className="w-5 h-5 text-yellow-600" />;
       default:
@@ -86,7 +86,7 @@ export default function OrdersPage() {
             </div>
             <Link
               href="/account/dashboard"
-              className="text-blue-600 hover:underline"
+              className="text-[#124657} hover:underline"
             >
               Back to Dashboard
             </Link>
@@ -98,7 +98,7 @@ export default function OrdersPage() {
         {/* Loading State */}
         {loading && (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#124657} mx-auto mb-4"></div>
             <p className="text-gray-600">Loading your orders...</p>
           </div>
         )}
@@ -180,12 +180,12 @@ export default function OrdersPage() {
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   {order.trackingNumber && (
-                    <button className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium">
+                    <button className="flex items-center text-[#124657} hover:text-blue-700 text-sm font-medium">
                       <Truck className="w-4 h-4 mr-1" />
                       Track Order
                     </button>
                   )}
-                  <button className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  <button className="flex items-center text-[#124657} hover:text-blue-700 text-sm font-medium">
                     <Eye className="w-4 h-4 mr-1" />
                     View Details
                   </button>
@@ -196,7 +196,7 @@ export default function OrdersPage() {
                     Download Invoice
                   </button>
                   {order.status === 'delivered' && (
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    <button className="bg-[#124657} hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
                       Reorder
                     </button>
                   )}
@@ -213,7 +213,7 @@ export default function OrdersPage() {
                 <p className="text-gray-600 mb-6">Start shopping to see your orders here</p>
                 <Link
                   href="/categories"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+                  className="bg-[#124657} hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
                 >
                   Browse Products
                 </Link>
@@ -227,7 +227,7 @@ export default function OrdersPage() {
           <div className="mt-8 flex justify-center">
             <div className="flex items-center space-x-2">
               <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Previous</button>
-              <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
+              <button className="px-3 py-2 bg-[#124657} text-white rounded-lg">1</button>
               <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
               <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">3</button>
               <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Next</button>

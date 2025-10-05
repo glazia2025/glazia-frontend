@@ -42,7 +42,7 @@ function WelcomeBanner({ onClose }: { onClose: () => void }) {
   if (!showWelcome) return null;
 
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+    <div className="bg-gradient-to-r from-[#124657} to-blue-700 text-white">
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -177,7 +177,7 @@ function DashboardContent() {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm text-gray-600">Loyalty Points</p>
-                <p className="text-lg font-semibold text-blue-600">{user.loyaltyPoints?.toLocaleString() || 0}</p>
+                <p className="text-lg font-semibold text-[#124657}">{user.loyaltyPoints?.toLocaleString() || 0}</p>
               </div>
             </div>
           </div>
@@ -193,7 +193,7 @@ function DashboardContent() {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center">
                   <div className="bg-blue-100 p-3 rounded-lg">
-                    <ShoppingBag className="w-6 h-6 text-blue-600" />
+                    <ShoppingBag className="w-6 h-6 text-[#124657}" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm text-gray-600">Total Orders</p>
@@ -241,7 +241,7 @@ function DashboardContent() {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
-                <Link href="/account/orders" className="text-blue-600 hover:underline text-sm">
+                <Link href="/account/orders" className="text-[#124657} hover:underline text-sm">
                   View All Orders
                 </Link>
               </div>
@@ -249,7 +249,7 @@ function DashboardContent() {
               {/* Loading State */}
               {loadingOrders && (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#124657} mx-auto mb-2"></div>
                   <p className="text-sm text-gray-600">Loading orders...</p>
                 </div>
               )}
@@ -290,7 +290,7 @@ function DashboardContent() {
                   <p className="text-gray-600 mb-4">No orders yet</p>
                   <Link
                     href="/categories"
-                    className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                    className="inline-block bg-[#124657} hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
                   >
                     Start Shopping
                   </Link>
@@ -327,7 +327,7 @@ function DashboardContent() {
               </div>
               <Link
                 href="/account/profile"
-                className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block text-center"
+                className="mt-4 w-full bg-[#124657} hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block text-center"
               >
                 Edit Profile
               </Link>
@@ -365,7 +365,7 @@ function DashboardContent() {
               </p>
               <Link
                 href="/contact"
-                className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block"
+                className="bg-[#124657} hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block"
               >
                 Contact Support
               </Link>
@@ -383,7 +383,7 @@ export default function DashboardPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#124657} mx-auto mb-2"></div>
           <p className="text-sm text-gray-600">Loading dashboard...</p>
         </div>
       </div>

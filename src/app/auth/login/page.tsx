@@ -308,7 +308,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <Link href="/" className="flex items-center text-blue-600 hover:text-blue-700 mb-8">
+          <Link href="/" className="flex items-center text-[#124657} hover:text-blue-700 mb-8">
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Home
           </Link>
@@ -363,7 +363,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading || phoneNumber.length !== 10}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#124657} hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Sending OTP...' : 'Send OTP'}
               </button>
@@ -372,11 +372,11 @@ export default function LoginPage() {
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 By continuing, you agree to our{' '}
-                <Link href="/terms" className="text-blue-600 hover:underline">
+                <Link href="/terms" className="text-[#124657} hover:underline">
                   Terms of Service
                 </Link>{' '}
                 and{' '}
-                <Link href="/privacy" className="text-blue-600 hover:underline">
+                <Link href="/privacy" className="text-[#124657} hover:underline">
                   Privacy Policy
                 </Link>
               </p>
@@ -421,7 +421,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading || otp.join('').length !== 6}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#124657} hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Shield className="w-5 h-5 mr-2" />
                 {isLoading ? 'Verifying...' : 'Verify OTP'}
@@ -439,7 +439,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={resendOtp}
                   disabled={isLoading}
-                  className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                  className="text-sm text-[#124657} hover:underline disabled:opacity-50"
                 >
                   Resend OTP
                 </button>
@@ -462,7 +462,7 @@ export default function LoginPage() {
           <div className="mt-8">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <div className="flex items-center">
-                <Phone className="w-5 h-5 text-blue-600 mr-2" />
+                <Phone className="w-5 h-5 text-[#124657} mr-2" />
                 <p className="text-sm text-blue-800">
                   Mobile number +91 {phoneNumber} is verified. Please complete your registration.
                 </p>
@@ -620,7 +620,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#124657} hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download className="w-5 h-5 mr-2" />
                   {isLoading ? 'Creating Account...' : 'Complete Registration & Download Agreement'}

@@ -164,9 +164,9 @@ export default function HardwarePage() {
         <div className="bg-white border-b">
           <div className="container mx-auto px-4 py-4">
             <nav className="text-sm text-gray-600">
-              <a className="hover:text-blue-600" href="/">Home</a>
+              <a className="hover:text-[#124657}" href="/">Home</a>
               <span className="mx-2">/</span>
-              <a className="hover:text-blue-600" href="/categories">Categories</a>
+              <a className="hover:text-[#124657}" href="/categories">Categories</a>
               <span className="mx-2">/</span>
               <span className="text-gray-900">Hardware</span>
             </nav>
@@ -204,9 +204,9 @@ export default function HardwarePage() {
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
           <nav className="text-sm text-gray-600">
-            <a className="hover:text-blue-600" href="/">Home</a>
+            <a className="hover:text-[#124657}" href="/">Home</a>
             <span className="mx-2">/</span>
-            <a className="hover:text-blue-600" href="/categories">Categories</a>
+            <a className="hover:text-[#124657}" href="/categories">Categories</a>
             <span className="mx-2">/</span>
             <span className="text-gray-900">Hardware</span>
           </nav>
@@ -242,7 +242,7 @@ export default function HardwarePage() {
                     }}
                     className={`px-4 py-2 rounded-lg border transition-colors ${
                       activeCategory === category
-                        ? 'bg-blue-600 text-white border-blue-600'
+                        ? 'bg-[#124657} text-white border-[#124657}'
                         : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'
                     }`}
                   >
@@ -289,7 +289,7 @@ export default function HardwarePage() {
 
               {loading ? (
                 <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#124657} mx-auto mb-4"></div>
                   <p className="text-gray-600">Loading {activeCategory} products...</p>
                 </div>
               ) : filteredProducts.length === 0 ? (
@@ -303,7 +303,7 @@ export default function HardwarePage() {
                   {searchQuery && (
                     <button
                       onClick={handleClearSearch}
-                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className="mt-4 px-4 py-2 bg-[#124657} text-white rounded-lg hover:bg-blue-700"
                     >
                       Clear Search
                     </button>
@@ -345,7 +345,7 @@ export default function HardwarePage() {
                               <p className="text-sm text-gray-600">MOQ: {product.moq}</p>
                             </div>
                             {cartQuantity > 0 && (
-                              <p className="text-xs text-blue-600 font-medium mt-1">
+                              <p className="text-xs text-[#124657} font-medium mt-1">
                                 ✓ {cartQuantity} in cart
                               </p>
                             )}
@@ -394,7 +394,7 @@ export default function HardwarePage() {
                                 disabled={displayQuantity <= 0}
                                 className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-colors ${
                                   displayQuantity > 0
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                    ? 'bg-[#124657} text-white hover:bg-blue-700'
                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 }`}
                               >

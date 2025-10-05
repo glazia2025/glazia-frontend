@@ -30,7 +30,7 @@ export default function CategoriesPage() {
         <div className="bg-white border-b">
           <div className="container mx-auto px-4 py-4">
             <nav className="text-sm text-gray-600">
-              <Link href="/" className="hover:text-blue-600">Home</Link>
+              <Link href="/" className="hover:text-[#124657}">Home</Link>
               <span className="mx-2">/</span>
               <span className="text-gray-900">Categories</span>
             </nav>
@@ -49,7 +49,7 @@ export default function CategoriesPage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
                 <Link
                   href="/contact"
-                  className="border border-white text-white font-semibold py-3 px-8 rounded-lg hover:bg-white hover:text-blue-600 transition-colors"
+                  className="border border-white text-white font-semibold py-3 px-8 rounded-lg hover:bg-white hover:text-[#124657} transition-colors"
                 >
                   Get Quote
                 </Link>
@@ -77,12 +77,12 @@ export default function CategoriesPage() {
                 >
                   <div className="aspect-w-16 aspect-h-10 bg-gray-200">
                     <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                      <span className="text-blue-600 font-semibold text-xl">{category.name}</span>
+                      <span className="text-[#124657} font-semibold text-xl">{category.name}</span>
                     </div>
                   </div>
 
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#124657} transition-colors">
                       {category.name}
                     </h3>
                     <p className="text-gray-600 text-sm mb-4 leading-relaxed">
@@ -90,7 +90,7 @@ export default function CategoriesPage() {
                     </p>
 
                     <div className="mb-4">
-                      <span className="text-blue-600 font-semibold text-lg">
+                      <span className="text-[#124657} font-semibold text-lg">
                         {category.productCount}+ Products
                       </span>
                     </div>
@@ -110,7 +110,7 @@ export default function CategoriesPage() {
                   </div>
 
                   <div className="bg-gray-50 px-6 py-4 group-hover:bg-blue-50 transition-colors">
-                    <span className="text-blue-600 font-medium group-hover:text-blue-700">
+                    <span className="text-[#124657} font-medium group-hover:text-blue-700">
                       View Products →
                     </span>
                   </div>
@@ -133,7 +133,7 @@ export default function CategoriesPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
                 <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-blue-600 font-bold text-xl">Q</span>
+                  <span className="text-[#124657} font-bold text-xl">Q</span>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Premium Quality</h3>
                 <p className="text-gray-600">
@@ -165,7 +165,7 @@ export default function CategoriesPage() {
             <div className="text-center mt-12">
               <Link
                 href="/about"
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
+                className="inline-block bg-[#124657} hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
               >
                 Learn More About Glazia
               </Link>

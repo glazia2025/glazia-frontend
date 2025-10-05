@@ -145,7 +145,7 @@ export default function ContactPage() {
                     id="consent"
                     name="consent"
                     required
-                    className="mt-1 mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="mt-1 mr-3 h-4 w-4 text-[#124657} focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="consent" className="text-sm text-gray-600">
                     I agree to the processing of my personal data for the purpose of responding to my inquiry. *
@@ -154,7 +154,7 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-300"
+                  className="w-full bg-[#124657} hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-300"
                 >
                   Send Message
                 </button>
@@ -171,7 +171,7 @@ export default function ContactPage() {
                 {/* Office Address */}
                 <div className="flex items-start space-x-4">
                   <div className="bg-blue-100 p-3 rounded-lg">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-[#124657}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
@@ -190,7 +190,7 @@ export default function ContactPage() {
                 {/* Phone Numbers */}
                 <div className="flex items-start space-x-4">
                   <div className="bg-blue-100 p-3 rounded-lg">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-[#124657}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
                   </div>
@@ -207,7 +207,7 @@ export default function ContactPage() {
                 {/* Email */}
                 <div className="flex items-start space-x-4">
                   <div className="bg-blue-100 p-3 rounded-lg">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-[#124657}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
@@ -224,7 +224,7 @@ export default function ContactPage() {
                 {/* Business Hours */}
                 <div className="flex items-start space-x-4">
                   <div className="bg-blue-100 p-3 rounded-lg">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-[#124657}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
@@ -243,13 +243,13 @@ export default function ContactPage() {
               <div className="mt-8 p-6 bg-blue-50 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Contact</h3>
                 <div className="space-y-3">
-                  <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                  <button className="w-full bg-[#124657} hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
                     Request Callback
                   </button>
-                  <button className="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors">
+                  <button className="w-full border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors">
                     Schedule Meeting
                   </button>
-                  <button className="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors">
+                  <button className="w-full border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors">
                     Live Chat Support
                   </button>
                 </div>

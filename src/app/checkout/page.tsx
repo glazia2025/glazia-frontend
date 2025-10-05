@@ -45,7 +45,7 @@ const CheckoutPage: React.FC = () => {
           <p className="text-gray-600 mb-8">Add some products to proceed with checkout</p>
           <Link
             href="/categories"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors"
+            className="inline-block bg-[#124657} hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors"
           >
             Browse Products
           </Link>
@@ -86,7 +86,7 @@ const CheckoutPage: React.FC = () => {
             <div className="space-x-4">
               <Link
                 href="/account/orders"
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors"
+                className="inline-block bg-[#124657} hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors"
               >
                 Track Order
               </Link>
@@ -111,9 +111,9 @@ const CheckoutPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
-          <Link href="/" className="hover:text-blue-600">Home</Link>
+          <Link href="/" className="hover:text-[#124657}">Home</Link>
           <span>/</span>
-          <Link href="/cart" className="hover:text-blue-600">Cart</Link>
+          <Link href="/cart" className="hover:text-[#124657}">Cart</Link>
           <span>/</span>
           <span className="text-gray-900">Checkout</span>
         </nav>
@@ -122,7 +122,7 @@ const CheckoutPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
           <Link
             href="/cart"
-            className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium"
+            className="flex items-center space-x-2 text-[#124657} hover:text-blue-700 font-medium"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Cart</span>
@@ -140,13 +140,13 @@ const CheckoutPage: React.FC = () => {
               <div key={step} className="flex items-center space-x-2">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                   currentStep >= step 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-[#124657} text-white' 
                     : 'bg-gray-200 text-gray-600'
                 }`}>
                   <Icon className="w-5 h-5" />
                 </div>
                 <span className={`font-medium ${
-                  currentStep >= step ? 'text-blue-600' : 'text-gray-600'
+                  currentStep >= step ? 'text-[#124657}' : 'text-gray-600'
                 }`}>
                   {title}
                 </span>
@@ -265,7 +265,7 @@ const CheckoutPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setCurrentStep(2)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                    className="w-full bg-[#124657} hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
                   >
                     Continue to Payment
                   </button>
@@ -285,7 +285,7 @@ const CheckoutPage: React.FC = () => {
                         value="card"
                         checked={paymentMethod === 'card'}
                         onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="text-blue-600"
+                        className="text-[#124657}"
                       />
                       <CreditCard className="w-5 h-5 text-gray-600" />
                       <span className="font-medium">Credit/Debit Card</span>
@@ -298,9 +298,9 @@ const CheckoutPage: React.FC = () => {
                         value="upi"
                         checked={paymentMethod === 'upi'}
                         onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="text-blue-600"
+                        className="text-[#124657}"
                       />
-                      <div className="w-5 h-5 bg-blue-600 rounded text-white text-xs flex items-center justify-center">₹</div>
+                      <div className="w-5 h-5 bg-[#124657} rounded text-white text-xs flex items-center justify-center">₹</div>
                       <span className="font-medium">UPI Payment</span>
                     </label>
                     
@@ -311,7 +311,7 @@ const CheckoutPage: React.FC = () => {
                         value="cod"
                         checked={paymentMethod === 'cod'}
                         onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="text-blue-600"
+                        className="text-[#124657}"
                       />
                       <Truck className="w-5 h-5 text-gray-600" />
                       <span className="font-medium">Cash on Delivery</span>
@@ -327,7 +327,7 @@ const CheckoutPage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => setCurrentStep(3)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                      className="flex-1 bg-[#124657} hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
                     >
                       Review Order
                     </button>

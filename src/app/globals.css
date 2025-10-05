@@ -1,13 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #D2D7DA;
   --foreground: #171717;
+  --primary: #124657;
+  --secondary: #359496;
+  --banner-gradient-from: #35875C;
+  --banner-gradient-to: #7FB549;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-banner-gradient-from: var(--banner-gradient-from);
+  --color-banner-gradient-to: var(--banner-gradient-to);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -16,4 +24,21 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Custom hover effects for primary color */
+.hover-primary:hover {
+  color: #124657 !important;
+}
+
+.hover-primary-bg:hover {
+  background-color: #124657 !important;
+}
+
+.hover-primary-bg-dark:hover {
+  background-color: #0f3a4a !important;
+}
+
+.hover-primary-border:hover {
+  border-color: #124657 !important;
 }

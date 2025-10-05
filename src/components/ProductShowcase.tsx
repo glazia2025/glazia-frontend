@@ -235,7 +235,7 @@ export default function ProductShowcase() {
 
               {/* Product Info */}
               <div className={`p-4 ${viewMode === "list" ? "flex-1" : ""}`}>
-                <div className="text-sm text-blue-600 font-medium mb-1">
+                <div className="text-sm text-[#124657} font-medium mb-1">
                   {product.brand}
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">
@@ -301,7 +301,7 @@ export default function ProductShowcase() {
                           <span className="w-8 text-center font-medium">{cartItem.quantity}</span>
                           <button
                             onClick={() => updateProductQuantity(product.id, cartItem.quantity + 1)}
-                            className="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
+                            className="w-8 h-8 flex items-center justify-center bg-[#124657} hover:bg-blue-700 text-white rounded-full transition-colors"
                           >
                             <Plus className="w-4 h-4" />
                           </button>
@@ -319,7 +319,7 @@ export default function ProductShowcase() {
                       <button
                         onClick={() => handleAddToCart(product)}
                         disabled={!product.inStock}
-                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center space-x-2"
+                        className="w-full bg-[#124657} hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center space-x-2"
                       >
                         <ShoppingCart className="w-4 h-4" />
                         <span>Add to Cart</span>
@@ -334,7 +334,7 @@ export default function ProductShowcase() {
 
         {/* Load More Button */}
         <div className="text-center mt-12">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300">
+          <button className="bg-[#124657} hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300">
             Load More Products
           </button>
         </div>
