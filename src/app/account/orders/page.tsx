@@ -6,6 +6,7 @@ import { Package, Truck, CheckCircle, Clock, Eye, Download } from 'lucide-react'
 import { useAuth, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
+import Navigation from '@/components/Navigation';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -75,8 +76,10 @@ export default function OrdersPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Main Site Header */}
       <Header />
+      <div className="pt-[120px]">
+        <Navigation />
 
-      {/* Page Header */}
+        {/* Page Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
@@ -234,6 +237,7 @@ export default function OrdersPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
