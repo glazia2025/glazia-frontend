@@ -7,6 +7,7 @@ import { ShoppingCart, Plus, Minus } from 'lucide-react';
 import { useCartState, ProfileProduct } from '@/contexts/AppContext';
 import { useProfilesData, useHardwareData } from '@/hooks';
 import Header from '@/components/Header';
+import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
 export default function CategoryPage() {
@@ -193,7 +194,8 @@ export default function CategoryPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen" style={{ backgroundColor: '#D2D7DA' }}>
+      <div className="min-h-screen pt-[120px]" style={{ backgroundColor: '#D2D7DA' }}>
+        <Navigation />
         {/* Breadcrumb */}
         <div className="bg-white border-b">
           <div className="container mx-auto px-4 py-4">

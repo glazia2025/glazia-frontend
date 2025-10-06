@@ -206,7 +206,20 @@ const initialState: AppState = {
 // ============================================================================
 
 const calculateCartTotal = (items: CartItem[]): number => {
-  return items.reduce((total, item) => total + ((parseInt(item.price, 10) + 75) * item.quantity * (parseInt(item.length, 10) / 1000) * item.kgm), 0);
+  let total = 0;
+
+  items.forEach((item) => {
+
+    if (item.category?.toLowerCase().includes("hardware")) {
+      // Hardware category → price × quantity
+      total = total + parseInt(item.price, 10) * item.quantity;
+    } else {
+      // Other categories → price × kgm × (length / 1000) × quantity
+      total = total + ((parseInt(item.price, 10) + 75) * item.quantity * (parseInt(item.length, 10) / 1000) * item.kgm);
+    }
+  });
+
+  return total;
 };
 
 const calculateCartItemCount = (items: CartItem[]): number => {

@@ -131,7 +131,8 @@ const CartSidebar: React.FC = () => {
 
   const handleQuickOrder = () => {
     if (!isAuthenticated) {
-      setShowLoginPrompt(true);
+      closeCart();
+      router.push('/auth/login');
       return;
     }
     setShowOrderPlacement(true);
@@ -157,13 +158,13 @@ const CartSidebar: React.FC = () => {
   return (
     <>
       {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-[#00000033] bg-opacity-50 z-50"
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-[10001]"
         onClick={closeCart}
       />
-      
+
       {/* Sidebar */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out">
+      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl z-[10001] transform transition-transform duration-300 ease-in-out">
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
@@ -238,7 +239,7 @@ const CartSidebar: React.FC = () => {
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <span className="text-sm font-semibold text-gray-900">
-                        ₹{((parseInt(item.price, 10) + 75) * item.quantity * (parseInt(item.length, 10) / 1000) * item.kgm).toLocaleString()}
+                        ₹{item.category.toLowerCase() === 'hardware' ? (parseInt(item.price, 10) * item.quantity).toLocaleString() : ((parseInt(item.price, 10) + 75) * item.quantity * (parseInt(item.length, 10) / 1000) * item.kgm).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -255,14 +256,6 @@ const CartSidebar: React.FC = () => {
                 <span className="text-lg font-semibold text-gray-900">Total:</span>
                 <span className="text-lg font-bold text-gray-900">₹{cart.total.toLocaleString()}</span>
               </div>
-
-              {/* Shipping Discount */}
-              {shippingInfo.discount > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Shipping Discount:</span>
-                  <span className="text-sm font-medium text-green-600">₹{shippingInfo.discount.toLocaleString()}</span>
-                </div>
-              )}
 
               {/* Shipping Info */}
               <div className={`text-sm p-3 rounded-lg ${
@@ -318,10 +311,10 @@ const CartSidebar: React.FC = () => {
       {showLoginPrompt && (
         <>
           {/* Modal Overlay */}
-          <div className="fixed inset-0 bg-[#00000033] bg-opacity-50 z-60" onClick={() => setShowLoginPrompt(false)} />
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[10002]" onClick={() => setShowLoginPrompt(false)} />
 
           {/* Modal Content */}
-          <div className="fixed inset-0 z-70 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
               <div className="text-center">
                 <div
@@ -360,10 +353,10 @@ const CartSidebar: React.FC = () => {
       {showOrderPlacement && (
         <>
           {/* Modal Overlay */}
-          <div className="fixed inset-0 bg-[#00000033] bg-opacity-50 z-60" onClick={handleOrderCancel} />
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[10002]" onClick={handleOrderCancel} />
 
           {/* Modal Content */}
-          <div className="fixed inset-0 z-70 flex items-center justify-center md:p-4">
+          <div className="fixed inset-0 z-[10002] flex items-center justify-center md:p-4">
             <div className="bg-white md:rounded-lg shadow-xl w-full md:w-[75vw] h-full md:h-auto md:max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">

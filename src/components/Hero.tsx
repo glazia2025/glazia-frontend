@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
+import { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -29,13 +28,13 @@ const slides = [
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
+  // useEffect(() => {
+  //   const timer = setInterval(() => {
+  //     setCurrentSlide((prev) => (prev + 1) % slides.length);
+  //   }, 5000);
 
-    return () => clearInterval(timer);
-  }, []);
+  //   return () => clearInterval(timer);
+  // }, []);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -61,8 +60,9 @@ export default function Hero() {
           </div>
           
           {/* Content */}
-          <div className="relative z-10 container mx-auto px-4 h-full flex items-center">
-            <div className="max-w-2xl text-white">
+          <div className="relative z-10 h-full flex items-center justify-start">
+            <div className="container mx-auto px-4">
+              <div className="max-w-2xl text-white" style={{ marginBottom: '120px' }}>
               <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
                 {slide.title}
               </h1>
@@ -72,13 +72,14 @@ export default function Hero() {
               <p className="text-lg mb-8 text-gray-200 leading-relaxed">
                 {slide.description}
               </p>
-              <Link
-                href={slide.link}
-                className="inline-block text-white font-semibold py-4 px-8 rounded-lg transition-colors duration-300 text-lg hover-primary-bg-dark"
-                style={{ backgroundColor: '#124657' }}
-              >
-                {slide.cta}
-              </Link>
+                <Link
+                  href={slide.link}
+                  className="inline-block text-white font-semibold py-4 px-8 rounded-lg transition-colors duration-300 text-lg hover-primary-bg-dark"
+                  style={{ backgroundColor: '#124657' }}
+                >
+                  {slide.cta}
+                </Link>
+              </div>
             </div>
           </div>
         </div>

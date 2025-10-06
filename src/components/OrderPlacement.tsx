@@ -223,9 +223,10 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
       <div className="space-y-2">
         <button
           onClick={() => setStep('upload')}
-          className="w-full bg-[#124657} hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+          className="w-full text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
+          style={{ backgroundColor: '#124657' }}
         >
-          I've Made the Payment
+          I&apos;ve Made the Payment
         </button>
         <button
           onClick={onCancel}

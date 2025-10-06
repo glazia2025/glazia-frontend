@@ -22,6 +22,7 @@ import {
 import { useAuth, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
+import Navigation from '@/components/Navigation';
 
 // Component to handle search params with Suspense
 function WelcomeBanner({ onClose }: { onClose: () => void }) {
@@ -160,8 +161,10 @@ function DashboardContent() {
     <div className="min-h-screen bg-gray-50">
       {/* Main Site Header */}
       <Header />
+      <div className="pt-[120px]">
+        <Navigation />
 
-      {/* Welcome Banner with Suspense */}
+        {/* Welcome Banner with Suspense */}
       <Suspense fallback={null}>
         <WelcomeBanner onClose={() => {}} />
       </Suspense>
@@ -372,6 +375,7 @@ function DashboardContent() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

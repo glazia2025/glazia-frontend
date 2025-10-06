@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Plus, Minus } from 'lucide-react';
 import { useCartState } from '@/contexts/AppContext';
 import Header from '@/components/Header';
+import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { apiClient } from '@/services/api';
 
@@ -160,7 +161,9 @@ export default function HardwarePage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        {/* Breadcrumb */}
+        <div className="pt-[120px]">
+          <Navigation />
+          {/* Breadcrumb */}
         <div className="bg-white border-b">
           <div className="container mx-auto px-4 py-4">
             <nav className="text-sm text-gray-600">
@@ -193,6 +196,7 @@ export default function HardwarePage() {
           </div>
         </div>
         <Footer />
+        </div>
       </div>
     );
   }
@@ -200,7 +204,9 @@ export default function HardwarePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      {/* Breadcrumb */}
+      <div className="pt-[120px]">
+        <Navigation />
+        {/* Breadcrumb */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
           <nav className="text-sm text-gray-600">
@@ -394,9 +400,10 @@ export default function HardwarePage() {
                                 disabled={displayQuantity <= 0}
                                 className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-colors ${
                                   displayQuantity > 0
-                                    ? 'bg-[#124657} text-white hover:bg-blue-700'
+                                    ? 'text-white hover-primary-bg-dark'
                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 }`}
+                                style={displayQuantity > 0 ? { backgroundColor: '#124657' } : {}}
                               >
                                 <ShoppingCart className="w-3 h-3" />
                                 <span className="font-medium">
@@ -419,6 +426,7 @@ export default function HardwarePage() {
         </div>
       </div>
       <Footer />
+      </div>
     </div>
   );
 }

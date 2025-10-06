@@ -3,13 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X, ShoppingCart, User, Phone, Settings, LogOut, ChevronDown } from "lucide-react";
+import { ShoppingCart, User, Phone, Settings, LogOut, ChevronDown } from "lucide-react";
 import { useCartState, useAuth } from "@/contexts/AppContext";
 import NalcoPriceDisplay from "./NalcoPriceDisplay";
 import NalcoGraphModal from "./NalcoGraphModal";
 
 export default function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNalcoModalOpen, setIsNalcoModalOpen] = useState(false);
   const { cart, toggleCart } = useCartState();
@@ -39,34 +38,33 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm">
+    <header className="fixed top-0 left-0 w-full bg-white shadow-sm z-[10000]">
       {/* Top Bar */}
-      <div className="bg-[#124657] text-white py-2">
+      <div className="bg-[#124657] text-white py-1">
         <div className="container mx-auto px-4 flex justify-between items-center text-sm">
           <div className="flex items-center space-x-4">
-            <span className="flex items-center">
+            <Link href="tel:+919876543210" className="flex items-center">
               <Phone className="w-4 h-4 mr-1" />
               +91 98765 43210
-            </span>
-            <span className="hidden md:block">Free Shipping on Windoors Orders Above ₹10000</span>
+            </Link>
           </div>
+          <div className="hidden md:block">Free Shipping on Windoors Orders Above ₹10000</div>
           <div className="flex items-center space-x-4">
             <NalcoPriceDisplay
               onClick={() => setIsNalcoModalOpen(true)}
-              className="hidden sm:flex"
+              className="block"
             />
-            <Link href="/track-order" className="hover:underline">Track Order</Link>
-            <Link href="/support" className="hover:underline">Support</Link>
           </div>
         </div>
       </div>
 
       {/* Main Header */}
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-4 bg-white">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <div className="text-2xl font-bold text-[#124657}">
+            <div className="text-2xl flex gap-2 font-bold text-[#124657}" style={{alignItems: 'center'}}>
+              <img src="/logo_n.png" alt="Glazia Logo" className="w-10" />
               GLAZIA
             </div>
           </Link>
@@ -137,88 +135,13 @@ export default function Header() {
                 </span>
               )}
             </button>
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden"
-            >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
           </div>
         </div>
 
 
       </div>
 
-      {/* Navigation Menu */}
-      <nav className="border-t" style={{ backgroundColor: '#D2D7DA' }}>
-        <div className="container mx-auto px-4">
-          <div className={`${isMenuOpen ? 'block' : 'hidden'} md:block`}>
-            <ul className="flex flex-col md:flex-row md:space-x-8 py-4">
-              <li>
-                <Link
-                  href="/categories/windoor-profiles"
-                  className="block py-2 md:py-0 text-gray-700 font-medium transition-colors hover-primary"
-                >
-                  Windoor Profiles
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/categories/hardware"
-                  className="block py-2 md:py-0 text-gray-700 font-medium transition-colors hover-primary"
-                >
-                  Hardware
-                </Link>
-              </li>
 
-              {/* Mobile-only NALCO price display */}
-              <li className="md:hidden border-t border-gray-200 pt-2 mt-2">
-                <div className="py-2">
-                  <NalcoPriceDisplay
-                    onClick={() => setIsNalcoModalOpen(true)}
-                    className="flex"
-                  />
-                </div>
-              </li>
-
-              {/* Mobile-only authentication links */}
-              {isAuthenticated ? (
-                <>
-                  <li className="md:hidden border-t border-gray-200 pt-2 mt-2">
-                    <Link
-                      href="/account/dashboard"
-                      className="block py-2 text-gray-700 font-medium transition-colors hover-primary"
-                    >
-                      Dashboard
-                    </Link>
-                  </li>
-
-                  <li className="md:hidden">
-                    <Link
-                      href="/account/settings"
-                      className="block py-2 text-gray-700 font-medium transition-colors hover-primary"
-                    >
-                      Settings
-                    </Link>
-                  </li>
-                  <li className="md:hidden">
-                    <button
-                      onClick={handleLogout}
-                      className="block py-2 text-gray-700 font-medium w-full text-left transition-colors hover-primary"
-                    >
-                      Log out
-                    </button>
-                  </li>
-                </>
-              ) : (
-                <li className="md:hidden border-t border-gray-200 pt-2 mt-2">
-                  <Link href="/auth/login" className="block py-2 text-gray-700 hover:text-[#124657} font-medium">Login</Link>
-                </li>
-              )}
-            </ul>
-          </div>
-        </div>
-      </nav>
 
       {/* NALCO Graph Modal */}
       <NalcoGraphModal

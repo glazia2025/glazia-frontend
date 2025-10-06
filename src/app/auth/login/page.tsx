@@ -363,7 +363,8 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading || phoneNumber.length !== 10}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#124657} hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
+                style={{ backgroundColor: '#124657' }}
               >
                 {isLoading ? 'Sending OTP...' : 'Send OTP'}
               </button>
@@ -421,7 +422,8 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading || otp.join('').length !== 6}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#124657} hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
+                style={{ backgroundColor: '#124657' }}
               >
                 <Shield className="w-5 h-5 mr-2" />
                 {isLoading ? 'Verifying...' : 'Verify OTP'}
@@ -620,7 +622,8 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#124657} hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
+                  style={{ backgroundColor: '#124657' }}
                 >
                   <Download className="w-5 h-5 mr-2" />
                   {isLoading ? 'Creating Account...' : 'Complete Registration & Download Agreement'}
