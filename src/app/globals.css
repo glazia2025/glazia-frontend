@@ -42,3 +42,92 @@ body {
 .hover-primary-border:hover {
   border-color: #124657 !important;
 }
+
+/* Admin Panel Specific Styles */
+.admin-layout {
+  font-family: var(--font-geist-sans);
+  background-color: #f9fafb;
+  min-height: 100vh;
+}
+
+.admin-layout * {
+  box-sizing: border-box;
+}
+
+/* Ensure admin layout doesn't inherit main site styles */
+.admin-layout .fixed {
+  position: fixed !important;
+}
+
+.admin-layout .sticky {
+  position: sticky !important;
+}
+
+/* Admin sidebar styles */
+.admin-sidebar {
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* Admin content area */
+.admin-content {
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+/* Admin table styles */
+.admin-table {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Admin modal styles */
+.admin-modal {
+  z-index: 10050;
+}
+
+/* Admin responsive styles */
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    position: fixed !important;
+  }
+}
+
+/* Admin table responsive */
+.admin-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Admin form styles */
+.admin-form-input {
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-form-input:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #124657;
+  border-color: transparent;
+}
+
+/* Admin button styles */
+.admin-btn-primary {
+  background-color: #124657;
+  color: white;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.admin-btn-primary:hover {
+  background-color: #0f3a4a;
+}
+
+/* Admin toggle styles */
+.admin-toggle {
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-toggle:hover {
+  opacity: 0.75;
+}

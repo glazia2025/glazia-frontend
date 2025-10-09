@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/contexts/AppContext";
+import { AdminProvider } from "@/contexts/AdminContext";
 import CartSidebar from "@/components/CartSidebar";
 import DataInitializer from "@/components/DataInitializer";
 
@@ -32,9 +33,11 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <AppProvider>
-          <DataInitializer />
-          {children}
-          <CartSidebar />
+          <AdminProvider>
+            <DataInitializer />
+            {children}
+            <CartSidebar />
+          </AdminProvider>
         </AppProvider>
       </body>
     </html>
