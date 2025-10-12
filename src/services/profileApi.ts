@@ -10,7 +10,7 @@ import {
 } from './api';
 
 /**
- * Profile API service class for Windoor Profiles
+ * Profile API service class for Aluminium Profiles
  * Based on your ProfileOptions MongoDB schema
  */
 export class ProfileApiService {

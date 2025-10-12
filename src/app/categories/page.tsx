@@ -5,8 +5,8 @@ import Footer from '@/components/Footer';
 export default function CategoriesPage() {
   const categories = [
     {
-      id: 'windoor-profiles',
-      name: 'Windoor Profiles',
+      id: 'aluminium-profiles',
+      name: 'Aluminium Profiles',
       description: 'UPVC, Aluminum, and Composite window & door profile systems manufactured by Glazia',
       productCount: 1500,
       image: '/api/placeholder/300/200',
@@ -43,7 +43,7 @@ export default function CategoriesPage() {
             <div className="max-w-4xl mx-auto text-center">
               <h1 className="text-4xl md:text-5xl font-bold mb-6">Product Categories</h1>
               <p className="text-xl md:text-2xl mb-8 text-blue-100">
-                Explore our comprehensive range of windoor profiles and hardware solutions manufactured by Glazia
+                Explore our comprehensive range of aluminium profiles and hardware solutions manufactured by Glazia
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
@@ -126,7 +126,7 @@ export default function CategoriesPage() {
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose Glazia</h2>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Experience the difference with our premium windoor solutions manufactured to the highest standards
+                Experience the difference with our premium aluminium solutions manufactured to the highest standards
               </p>
             </div>
 
@@ -147,7 +147,7 @@ export default function CategoriesPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Certified Products</h3>
                 <p className="text-gray-600">
-                  Our windoor profiles and hardware meet international standards and are certified for performance and safety.
+                  Our aluminium profiles and hardware meet international standards and are certified for performance and safety.
                 </p>
               </div>
 

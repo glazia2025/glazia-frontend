@@ -7,17 +7,17 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 const slides = [
   {
     id: 1,
-    title: "Premium Windoor Profiles",
+    title: "Premium Aluminium Profiles",
     subtitle: "High-Performance Window & Door Profile Systems",
     description: "Discover our extensive range of UPVC, aluminum, and composite profiles. Create energy-efficient and durable windoors with Glazia's premium profile systems.",
     image: "/hero-slide-1.jpg",
     cta: "Explore Profiles",
-    link: "/categories/windoor-profiles"
+    link: "/categories/aluminium-profiles"
   },
   {
     id: 2,
     title: "Professional Hardware",
-    subtitle: "Complete Hardware Solutions for Windoors",
+    subtitle: "Complete Hardware Solutions for Aluminium",
     description: "From hinges and handles to locking systems and operators, find everything you need for professional windoors installation and operation.",
     image: "/hero-slide-2.jpg",
     cta: "Shop Hardware",
@@ -118,7 +118,7 @@ export default function Hero() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold" style={{ color: '#124657' }}>5,000+</div>
-              <div className="text-sm text-gray-600">Windoors Products</div>
+              <div className="text-sm text-gray-600">Aluminium Products</div>
             </div>
             <div>
               <div className="text-2xl font-bold" style={{ color: '#124657' }}>150+</div>

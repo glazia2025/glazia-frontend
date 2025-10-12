@@ -1,10 +1,10 @@
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.glazia.in';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || 'v1';
 
 // API Endpoints
 export const API_ENDPOINTS = {
-  // Profile endpoints (Windoor Profiles)
+  // Profile endpoints (Aluminium Profiles)
   PROFILES: {
     OPTIONS: '/api/user/getProducts',
     CATEGORIES: '/api/profiles/categories',

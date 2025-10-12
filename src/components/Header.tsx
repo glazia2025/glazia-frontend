@@ -45,10 +45,10 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             <Link href="tel:+919876543210" className="flex items-center">
               <Phone className="w-4 h-4 mr-1" />
-              +91 98765 43210
+              +91 9958053708
             </Link>
           </div>
-          <div className="hidden md:block">Free Shipping on Windoors Orders Above ₹10000</div>
+          <div className="hidden md:block">Free Shipping on Aluminium Orders Above ₹1000000</div>
           <div className="flex items-center space-x-4">
             <NalcoPriceDisplay
               onClick={() => setIsNalcoModalOpen(true)}

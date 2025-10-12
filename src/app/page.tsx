@@ -18,14 +18,14 @@ export default function Home() {
       <FeaturedCategories />
       <FeaturedProducts />
 
-      {/* Call to Action for Complete Windoors Solutions */}
+      {/* Call to Action for Complete Aluminium Solutions */}
       <section className="py-16 text-white" style={{ backgroundColor: '#124657' }}>
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Explore Our Complete Windoors Range
+            Explore Our Complete Aluminium Range
           </h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto" style={{ color: '#E6F0FF' }}>
-            Discover our comprehensive collection of windoor profiles and hardware solutions
+            Discover our comprehensive collection of aluminium profiles and hardware solutions
             designed for modern construction needs.
           </p>
           <Link
@@ -36,7 +36,7 @@ export default function Home() {
               color: '#124657'
             }}
           >
-            View Complete Windoors Solutions
+            View Complete Aluminium Solutions
           </Link>
         </div>
       </section>

@@ -121,10 +121,10 @@ export default function FeaturedProducts() {
         {/* Section Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Featured Windoor Products
+            Featured Aluminium Products
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Discover our best-selling windoor profiles and hardware solutions,
+            Discover our best-selling aluminium profiles and hardware solutions,
             trusted by professionals and contractors worldwide.
           </p>
         </div>

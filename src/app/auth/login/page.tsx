@@ -182,7 +182,7 @@ export default function LoginPage() {
         <div style="margin-bottom: 30px;">
           <h3 style="color: #374151; border-bottom: 2px solid #2563eb; padding-bottom: 5px;">Terms and Conditions</h3>
           <div style="margin-top: 15px; line-height: 1.6; color: #374151;">
-            <p><strong>1. Partnership Scope:</strong> This agreement establishes a business partnership between Glazia and the above-mentioned partner for the distribution and sale of windoor profiles and hardware solutions.</p>
+            <p><strong>1. Partnership Scope:</strong> This agreement establishes a business partnership between Glazia and the above-mentioned partner for the distribution and sale of aluminium profiles and hardware solutions.</p>
 
             <p><strong>2. Product Range:</strong> Partner is authorized to sell Glazia's complete range of:</p>
             <ul style="margin-left: 20px;">
@@ -223,8 +223,8 @@ export default function LoginPage() {
         </div>
 
         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
-          <p>GLAZIA - Premium Windoors Profiles & Hardware Solutions</p>
-          <p>456 Windoors Plaza, Industrial Estate Phase-II, Pune, Maharashtra 411019</p>
+          <p>GLAZIA - Premium Aluminium Profiles & Hardware Solutions</p>
+          <p>456 Aluminium Plaza, Industrial Estate Phase-II, Pune, Maharashtra 411019</p>
           <p>Phone: +91 98765 43210 | Email: info@glazia.in | Website: www.glazia.in</p>
         </div>
       </div>

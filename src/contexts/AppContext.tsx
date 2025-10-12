@@ -177,7 +177,7 @@ type AppAction =
 const initialState: AppState = {
   products: [],
   featuredProducts: [],
-  categories: ['All', 'Windoor Profiles', 'Hardware'],
+  categories: ['All', 'Aluminium Profiles', 'Hardware'],
   
   user: null,
   isAuthenticated: false,

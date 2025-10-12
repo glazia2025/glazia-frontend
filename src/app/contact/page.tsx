@@ -9,15 +9,15 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 py-[110px]">
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-16">
+      <section className="bg-gradient-to-r from-green-900 to-green-700 text-white py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Contact Our Windoors Experts
+              Contact Our Aluminium Experts
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100">
               Get professional consultation, technical support, and custom quotes 
@@ -179,10 +179,7 @@ export default function ContactPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Head Office</h3>
                     <p className="text-gray-600">
-                      456 Windoors Plaza,<br />
-                      Industrial Estate Phase-II,<br />
-                      Pune, Maharashtra 411019<br />
-                      India
+                      Near Manesar Toll Plaza, Gurgaon, Haryana - 122001 (Can we integrate google location?)
                     </p>
                   </div>
                 </div>
@@ -197,9 +194,8 @@ export default function ContactPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Phone</h3>
                     <p className="text-gray-600">
-                      Sales: +91 98765 43210<br />
-                      Technical: +91 98765 43211<br />
-                      Support: +91 98765 43212
+                      9958053708<br />
+                      9354876670
                     </p>
                   </div>
                 </div>
@@ -214,9 +210,7 @@ export default function ContactPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Email</h3>
                     <p className="text-gray-600">
-                      General: info@glazia.in<br />
-                      Sales: sales@glazia.in<br />
-                      Support: support@glazia.in
+                      sales@glazia.in
                     </p>
                   </div>
                 </div>
@@ -231,27 +225,10 @@ export default function ContactPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Business Hours</h3>
                     <p className="text-gray-600">
-                      Monday - Friday: 9:00 AM - 6:00 PM<br />
-                      Saturday: 9:00 AM - 2:00 PM<br />
+                      Monday-Saturday : 9:00 AM - 6:00 PM<br />
                       Sunday: Closed
                     </p>
                   </div>
-                </div>
-              </div>
-
-              {/* Quick Contact Options */}
-              <div className="mt-8 p-6 bg-blue-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Contact</h3>
-                <div className="space-y-3">
-                  <button className="w-full bg-[#124657} hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
-                    Request Callback
-                  </button>
-                  <button className="w-full border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors">
-                    Schedule Meeting
-                  </button>
-                  <button className="w-full border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors">
-                    Live Chat Support
-                  </button>
                 </div>
               </div>
             </div>

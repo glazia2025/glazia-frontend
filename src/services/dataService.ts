@@ -5,7 +5,7 @@ import { Product, User, Order } from '@/contexts/AppContext';
 // ============================================================================
 
 export const mockProducts: Product[] = [
-  // Windoor Profiles
+  // Aluminium Profiles
   {
     id: '1',
     name: 'UPVC Window Profile 70mm Series',
@@ -16,7 +16,7 @@ export const mockProducts: Product[] = [
     rating: 4.9,
     reviews: 450,
     inStock: true,
-    category: 'Windoor Profiles',
+    category: 'Aluminium Profiles',
     description: 'High-performance UPVC window profile with excellent thermal insulation and energy efficiency.',
     features: ['Energy Efficient', 'Multi-Chamber', 'Lead-Free', 'Weather Resistant'],
     specifications: {
@@ -40,7 +40,7 @@ export const mockProducts: Product[] = [
     rating: 4.8,
     reviews: 320,
     inStock: true,
-    category: 'Windoor Profiles',
+    category: 'Aluminium Profiles',
     description: 'Premium aluminum door profile with thermal break technology for superior performance.',
     features: ['Thermal Break', 'High Security', 'Weather Resistant', 'Corrosion Resistant'],
     specifications: {
@@ -64,7 +64,7 @@ export const mockProducts: Product[] = [
     rating: 4.7,
     reviews: 180,
     inStock: true,
-    category: 'Windoor Profiles',
+    category: 'Aluminium Profiles',
     description: 'Advanced composite window profile combining strength and insulation properties.',
     features: ['Composite Material', 'High Strength', 'Low Maintenance', 'UV Resistant'],
     specifications: {
@@ -435,6 +435,6 @@ export class DataService {
   // Categories
   static async getCategories(): Promise<string[]> {
     await this.delay();
-    return ['All', 'Windoor Profiles', 'Hardware'];
+    return ['All', 'Aluminium Profiles', 'Hardware'];
   }
 }

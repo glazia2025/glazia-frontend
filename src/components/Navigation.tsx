@@ -34,11 +34,11 @@ export default function Navigation() {
           <ul className="flex flex-col md:flex-row md:space-x-8 py-4">
             <li>
               <Link
-                href="/categories/windoor-profiles"
+                href="/categories/aluminium-profiles"
                 className="block py-2 md:py-0 text-gray-700 font-medium transition-colors hover-primary"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Windoor Profiles
+                Aluminium Profiles
               </Link>
             </li>
             <li>

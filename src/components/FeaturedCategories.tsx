@@ -13,10 +13,10 @@ import {
 const categories = [
   {
     id: 1,
-    name: "Windoor Profiles",
+    name: "Aluminium Profiles",
     description: "UPVC, aluminum, and composite window & door profiles",
     icon: RectangleHorizontal,
-    link: "/categories/windoor-profiles",
+    link: "/categories/aluminium-profiles",
     color: "#124657",
     products: "1,500+ Products"
   },
@@ -38,10 +38,10 @@ export default function FeaturedCategories() {
         {/* Section Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Windoor Product Categories
+            Aluminium Product Categories
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Explore our comprehensive range of windoor profiles and hardware solutions,
+            Explore our comprehensive range of aluminium profiles and hardware solutions,
             carefully curated for professionals and contractors.
           </p>
         </div>

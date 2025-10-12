@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Glazia - Premium Windoors Profiles & Hardware Solutions",
+  title: "Glazia - Premium Aluminium Profiles & Hardware Solutions",
   description: "Discover premium windoors profiles, window hardware, door hardware, and glazing solutions at Glazia. Your trusted partner for quality windoors systems.",
 };
 

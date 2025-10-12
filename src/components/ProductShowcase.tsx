@@ -17,7 +17,7 @@ const allProducts = [
     originalPrice: 320,
     rating: 4.9,
     reviews: 450,
-    category: "Windoor Profiles",
+    category: "Aluminium Profiles",
     inStock: true,
     discount: 11,
     features: ["Energy Efficient", "Multi-Chamber", "Lead-Free"]
@@ -30,7 +30,7 @@ const allProducts = [
     originalPrice: 480,
     rating: 4.8,
     reviews: 320,
-    category: "Windoor Profiles",
+    category: "Aluminium Profiles",
     inStock: true,
     discount: 13,
     features: ["Thermal Break", "High Security", "Weather Resistant"]
@@ -108,7 +108,7 @@ const allProducts = [
     originalPrice: 750,
     rating: 4.7,
     reviews: 160,
-    category: "Windoor Profiles",
+    category: "Aluminium Profiles",
     inStock: true,
     discount: 13,
     features: ["Insulated Core", "Recyclable", "Color Stable"]
@@ -195,10 +195,10 @@ export default function ProductShowcase() {
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Complete Windoor Product Range
+            Complete Aluminium Product Range
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Explore our comprehensive collection of windoor profiles and hardware solutions,
+            Explore our comprehensive collection of aluminium profiles and hardware solutions,
             all manufactured by Glazia with premium quality and reliability.
           </p>
         </div>

@@ -105,7 +105,7 @@ class AdminApiService {
               id: '1',
               productId: 'WP001',
               productName: 'Window Profile A1',
-              category: 'Windoor Profiles',
+              category: 'Aluminium Profiles',
               quantity: 5,
               price: 1200
             }
@@ -183,7 +183,7 @@ class AdminApiService {
                 sapCode: product.part || `PROF_${product.id}`,
                 name: `${product.description} - ${product.part}`,
                 description: product.description,
-                category: 'Windoor Profiles',
+                category: 'Aluminium Profiles',
                 subCategory: categoryName,
                 price: product.kgm || 0,
                 isActive: category.enabled && option.enabled,
@@ -367,7 +367,7 @@ class AdminApiService {
 
         categories.push({
           id: 'profiles',
-          name: 'Windoor Profiles',
+          name: 'Aluminium Profiles',
           isActive: true,
           productCount: totalProfileProducts,
           subCategories: profileSubCategories

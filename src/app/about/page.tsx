@@ -3,25 +3,25 @@ import Footer from "@/components/Footer";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About Glazia - Windoors Specialists",
+  title: "About Glazia - Aluminium Specialists",
   description: "Learn about Glazia's 15+ years of expertise in windoors profiles, hardware, and glazing solutions. Your trusted partner for quality windoors systems.",
 };
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 py-[110px]">
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-16">
+      <section className="bg-gradient-to-r from-green-900 to-green-700 text-white py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               About Glazia
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100">
-              Your trusted partner for premium windoors profiles, hardware, 
-              and glazing solutions since 2010.
+              Your trusted partner for premium façade and fenestration profiles and hardware
+
             </p>
           </div>
         </div>
@@ -36,20 +36,18 @@ export default function AboutPage() {
                 Our Story
               </h2>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                Founded in 2010, Glazia began with a simple mission: to provide the Indian 
-                market with world-class windoors solutions that combine European quality 
-                with local expertise. What started as a small trading company has grown 
-                into one of India's leading suppliers of premium windoors systems.
+                In 2023, two paths from different worlds crossed, one driven by entrepreneurial energy, the other by decades of industry wisdom.<br />
+                Navdeep Kamboj, a serial entrepreneur with a background in technology, business, and building scalable ventures, had experienced firsthand the inefficiencies of India’s fragmented façade and fenestration supply chain. He saw an industry that was ready for transformation where innovation, design, and customer experience could replace delays, compromises, and chaos.
               </p>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                Over the years, we have built strong partnerships with renowned international 
-                brands like Rehau, Schuco, Maco, and Roto, ensuring our customers have access 
-                to the latest innovations in windoors technology.
+                On the other hand, Jaswant Singh, a seasoned industry veteran with 20+ years of experience in aluminium systems, brought deep product knowledge, trusted relationships, and a legacy of excellence in execution.
+Their shared belief: India&apos;s building material industry deserves better quality, better service, and better systems.
+What began as conversations over projects and possibilities quickly evolved into a shared mission. In 2023, they came together to build Glazia Windoors - a next-generation, tech-enabled platform designed to reimagine the way aluminium, glass, and hardware are sourced, experienced, and delivered.
               </p>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Today, Glazia serves over 2,500 customers across India, from individual 
-                homeowners to large construction companies, providing comprehensive windoors 
-                solutions backed by expert technical support.
+                Glazia stands for precision, innovation, and trust. By blending Navdeep&apos;s strategic vision with Jaswant&apos;s deep industry expertise, the company is setting new benchmarks in the aluminium doors and windows ecosystem from superior finishes and proprietary designs to seamless supply chain orchestration.
+Together, they&apos;re not just building a company, they&apos;re building the future of India&apos;s fenestration industry.
+
               </p>
             </div>
             <div className="bg-gray-100 rounded-lg h-96 flex items-center justify-center">
@@ -113,7 +111,7 @@ export default function AboutPage() {
       </section>
 
       {/* Key Statistics */}
-      <section className="py-16 bg-blue-900 text-white">
+      <section className="py-16 bg-green-900 text-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -126,19 +124,19 @@ export default function AboutPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold mb-2">15+</div>
+              <div className="text-4xl md:text-5xl font-bold mb-2">25+</div>
               <div className="text-blue-200">Years of Experience</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold mb-2">2,500+</div>
+              <div className="text-4xl md:text-5xl font-bold mb-2">2,50+</div>
               <div className="text-blue-200">Happy Customers</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold mb-2">25,000+</div>
+              <div className="text-4xl md:text-5xl font-bold mb-2">25,00+</div>
               <div className="text-blue-200">Projects Completed</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold mb-2">50+</div>
+              <div className="text-4xl md:text-5xl font-bold mb-2">20+</div>
               <div className="text-blue-200">Cities Served</div>
             </div>
           </div>
@@ -245,11 +243,8 @@ export default function AboutPage() {
             windoors requirements.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-[#124657} hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg transition-colors">
-              Contact Our Team
-            </button>
             <button className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-semibold py-4 px-8 rounded-lg transition-colors">
-              Download Company Profile
+              Contact Our Team
             </button>
           </div>
         </div>

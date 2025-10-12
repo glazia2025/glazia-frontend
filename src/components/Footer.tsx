@@ -26,7 +26,7 @@ export default function Footer() {
               </div>
               <div>
                 <h4 className="font-semibold">Free Shipping</h4>
-                <p className="text-sm text-gray-300">On windoors orders above ₹10000</p>
+                <p className="text-sm text-gray-300">On windoors orders above ₹1000000</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -63,15 +63,14 @@ export default function Footer() {
       {/* Main Footer Content */}
       <div className="py-12">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Company Info */}
             <div>
               <div className="text-2xl font-bold text-blue-400 mb-4">
                 GLAZIA
               </div>
               <p className="text-gray-300 mb-6 leading-relaxed">
-                Your trusted partner for premium windoors profiles and hardware solutions.
-                Creating energy-efficient and durable windoors systems since 2010.
+                Your trusted partner for premium fenestration profiles and hardware solutions with an experience of over 25 years.
               </p>
               <div className="flex space-x-4">
                 <Link href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
@@ -94,23 +93,9 @@ export default function Footer() {
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2">
                 <li><Link href="/about" className="text-gray-300 hover:text-white transition-colors">About Us</Link></li>
-                <li><Link href="/brands" className="text-gray-300 hover:text-white transition-colors">Partner Brands</Link></li>
-                <li><Link href="/projects" className="text-gray-300 hover:text-white transition-colors">Project Gallery</Link></li>
-                <li><Link href="/technical-support" className="text-gray-300 hover:text-white transition-colors">Technical Support</Link></li>
-                <li><Link href="/installation-guides" className="text-gray-300 hover:text-white transition-colors">Installation Guides</Link></li>
-              </ul>
-            </div>
-
-            {/* Customer Service */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Customer Service</h3>
-              <ul className="space-y-2">
                 <li><Link href="/contact" className="text-gray-300 hover:text-white transition-colors">Contact Us</Link></li>
-                <li><Link href="/track-order" className="text-gray-300 hover:text-white transition-colors">Track Your Order</Link></li>
-                <li><Link href="/returns" className="text-gray-300 hover:text-white transition-colors">Returns & Refunds</Link></li>
-                <li><Link href="/shipping" className="text-gray-300 hover:text-white transition-colors">Shipping Info</Link></li>
-                <li><Link href="/faq" className="text-gray-300 hover:text-white transition-colors">FAQ</Link></li>
-                <li><Link href="/support" className="text-gray-300 hover:text-white transition-colors">Support Center</Link></li>
+                <li><Link href="/categories/aluminium-profiles" className="text-gray-300 hover:text-white transition-colors">Aluminium Profiles</Link></li>
+                <li><Link href="/categories/hardware" className="text-gray-300 hover:text-white transition-colors">Hardwares</Link></li>
               </ul>
             </div>
 
@@ -122,47 +107,24 @@ export default function Footer() {
                   <MapPin className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
                   <div>
                     <p className="text-gray-300">
-                      456 Windoors Plaza,<br />
-                      Industrial Estate Phase-II,<br />
-                      Pune, Maharashtra 411019
+                      Near Manesar Toll Plaza, Gurgaon, Haryana - 122001 (Can we integrate google location?)
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Phone className="w-5 h-5 text-blue-400" />
                   <div>
-                    <p className="text-gray-300">+91 98765 43210</p>
-                    <p className="text-gray-300">+91 98765 43211</p>
+                    <p className="text-gray-300">+91 9958053708</p>
+                    <p className="text-gray-300">+91 9354876670</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="w-5 h-5 text-blue-400" />
                   <div>
-                    <p className="text-gray-300">info@glazia.in</p>
-                    <p className="text-gray-300">support@glazia.in</p>
+                    <p className="text-gray-300">sales@glazia.in</p>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Newsletter Section */}
-      <div className="bg-gray-800 py-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h3 className="text-xl font-semibold mb-2">Stay Updated</h3>
-            <p className="text-gray-300 mb-6">Subscribe to our newsletter for latest windoors products and technical updates</p>
-            <div className="max-w-md mx-auto flex">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-l-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button className="bg-[#124657} hover:bg-blue-700 px-6 py-3 rounded-r-lg font-medium transition-colors">
-                Subscribe
-              </button>
             </div>
           </div>
         </div>
