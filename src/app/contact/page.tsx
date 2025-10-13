@@ -21,7 +21,7 @@ export default function ContactPage() {
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100">
               Get professional consultation, technical support, and custom quotes 
-              for your windoors projects.
+              for your projects.
             </p>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function ContactPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Head Office</h3>
                     <p className="text-gray-600">
-                      Near Manesar Toll Plaza, Gurgaon, Haryana - 122001 (Can we integrate google location?)
+                      Near Manesar Toll Plaza, Gurgaon, Haryana - 122001
                     </p>
                   </div>
                 </div>

@@ -26,7 +26,7 @@ export default function Footer() {
               </div>
               <div>
                 <h4 className="font-semibold">Free Shipping</h4>
-                <p className="text-sm text-gray-300">On windoors orders above ₹1000000</p>
+                <p className="text-sm text-gray-300">On windoors orders above ₹1000000*</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -76,13 +76,7 @@ export default function Footer() {
                 <Link href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
                   <Facebook className="w-5 h-5" />
                 </Link>
-                <Link href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
-                  <Twitter className="w-5 h-5" />
-                </Link>
-                <Link href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
-                  <Instagram className="w-5 h-5" />
-                </Link>
-                <Link href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <Link href="https://www.linkedin.com/company/glazia-windoors-private-limited/" className="text-gray-400 hover:text-blue-400 transition-colors">
                   <Linkedin className="w-5 h-5" />
                 </Link>
               </div>
@@ -107,7 +101,7 @@ export default function Footer() {
                   <MapPin className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
                   <div>
                     <p className="text-gray-300">
-                      Near Manesar Toll Plaza, Gurgaon, Haryana - 122001 (Can we integrate google location?)
+                      Near Manesar Toll Plaza, Gurgaon, Haryana - 122001
                     </p>
                   </div>
                 </div>

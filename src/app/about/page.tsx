@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "About Glazia - Aluminium Specialists",
@@ -128,11 +129,11 @@ Together, they&apos;re not just building a company, they&apos;re building the fu
               <div className="text-blue-200">Years of Experience</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold mb-2">2,50+</div>
+              <div className="text-4xl md:text-5xl font-bold mb-2">250+</div>
               <div className="text-blue-200">Happy Customers</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold mb-2">25,00+</div>
+              <div className="text-4xl md:text-5xl font-bold mb-2">2500+</div>
               <div className="text-blue-200">Projects Completed</div>
             </div>
             <div className="text-center">
@@ -243,9 +244,12 @@ Together, they&apos;re not just building a company, they&apos;re building the fu
             windoors requirements.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-semibold py-4 px-8 rounded-lg transition-colors">
-              Contact Our Team
-            </button>
+            <Link href="/contact">
+              <button className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-semibold py-4 px-8 rounded-lg transition-colors">
+                Contact Our Team
+              </button>
+            </Link>
+            
           </div>
         </div>
       </section>

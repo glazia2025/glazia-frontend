@@ -159,7 +159,7 @@ const CartSidebar: React.FC = () => {
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-[10001]"
+        className="fixed inset-0 bg-[#00000033] bg-opacity-50 z-[10001]"
         onClick={closeCart}
       />
 
@@ -207,9 +207,7 @@ const CartSidebar: React.FC = () => {
                       <p className="text-xs text-gray-500">{item.brand}</p>
                       <div className="flex items-center space-x-2 mt-1">
                         <span className="text-sm font-semibold text-gray-900">₹{item.price}</span>
-                        {item.originalPrice && (
-                          <span className="text-xs text-gray-500 line-through">₹{item.originalPrice}</span>
-                        )}
+                        
                       </div>
                       
                       {/* Quantity Controls */}

@@ -37,6 +37,7 @@ export default function Navigation() {
                 href="/categories/aluminium-profiles"
                 className="block py-2 md:py-0 text-gray-700 font-medium transition-colors hover-primary"
                 onClick={() => setIsMenuOpen(false)}
+                style={{ color: window.location.href.includes('aluminium-profiles') ? '#117b23ff' : 'inherit' }}
               >
                 Aluminium Profiles
               </Link>
@@ -46,6 +47,7 @@ export default function Navigation() {
                 href="/categories/hardware"
                 className="block py-2 md:py-0 text-gray-700 font-medium transition-colors hover-primary"
                 onClick={() => setIsMenuOpen(false)}
+                style={{ color: window.location.href.includes('hardware') ? '#117b23ff' : 'inherit' }}
               >
                 Hardware
               </Link>

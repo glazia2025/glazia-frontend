@@ -312,7 +312,7 @@ export default function CategoryPage() {
                         placeholder="Search by SAP Code, Description, KGM..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-4 py-2 border border-gray-700 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                       {searchQuery && (
                         <button
@@ -363,8 +363,6 @@ export default function CategoryPage() {
                       {/* Technical Drawing Section */}
                       <div className="bg-gray-50 p-4 border-b">
                         <div className="text-center mb-2">
-                          <div className="text-sm font-medium text-gray-700">Frame 21</div>
-                          <div className="text-xs text-gray-500">40.0</div>
                         </div>
                         <div className="flex justify-center">
                           {product.image ? (
@@ -383,15 +381,11 @@ export default function CategoryPage() {
 
                       {/* Specifications Table */}
                       <div className="p-3">
-                        <div className="grid grid-cols-4 gap-1 text-xs mb-3">
-                          <div className="bg-gray-100 p-1 text-center font-medium">Glass</div>
-                          <div className="bg-gray-100 p-1 text-center font-medium">Ext. Depth</div>
-                          <div className="bg-gray-100 p-1 text-center font-medium">Kg. Weight</div>
-                          <div className="bg-gray-100 p-1 text-center font-medium">Perimeter</div>
-                          <div className="bg-white p-1 text-center border">{product.degree || '6'}</div>
+                        <div className="grid grid-cols-2 gap-1 text-xs mb-3">
+                          <div className="bg-gray-100 p-1 text-center font-medium">Kg/m</div>
+                          <div className="bg-gray-100 p-1 text-center font-medium">Length(mm)</div>
                           <div className="bg-white p-1 text-center border">{product.kgm || '40.0'}</div>
                           <div className="bg-white p-1 text-center border">{product.length || '1.673'}</div>
-                          <div className="bg-white p-1 text-center border">{product.per || '40.0'}</div>
                         </div>
 
                         <div className="mb-3">
@@ -406,7 +400,7 @@ export default function CategoryPage() {
 
                         <div className="mb-3">
                           <div className="text-center">
-                            <div className="text-lg font-bold text-gray-900">Rate: ₹{rate}</div>
+                            <div className="text-lg font-bold text-gray-900">Rate: ₹{rate}/Kg</div>
                           </div>
                         </div>
 

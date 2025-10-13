@@ -335,31 +335,6 @@ function DashboardContent() {
                 Edit Profile
               </Link>
             </div>
-
-            {/* Account Menu */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Menu</h2>
-              <nav className="space-y-2">
-                <Link href="/account/orders" className="flex items-center p-2 text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <ShoppingBag className="w-5 h-5 mr-3" />
-                  My Orders
-                </Link>
-
-                <Link href="/account/addresses" className="flex items-center p-2 text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <MapPin className="w-5 h-5 mr-3" />
-                  Addresses
-                </Link>
-                <Link href="/account/payments" className="flex items-center p-2 text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <CreditCard className="w-5 h-5 mr-3" />
-                  Payment Methods
-                </Link>
-                <Link href="/account/profile" className="flex items-center p-2 text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <User className="w-5 h-5 mr-3" />
-                  Profile Settings
-                </Link>
-              </nav>
-            </div>
-
             {/* Support */}
             <div className="bg-blue-50 rounded-lg p-6">
               <h3 className="font-semibold text-blue-900 mb-2">Need Help?</h3>
@@ -368,7 +343,7 @@ function DashboardContent() {
               </p>
               <Link
                 href="/contact"
-                className="bg-[#124657} hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block"
+                className="bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block"
               >
                 Contact Support
               </Link>

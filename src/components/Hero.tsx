@@ -8,8 +8,8 @@ const slides = [
   {
     id: 1,
     title: "Premium Aluminium Profiles",
-    subtitle: "High-Performance Window & Door Profile Systems",
-    description: "Discover our extensive range of UPVC, aluminum, and composite profiles. Create energy-efficient and durable windoors with Glazia's premium profile systems.",
+    subtitle: "High performance System Aluminium",
+    description: "Discover our extensive range of Aluminium. Create energy-efficient and durable Aluminium fenestration products with Glazia's premium profile systems.",
     image: "/hero-slide-1.jpg",
     cta: "Explore Profiles",
     link: "/categories/aluminium-profiles"
@@ -125,11 +125,11 @@ export default function Hero() {
               <div className="text-sm text-gray-600">Profile Systems</div>
             </div>
             <div>
-              <div className="text-2xl font-bold" style={{ color: '#124657' }}>25,000+</div>
+              <div className="text-2xl font-bold" style={{ color: '#124657' }}>2,500+</div>
               <div className="text-sm text-gray-600">Projects Completed</div>
             </div>
             <div>
-              <div className="text-2xl font-bold" style={{ color: '#124657' }}>15+</div>
+              <div className="text-2xl font-bold" style={{ color: '#124657' }}>25+</div>
               <div className="text-sm text-gray-600">Years Experience</div>
             </div>
           </div>

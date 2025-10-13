@@ -202,15 +202,15 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
             </div>
             <div className="flex justify-between py-2 border-b border-green-200">
               <span className="font-medium text-gray-700">Bank:</span>
-              <span className="text-gray-900">Axis Bank</span>
+              <span className="text-gray-900">HDFC Bank</span>
             </div>
             <div className="flex justify-between py-2 border-b border-green-200">
               <span className="font-medium text-gray-700">A/C No:</span>
-              <span className="text-gray-900 font-mono">82837539293740</span>
+              <span className="text-gray-900 font-mono">50200084871361</span>
             </div>
             <div className="flex justify-between py-2 border-b border-green-200">
               <span className="font-medium text-gray-700">IFSC:</span>
-              <span className="text-gray-900 font-mono">00202030GJSS</span>
+              <span className="text-gray-900 font-mono">HDFC0004809</span>
             </div>
             <div className="flex justify-between py-2">
               <span className="font-medium text-gray-700">Amount:</span>

@@ -116,7 +116,7 @@ export default function NalcoPriceDisplay({ onClick, className = '' }: NalcoPric
         </span>
         <div className="flex items-center space-x-1">
           <span className={`text-sm font-semibold ${getTrendColor()} group-hover:text-white transition-colors`}>
-            {nalcoApiService.formatPrice(currentData.nalcoPrice/1000)}
+            {nalcoApiService.formatPrice(currentData.nalcoPrice/1000)}/Kg
           </span>
           {getTrendIcon()}
         </div>

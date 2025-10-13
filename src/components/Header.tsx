@@ -48,7 +48,7 @@ export default function Header() {
               +91 9958053708
             </Link>
           </div>
-          <div className="hidden md:block">Free Shipping on Aluminium Orders Above ₹1000000</div>
+          <div className="hidden md:block">Free Shipping on Aluminium Orders Above ₹1000000*</div>
           <div className="flex items-center space-x-4">
             <NalcoPriceDisplay
               onClick={() => setIsNalcoModalOpen(true)}

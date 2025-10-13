@@ -14,7 +14,7 @@ const categories = [
   {
     id: 1,
     name: "Aluminium Profiles",
-    description: "UPVC, aluminum, and composite window & door profiles",
+    description: "High Quality Aluminium profile systems",
     icon: RectangleHorizontal,
     link: "/categories/aluminium-profiles",
     color: "#124657",

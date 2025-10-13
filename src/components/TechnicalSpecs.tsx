@@ -1,4 +1,5 @@
 import { CheckCircle, Award, Shield, Thermometer, Volume2, Lock } from "lucide-react";
+import Link from "next/link";
 
 const specifications = [
   {
@@ -186,12 +187,12 @@ export default function TechnicalSpecs() {
               installation guides, and performance data.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-[#124657} hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">
-                Download Technical Sheets
-              </button>
-              <button className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-colors">
-                Request Custom Specifications
-              </button>
+              <Link href="/contact">
+                <button className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-colors">
+                  Contact Us
+                </button>
+              </Link>
+              
             </div>
           </div>
         </div>
