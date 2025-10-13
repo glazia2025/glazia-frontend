@@ -247,10 +247,14 @@ export default function HardwarePage() {
                       console.log('🎯 Selected category:', category);
                     }}
                     className={`px-4 py-2 rounded-lg border transition-colors ${
-                      activeCategory === category
-                        ? 'bg-[#124657} text-white border-[#124657}'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'
-                    }`}
+                          activeCategory === category
+                            ? 'text-white'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                        style={activeCategory === category ? {
+                          backgroundColor: '#124657',
+                          borderColor: '#124657'
+                        } : {}}
                   >
                     {category}
                   </button>
