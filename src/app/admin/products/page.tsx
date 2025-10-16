@@ -1172,7 +1172,7 @@ export default function AdminProductsPage() {
                     description: formData.get('description') as string,
                     sapCode: formData.get('sapCode') as string,
                     price: parseFloat(formData.get('price') as string),
-                    isActive: formData.get('isActive') === 'on'
+                    isEnabled: formData.get('isActive') === 'on'
                   };
 
                   // Handle image file upload
