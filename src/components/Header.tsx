@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShoppingCart, User, Phone, Settings, LogOut, ChevronDown } from "lucide-react";
 import { useCartState, useAuth } from "@/contexts/AppContext";
 import NalcoPriceDisplay from "./NalcoPriceDisplay";
@@ -13,6 +14,7 @@ export default function Header() {
   const [isNalcoModalOpen, setIsNalcoModalOpen] = useState(false);
   const { cart, toggleCart } = useCartState();
   const { isAuthenticated, clearUser } = useAuth();
+  const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Authentication is now managed by AppContext, no need for local state
@@ -34,7 +36,7 @@ export default function Header() {
   const handleLogout = () => {
     clearUser();
     setIsDropdownOpen(false);
-    window.location.href = '/';
+    router.push('/');
   };
 
   return (

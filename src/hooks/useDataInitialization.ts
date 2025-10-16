@@ -58,8 +58,8 @@ export const useDataInitialization = () => {
     const loadUserData = async () => {
       try {
         setLoadingUser(true);
-        
-        const token = localStorage.getItem('authToken');
+
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
         if (token) {
           setAuthentication(true);
           

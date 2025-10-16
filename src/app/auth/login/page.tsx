@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Phone, ArrowLeft, Shield, Clock, User, Mail, MapPin, Building, FileText, Download } from 'lucide-react';
 import axios from 'axios';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [step, setStep] = useState<'phone' | 'otp' | 'register'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -119,7 +121,7 @@ export default function LoginPage() {
         localStorage.setItem('glazia-user', JSON.stringify(userData));
 
         // Redirect to dashboard
-        window.location.href = "/account/dashboard";
+        router.push("/account/dashboard");
       }
     } catch (err) {
       console.error('❌ OTP Verification Error:', err);
@@ -294,7 +296,7 @@ export default function LoginPage() {
         // Show success message and redirect after a delay
         alert('Registration successful! Partner agreement has been downloaded. Redirecting to dashboard...');
         setTimeout(() => {
-          window.location.href = "/account/dashboard";
+          router.push("/account/dashboard");
         }, 2000);
       }
     } catch (err) {

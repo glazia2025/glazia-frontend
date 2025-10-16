@@ -476,6 +476,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Load data from localStorage on mount
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
     // Load cart
     const savedCart = localStorage.getItem('glazia-cart');
     if (savedCart) {
@@ -508,17 +511,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('glazia-cart', JSON.stringify(state.cart.items));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('glazia-cart', JSON.stringify(state.cart.items));
+    }
   }, [state.cart.items]);
 
 
 
   // Save user to localStorage whenever it changes
   useEffect(() => {
-    if (state.user) {
-      localStorage.setItem('glazia-user', JSON.stringify(state.user));
-    } else {
-      localStorage.removeItem('glazia-user');
+    if (typeof window !== 'undefined') {
+      if (state.user) {
+        localStorage.setItem('glazia-user', JSON.stringify(state.user));
+      } else {
+        localStorage.removeItem('glazia-user');
+      }
     }
   }, [state.user]);
 

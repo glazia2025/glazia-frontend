@@ -79,7 +79,7 @@ const CartSidebar: React.FC = () => {
   // Lock body scroll when cart is open
   useEffect(() => {
     console.log(cart);
-    if (cart.isOpen) {
+    if (cart.isOpen && typeof window !== 'undefined') {
       // Save current scroll position
       const scrollY = window.scrollY;
 

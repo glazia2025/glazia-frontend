@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AppContext";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthenticated, clearUser } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = () => {
     clearUser();
     setIsMenuOpen(false);
-    window.location.href = '/';
+    router.push('/');
   };
 
   return (
@@ -37,7 +40,7 @@ export default function Navigation() {
                 href="/categories/aluminium-profiles"
                 className="block py-2 md:py-0 text-gray-700 font-medium transition-colors hover-primary"
                 onClick={() => setIsMenuOpen(false)}
-                style={{ color: window.location.href.includes('aluminium-profiles') ? '#117b23ff' : 'inherit' }}
+                style={{ color: pathname?.includes('aluminium-profiles') ? '#117b23ff' : 'inherit' }}
               >
                 Aluminium Profiles
               </Link>
@@ -47,7 +50,7 @@ export default function Navigation() {
                 href="/categories/hardware"
                 className="block py-2 md:py-0 text-gray-700 font-medium transition-colors hover-primary"
                 onClick={() => setIsMenuOpen(false)}
-                style={{ color: window.location.href.includes('hardware') ? '#117b23ff' : 'inherit' }}
+                style={{ color: pathname?.includes('hardware') ? '#117b23ff' : 'inherit' }}
               >
                 Hardware
               </Link>
