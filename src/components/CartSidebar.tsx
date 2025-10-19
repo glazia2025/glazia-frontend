@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { X, Plus, Minus, ShoppingBag, Trash2, Zap, LogIn } from 'lucide-react';
 import { useCartState, useAuth } from '@/contexts/AppContext';
 import OrderPlacement from './OrderPlacement';
+import ImageModal from '@/components/ImageModal';
 
 const CartSidebar: React.FC = () => {
   const { cart, removeFromCart, updateCartQuantity, closeCart } = useCartState();
@@ -13,6 +14,15 @@ const CartSidebar: React.FC = () => {
   const router = useRouter();
   const [showOrderPlacement, setShowOrderPlacement] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [nalcoPrice, setNalcoPrice] = useState<number>(0);
+
+  // State for image modal
+  const [imageModal, setImageModal] = useState({
+    isOpen: false,
+    imageSrc: '',
+    imageAlt: '',
+    productName: ''
+  });
 
   // Shipping discount calculation based on order value slabs
   const calculateShippingDiscount = (orderValue: number) => {
@@ -79,6 +89,12 @@ const CartSidebar: React.FC = () => {
   // Lock body scroll when cart is open
   useEffect(() => {
     console.log(cart);
+    if (window.localStorage) {
+      const temp = window.localStorage.getItem('nalcoPrice');
+      if (temp) {
+        setNalcoPrice(parseFloat(temp)); // Use parseFloat to preserve decimal values
+      }
+    }
     if (cart.isOpen && typeof window !== 'undefined') {
       // Save current scroll position
       const scrollY = window.scrollY;
@@ -153,6 +169,26 @@ const CartSidebar: React.FC = () => {
     setShowOrderPlacement(false);
   };
 
+  // Handle image click to open modal
+  const handleImageClick = (imageSrc: string, productName: string) => {
+    setImageModal({
+      isOpen: true,
+      imageSrc,
+      imageAlt: productName,
+      productName
+    });
+  };
+
+  // Close image modal
+  const closeImageModal = () => {
+    setImageModal({
+      isOpen: false,
+      imageSrc: '',
+      imageAlt: '',
+      productName: ''
+    });
+  };
+
   console.log(cart, 'cart>>>>')
 
   return (
@@ -198,8 +234,18 @@ const CartSidebar: React.FC = () => {
               <div className="space-y-4">
                 {cart.items.map((item) => (
                   <div key={item.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <span className="text-gray-500 text-xs">{item.category}</span>
+                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {item.image ? (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleImageClick(item.image, item.name)}
+                          title="Click to view larger image"
+                        />
+                      ) : (
+                        <span className="text-gray-500 text-xs text-center">{item.category}</span>
+                      )}
                     </div>
                     
                     <div className="flex-1 min-w-0">
@@ -214,8 +260,8 @@ const CartSidebar: React.FC = () => {
                       <div className="flex items-center space-x-2 mt-2">
                         <button
                           onClick={() => updateCartQuantity(item.id, item.quantity - 1)}
-                          className="p-1 hover:bg-gray-200 rounded transition-colors"
-                          disabled={item.quantity <= 1}
+                          className="p-1 hover:bg-gray-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={item.quantity <= 0}
                         >
                           <Minus className="w-3 h-3" />
                         </button>
@@ -237,7 +283,7 @@ const CartSidebar: React.FC = () => {
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <span className="text-sm font-semibold text-gray-900">
-                        ₹{item.category.toLowerCase() === 'hardware' ? (parseInt(item.price, 10) * item.quantity).toLocaleString() : ((parseInt(item.price, 10) + 75) * item.quantity * (parseInt(item.length, 10) / 1000) * item.kgm).toLocaleString()}
+                        ₹{item.category.toLowerCase() === 'hardware' ? (parseFloat(item.price) * item.quantity).toLocaleString() : (((nalcoPrice/1000) + 75) * item.quantity * (parseFloat(item.length) / 1000) * item.kgm).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -376,6 +422,15 @@ const CartSidebar: React.FC = () => {
           </div>
         </>
       )}
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={imageModal.isOpen}
+        onClose={closeImageModal}
+        imageSrc={imageModal.imageSrc}
+        imageAlt={imageModal.imageAlt}
+        productName={imageModal.productName}
+      />
     </>
   );
 };

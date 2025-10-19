@@ -6,6 +6,7 @@ import { useCartState } from '@/contexts/AppContext';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import ImageModal from '@/components/ImageModal';
 import { apiClient } from '@/services/api';
 
 // Fixed hardware categories
@@ -20,7 +21,7 @@ const HARDWARE_CATEGORIES = [
 ];
 
 export default function HardwarePage() {
-  const { addToCart, cart, getCartItem } = useCartState();
+  const { addToCart, cart, getCartItem, updateCartQuantity } = useCartState();
 
   // State management
   const [loading, setLoading] = useState(false);
@@ -30,6 +31,14 @@ export default function HardwarePage() {
 
   // Quantity state for hardware products
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+
+  // State for image modal
+  const [imageModal, setImageModal] = useState({
+    isOpen: false,
+    imageSrc: '',
+    imageAlt: '',
+    productName: ''
+  });
 
   // Filter products based on search query
   const filteredProducts = searchQuery.trim()
@@ -108,7 +117,11 @@ export default function HardwarePage() {
 
   const handleQuantityDecrement = (productId: string) => {
     const current = quantities[productId] || 0;
-    if (current > 0) {
+    const cartQuantity = getCartQuantityForProduct({ id: productId });
+
+    // Allow going negative to represent removing from cart
+    // But don't go below negative cart quantity (can't remove more than what's in cart)
+    if (current > -cartQuantity) {
       setQuantities((prev) => ({
         ...prev,
         [productId]: current - 1,
@@ -116,45 +129,80 @@ export default function HardwarePage() {
     }
   };
 
-  // Add to cart function
+  // Update cart function
   const handleProductSelect = (product: any) => {
     const productId = product.id || product.sapCode;
-    const quantity = quantities[productId] || 0;
+    const localQuantity = quantities[productId] || 0;
+    const cartQuantity = getCartQuantityForProduct(product);
 
-    if (quantity > 0) {
-      const cartItem = {
-        id: productId,
-        name: product.perticular || product.description || 'Hardware Item',
-        brand: 'Glazia',
-        price: product.rate || 0,
-        originalPrice: product.rate,
-        image: product.image || '',
-        inStock: true,
-        category: 'Hardware'
-      };
+    if (localQuantity !== 0) {
+      if (localQuantity > 0) {
+        // Adding items to cart
+        const cartItem = {
+          id: productId,
+          name: product.perticular || product.description || 'Hardware Item',
+          brand: 'Glazia',
+          price: product.rate || 0,
+          originalPrice: product.rate,
+          image: product.image || '',
+          inStock: true,
+          category: 'Hardware',
+          length: '1000', // Default length for hardware items
+          per: 'piece',   // Hardware is sold per piece
+          kgm: 1          // Default weight for hardware items
+        };
 
-      console.log('🛒 Adding to cart with quantity:', quantity, 'Product:', cartItem);
+        console.log('🛒 Adding to cart with quantity:', localQuantity, 'Product:', cartItem);
 
-      // Add to cart with the specified quantity
-      for (let i = 0; i < quantity; i++) {
-        addToCart(cartItem);
+        // Add to cart with the specified quantity
+        for (let i = 0; i < localQuantity; i++) {
+          addToCart(cartItem);
+        }
+      } else {
+        // Removing items from cart (localQuantity is negative)
+        const removeQuantity = Math.abs(localQuantity);
+        console.log('🗑️ Removing from cart with quantity:', removeQuantity, 'Product ID:', productId);
+
+        // Update cart quantity directly
+        const newCartQuantity = Math.max(0, cartQuantity - removeQuantity);
+        updateCartQuantity(productId, newCartQuantity);
       }
 
-      // Reset quantity after adding to cart
+      // Reset local quantity after updating cart
       setQuantities((prev) => ({
         ...prev,
         [productId]: 0
       }));
 
-      console.log('✅ Successfully added to cart');
+      console.log('✅ Successfully updated cart');
     } else {
-      alert("Please enter a valid quantity before adding to cart.");
+      alert("Please adjust the quantity before updating cart.");
     }
   };
 
   // Handle search clear
   const handleClearSearch = () => {
     setSearchQuery('');
+  };
+
+  // Handle image click to open modal
+  const handleImageClick = (imageSrc: string, productName: string) => {
+    setImageModal({
+      isOpen: true,
+      imageSrc,
+      imageAlt: productName,
+      productName
+    });
+  };
+
+  // Close image modal
+  const closeImageModal = () => {
+    setImageModal({
+      isOpen: false,
+      imageSrc: '',
+      imageAlt: '',
+      productName: ''
+    });
   };
 
   if (loading) {
@@ -325,7 +373,7 @@ export default function HardwarePage() {
                     const productId = product.id || product.sapCode;
                     const localQuantity = quantities[productId] || 0;
                     const cartQuantity = getCartQuantityForProduct(product);
-                    const displayQuantity = localQuantity || cartQuantity;
+                    const displayQuantity = cartQuantity + localQuantity;
 
                     return (
                       <div key={productId || index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -337,7 +385,9 @@ export default function HardwarePage() {
                               <img
                                 src={product.image}
                                 alt={product.perticular}
-                                className="h-36 w-auto object-contain rounded-lg"
+                                className="h-36 w-auto object-contain rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => handleImageClick(product.image, product.perticular || product.description || 'Hardware Item')}
+                                title="Click to view larger image"
                               />
                             ) : (
                               <div className="h-24 w-32 bg-gray-100 border border-gray-300 rounded flex items-center justify-center">
@@ -389,31 +439,27 @@ export default function HardwarePage() {
                                   <Plus className="w-4 h-4" />
                                 </button>
                               </div>
-
-                              {displayQuantity > 0 && (
-                                <span className="text-sm text-gray-600">
-                                  Qty: {displayQuantity}
-                                </span>
-                              )}
                             </div>
 
                             {/* Action Buttons */}
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleProductSelect(product)}
-                                disabled={displayQuantity <= 0}
+                                disabled={localQuantity === 0}
                                 className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-colors ${
-                                  displayQuantity > 0
+                                  localQuantity !== 0
                                     ? 'text-white hover-primary-bg-dark'
                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 }`}
-                                style={displayQuantity > 0 ? { backgroundColor: '#124657' } : {}}
+                                style={localQuantity !== 0 ? { backgroundColor: '#124657' } : {}}
                               >
                                 <ShoppingCart className="w-3 h-3" />
                                 <span className="font-medium">
-                                  {displayQuantity > 0
-                                    ? (cartQuantity > 0 ? 'Update Cart' : 'Add to Cart')
-                                    : 'Enter Quantity'
+                                  {localQuantity === 0
+                                    ? 'Adjust Quantity'
+                                    : localQuantity > 0
+                                    ? 'Add to Cart'
+                                    : 'Remove from Cart'
                                   }
                                 </span>
                               </button>
@@ -430,6 +476,15 @@ export default function HardwarePage() {
         </div>
       </div>
       <Footer />
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={imageModal.isOpen}
+        onClose={closeImageModal}
+        imageSrc={imageModal.imageSrc}
+        imageAlt={imageModal.imageAlt}
+        productName={imageModal.productName}
+      />
       </div>
     </div>
   );

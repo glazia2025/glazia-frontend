@@ -9,9 +9,10 @@ import { useProfilesData, useHardwareData } from '@/hooks';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import ImageModal from '@/components/ImageModal';
 
 export default function CategoryPage() {
-  const { addToCart, getCartItem, cart } = useCartState();
+  const { addToCart, getCartItem, cart, updateCartQuantity } = useCartState();
 
   const pathname = usePathname();
   const { loadProfileOptions } = useProfilesData();
@@ -29,6 +30,14 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [quantities, setQuantities] = useState<Record<string, any>>({});
+
+  // State for image modal
+  const [imageModal, setImageModal] = useState({
+    isOpen: false,
+    imageSrc: '',
+    imageAlt: '',
+    productName: ''
+  });
 
   // Get current products from API data
   const currentProducts = apiData?.[activeCategory]?.products?.[activeSubCategory] || [];
@@ -148,30 +157,44 @@ export default function CategoryPage() {
   // Handle product selection (similar to your onConfirmRow)
   const handleProductSelect = (product: ProfileProduct) => {
     const key = `${activeCategory}-${activeSubCategory}-${product.id}`;
-    const quantity = quantities[key]?.quantity || 0;
+    const localQuantity = quantities[key]?.quantity || 0;
+    const cartQuantity = getCartQuantityForProduct(product);
 
-    if (quantity > 0) {
-      // Add to cart with category-specific data
-      const cartItem = {
-        id: `${product.sapCode}-${activeCategory}-${activeSubCategory}`,
-        name: product.description,
-        brand: 'Glazia',
-        price: apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0,
-        originalPrice: apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0,
-        image: product.image || '/api/placeholder/300/300',
-        inStock: product.isEnabled,
-        category: `${activeCategory} - ${activeSubCategory}`,
-        kgm: product.kgm,
-        length: product.length,
-        per: product.per,
-      };
+    if (localQuantity !== 0) {
+      if (localQuantity > 0) {
+        // Adding items to cart
+        const cartItem = {
+          id: `${product.sapCode}-${activeCategory}-${activeSubCategory}`,
+          name: product.description,
+          brand: 'Glazia',
+          price: apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0,
+          originalPrice: apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0,
+          image: product.image || '/api/placeholder/300/300',
+          inStock: product.isEnabled,
+          category: `${activeCategory} - ${activeSubCategory}`,
+          kgm: product.kgm,
+          length: product.length,
+          per: product.per,
+        };
 
-      // Add to cart with the specified quantity
-      for (let i = 0; i < quantity; i++) {
-        addToCart(cartItem);
+        // Add to cart with the specified quantity
+        for (let i = 0; i < localQuantity; i++) {
+          addToCart(cartItem);
+        }
+      } else {
+        // Removing items from cart (localQuantity is negative)
+        const removeQuantity = Math.abs(localQuantity);
+        const newCartQuantity = Math.max(0, cartQuantity - removeQuantity);
+        updateCartQuantity(`${product.sapCode}-${activeCategory}-${activeSubCategory}`, newCartQuantity);
       }
+
+      // Reset local quantity after updating cart
+      setQuantities((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], quantity: 0 }
+      }));
     } else {
-      alert("Please enter a valid quantity before adding to cart.");
+      alert("Please adjust the quantity before updating cart.");
     }
   };
 
@@ -183,12 +206,38 @@ export default function CategoryPage() {
 
   const handleQuantityDecrement = (product: ProfileProduct) => {
     const current = quantities[`${activeCategory}-${activeSubCategory}-${product.id}`]?.quantity || 0;
-    handleQuantityChange(activeCategory, activeSubCategory, product.id, Math.max(0, current - 1).toString());
+    const cartQuantity = getCartQuantityForProduct(product);
+
+    // Allow going negative to represent removing from cart
+    // But don't go below negative cart quantity (can't remove more than what's in cart)
+    if (current > -cartQuantity) {
+      handleQuantityChange(activeCategory, activeSubCategory, product.id, (current - 1).toString());
+    }
   };
 
   // Clear all quantities (used in JSX)
   const handleClear = () => {
     setQuantities({});
+  };
+
+  // Handle image click to open modal
+  const handleImageClick = (imageSrc: string, productName: string) => {
+    setImageModal({
+      isOpen: true,
+      imageSrc,
+      imageAlt: productName,
+      productName
+    });
+  };
+
+  // Close image modal
+  const closeImageModal = () => {
+    setImageModal({
+      isOpen: false,
+      imageSrc: '',
+      imageAlt: '',
+      productName: ''
+    });
   };
 
   return (
@@ -230,7 +279,7 @@ export default function CategoryPage() {
                 <p className="text-gray-600">
                   {isHardwarePage
                     ? 'Complete hardware solutions for windows and doors'
-                    : 'High-quality UPVC, Aluminum, and Composite window & door profile systems'
+                    : 'High Quality Aluminium profile systems'
                   }
                 </p>
               </div>
@@ -250,6 +299,8 @@ export default function CategoryPage() {
               {/* Dynamic Categories */}
               {categories.length > 0 && (
                 <div className="mb-6">
+                  <div className='bg-white rounded-lg shadow-sm border p-6'>
+                    <h2 className="text-xl font-semibold mb-4">Aluminium Profiles Categories</h2>
                   {/* Categories */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {categories.map((category) => (
@@ -283,7 +334,7 @@ export default function CategoryPage() {
 
                   {/* Options */}
                   {activeCategory && apiData?.[activeCategory]?.options && (
-                    <div className="flex flex-wrap gap-2 mb-6">
+                    <div className="flex flex-wrap gap-2 mb-2">
                       {apiData[activeCategory].options.map((option: string) => (
                         <button
                           key={option}
@@ -303,6 +354,12 @@ export default function CategoryPage() {
                       ))}
                     </div>
                   )}
+                  </div>
+                </div>
+              )}
+
+              <div className='bg-white rounded-lg shadow-sm border p-6'>
+
 
                   {/* Search Bar */}
                   <div className="mb-6">
@@ -324,148 +381,160 @@ export default function CategoryPage() {
                       )}
                     </div>
                   </div>
-                </div>
-              )}
 
-              <div className="mb-6">
-                <p className="text-gray-600">
-                  Showing {productsToDisplay?.length || 0} {isHardwarePage ? 'hardware' : 'profile'} products
-                  {activeCategory && activeSubCategory && ` for ${activeCategory} - ${activeSubCategory}`}
-                  {searchQuery && ` - Filtered from ${currentProducts.length} total`}
-                </p>
-              </div>
-
-              {productsToDisplay?.length === 0 && searchQuery ? (
-                <div className="text-center py-8">
-                  <div className="text-gray-600">
-                    No products found matching "{searchQuery}"
+                  <div className="mb-6">
+                    <p className="text-gray-600">
+                      Showing {productsToDisplay?.length || 0} {isHardwarePage ? 'hardware' : 'profile'} products
+                      {activeCategory && activeSubCategory && ` for ${activeCategory} - ${activeSubCategory}`}
+                      {searchQuery && ` - Filtered from ${currentProducts.length} total`}
+                    </p>
                   </div>
-                  <button
-                    onClick={handleClearSearch}
-                    className="mt-4 px-4 py-2 text-white rounded-lg transition-colors hover-primary-bg-dark"
-                    style={{ backgroundColor: '#124657' }}
-                  >
-                    Clear Search
-                  </button>
-                </div>
-              ) : null}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {productsToDisplay?.map((product: ProfileProduct) => {
-                  const key = `${activeCategory}-${activeSubCategory}-${product.id}`;
-                  const localQuantity = quantities[key]?.quantity || 0;
-                  const cartQuantity = getCartQuantityForProduct(product);
-                  const quantity = localQuantity || cartQuantity; // Show local quantity if set, otherwise show cart quantity
-                  const rate = apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0;
-
-                  return (
-                    <div key={product.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                      {/* Technical Drawing Section */}
-                      <div className="bg-gray-50 p-4 border-b">
-                        <div className="text-center mb-2">
-                        </div>
-                        <div className="flex justify-center">
-                          {product.image ? (
-                            <img
-                              src={product.image}
-                              alt={product.description}
-                              className="h-24 w-auto object-contain"
-                            />
-                          ) : (
-                            <div className="h-24 w-32 bg-white border border-gray-300 rounded flex items-center justify-center">
-                              <div className="text-xs text-gray-400 text-center">Technical Drawing</div>
-                            </div>
-                          )}
-                        </div>
+                  {productsToDisplay?.length === 0 && searchQuery ? (
+                    <div className="text-center py-8">
+                      <div className="text-gray-600">
+                        No products found matching "{searchQuery}"
                       </div>
-
-                      {/* Specifications Table */}
-                      <div className="p-3">
-                        <div className="grid grid-cols-2 gap-1 text-xs mb-3">
-                          <div className="bg-gray-100 p-1 text-center font-medium">Kg/m</div>
-                          <div className="bg-gray-100 p-1 text-center font-medium">Length(mm)</div>
-                          <div className="bg-white p-1 text-center border">{product.kgm || '40.0'}</div>
-                          <div className="bg-white p-1 text-center border">{product.length || '1.673'}</div>
-                        </div>
-
-                        <div className="mb-3">
-                          <h3 className="font-medium text-gray-900 text-sm mb-1">{product.description}</h3>
-                          <p className="text-xs text-gray-600">SAP Code: {product.sapCode}</p>
-                          {cartQuantity > 0 && (
-                            <p className="text-xs font-medium" style={{ color: '#124657' }}>
-                              ✓ {cartQuantity} in cart
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="mb-3">
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-gray-900">Rate: ₹{rate}/Kg</div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          {/* Quantity Controls */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() => handleQuantityDecrement(product)}
-                                className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
-                              >
-                                <Minus className="w-4 h-4" />
-                              </button>
-                              <input
-                                type="number"
-                                min="0"
-                                value={quantity || ""}
-                                onChange={(e) => handleQuantityChange(activeCategory, activeSubCategory, product.id, e.target.value)}
-                                className="w-16 text-center border border-gray-300 rounded px-2 py-1"
-                              />
-                              <button
-                                onClick={() => handleQuantityIncrement(product)}
-                                className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                            </div>
-
-                            {quantity > 0 && (
-                              <span className="text-sm text-gray-600">
-                                Total: ₹{(quantity * rate).toLocaleString()}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Add to Cart Button */}
-                          <button
-                            onClick={() => handleProductSelect(product)}
-                            disabled={!product.isEnabled || quantity <= 0}
-                            className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-colors ${
-                              product.isEnabled && quantity > 0
-                                ? 'text-white hover-primary-bg-dark'
-                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            }`}
-                            style={product.isEnabled && quantity > 0 ? { backgroundColor: '#124657' } : {}}
-                          >
-                            <ShoppingCart className="w-4 h-4" />
-                            <span className="font-medium">
-                              {quantity > 0
-                                ? (cartQuantity > 0 ? 'Update Cart' : 'Add to Cart')
-                                : 'Enter Quantity'
-                              }
-                            </span>
-                          </button>
-                        </div>
-                      </div>
+                      <button
+                        onClick={handleClearSearch}
+                        className="mt-4 px-4 py-2 text-white rounded-lg transition-colors hover-primary-bg-dark"
+                        style={{ backgroundColor: '#124657' }}
+                      >
+                        Clear Search
+                      </button>
                     </div>
-                  );
-                })}
+                  ) : null}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {productsToDisplay?.map((product: ProfileProduct) => {
+                      const key = `${activeCategory}-${activeSubCategory}-${product.id}`;
+                      const localQuantity = quantities[key]?.quantity || 0;
+                      const cartQuantity = getCartQuantityForProduct(product);
+                      const quantity = cartQuantity + localQuantity; // Cart quantity + local adjustments
+                      const rate = apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0;
+
+                      return (
+                        <div key={product.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                          {/* Technical Drawing Section */}
+                          <div className="bg-gray-50 p-4 border-b">
+                            <div className="text-center mb-2">
+                            </div>
+                            <div className="flex justify-center">
+                              {product.image ? (
+                                <img
+                                  src={product.image}
+                                  alt={product.description}
+                                  className="h-24 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => handleImageClick(product.image || '', product.description)}
+                                  title="Click to view larger image"
+                                />
+                              ) : (
+                                <div className="h-24 w-32 bg-white border border-gray-300 rounded flex items-center justify-center">
+                                  <div className="text-xs text-gray-400 text-center">Technical Drawing</div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Specifications Table */}
+                          <div className="p-3">
+                            <div className="grid grid-cols-2 gap-1 text-xs mb-3">
+                              <div className="bg-gray-100 p-1 text-center font-medium">Kg/m</div>
+                              <div className="bg-gray-100 p-1 text-center font-medium">Length(mm)</div>
+                              <div className="bg-white p-1 text-center border">{product.kgm || '40.0'}</div>
+                              <div className="bg-white p-1 text-center border">{product.length || '1.673'}</div>
+                            </div>
+
+                            <div className="mb-3">
+                              <h3 className="font-medium text-gray-900 text-sm mb-1">{product.description}</h3>
+                              <p className="text-xs text-gray-600">SAP Code: {product.sapCode}</p>
+                              {cartQuantity > 0 && (
+                                <p className="text-xs font-medium" style={{ color: '#124657' }}>
+                                  ✓ {cartQuantity} in cart
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="mb-3">
+                              <div className="text-center">
+                                <div className="text-lg font-bold text-gray-900">Rate: ₹{rate}/Kg</div>
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              {/* Quantity Controls */}
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => handleQuantityDecrement(product)}
+                                    className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
+                                  >
+                                    <Minus className="w-4 h-4" />
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={quantity || ""}
+                                    onChange={(e) => handleQuantityChange(activeCategory, activeSubCategory, product.id, e.target.value)}
+                                    className="w-16 text-center border border-gray-300 rounded px-2 py-1"
+                                  />
+                                  <button
+                                    onClick={() => handleQuantityIncrement(product)}
+                                    className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </button>
+                                </div>
+
+                                {quantity > 0 && (
+                                  <span className="text-sm text-gray-600">
+                                    Total: ₹{(quantity * rate).toLocaleString()}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Add to Cart Button */}
+                              <button
+                                onClick={() => handleProductSelect(product)}
+                                disabled={!product.isEnabled || localQuantity === 0}
+                                className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-colors ${
+                                  product.isEnabled && localQuantity !== 0
+                                    ? 'text-white hover-primary-bg-dark'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
+                                style={product.isEnabled && localQuantity !== 0 ? { backgroundColor: '#124657' } : {}}
+                              >
+                                <ShoppingCart className="w-4 h-4" />
+                                <span className="font-medium">
+                                  {localQuantity === 0
+                                    ? 'Adjust Quantity'
+                                    : localQuantity > 0
+                                    ? 'Add to Cart'
+                                    : 'Remove from Cart'
+                                  }
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
               </div>
             </>
           )}
         </div>
       </div>
       <Footer />
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={imageModal.isOpen}
+        onClose={closeImageModal}
+        imageSrc={imageModal.imageSrc}
+        imageAlt={imageModal.imageAlt}
+        productName={imageModal.productName}
+      />
     </>
   );
 }

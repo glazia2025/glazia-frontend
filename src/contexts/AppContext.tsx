@@ -208,18 +208,29 @@ const initialState: AppState = {
 const calculateCartTotal = (items: CartItem[]): number => {
   let total = 0;
 
-  items.forEach((item) => {
+  const nalcoPriceStr = typeof window !== 'undefined' ? window.localStorage.getItem('nalcoPrice') || '0' : '0';
+  const nalcoPrice = parseFloat(nalcoPriceStr); // Use parseFloat instead of parseInt
+  console.log('NALCO Price from localStorage:', nalcoPriceStr, 'Parsed:', nalcoPrice);
 
+  items.forEach((item) => {
     if (item.category?.toLowerCase().includes("hardware")) {
       // Hardware category → price × quantity
-      total = total + parseInt(item.price, 10) * item.quantity;
+      const itemPrice = parseFloat(item.price) || 0; // Handle string prices properly
+      total = total + itemPrice * item.quantity;
     } else {
-      // Other categories → price × kgm × (length / 1000) × quantity
-      total = total + ((parseInt(item.price, 10) + 75) * item.quantity * (parseInt(item.length, 10) / 1000) * item.kgm);
+      // Other categories → (nalcoPrice/1000 + 75) × quantity × (length/1000) × kgm
+      const itemLength = parseFloat(item.length) || 1000; // Default to 1000 if invalid
+      const itemKgm = item.kgm || 1; // Default to 1 if invalid
+      const basePrice = (nalcoPrice / 1000) + 75;
+      const itemTotal = basePrice * item.quantity * (itemLength / 1000) * itemKgm;
+      total = total + itemTotal;
+
+      console.log(`Item: ${item.name}, NALCO: ${nalcoPrice}, Length: ${itemLength}, KGM: ${itemKgm}, Qty: ${item.quantity}, Total: ${itemTotal}`);
     }
   });
 
-  return total;
+  console.log('Cart Total Calculated:', total);
+  return Math.round(total * 100) / 100; // Round to 2 decimal places
 };
 
 const calculateCartItemCount = (items: CartItem[]): number => {

@@ -22,6 +22,14 @@ export default function NalcoPriceDisplay({ onClick, className = '' }: NalcoPric
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && currentData?.nalcoPrice !== undefined) {
+      // Ensure nalcoPrice is stored as a string representation of the number
+      window.localStorage.setItem('nalcoPrice', currentData.nalcoPrice.toString());
+      console.log('NALCO Price stored in localStorage:', currentData.nalcoPrice);
+    }
+  }, [currentData])
+
   const fetchCurrentPrice = async () => {
     try {
       setLoading(true);

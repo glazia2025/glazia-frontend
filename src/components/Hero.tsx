@@ -45,7 +45,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative h-[500px] md:h-[600px] overflow-hidden">
+    <section className="relative h-[500px] overflow-hidden">
       {slides.map((slide, index) => (
         <div
           key={slide.id}
@@ -62,7 +62,7 @@ export default function Hero() {
           {/* Content */}
           <div className="relative z-10 h-full flex items-center justify-start">
             <div className="container mx-auto px-4">
-              <div className="max-w-2xl text-white" style={{ marginBottom: '120px' }}>
+              <div className="max-w-2xl text-white">
               <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
                 {slide.title}
               </h1>
@@ -110,30 +110,6 @@ export default function Hero() {
             }`}
           />
         ))}
-      </div>
-
-      {/* Quick Stats */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold" style={{ color: '#124657' }}>5,000+</div>
-              <div className="text-sm text-gray-600">Aluminium Products</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold" style={{ color: '#124657' }}>150+</div>
-              <div className="text-sm text-gray-600">Profile Systems</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold" style={{ color: '#124657' }}>2,500+</div>
-              <div className="text-sm text-gray-600">Projects Completed</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold" style={{ color: '#124657' }}>25+</div>
-              <div className="text-sm text-gray-600">Years Experience</div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
