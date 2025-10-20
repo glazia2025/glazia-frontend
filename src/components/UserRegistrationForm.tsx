@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { User, Mail, MapPin, Building, FileText, Download } from 'lucide-react';
 import axios from 'axios';
 import PartnerAgreement from '@/components/PartnerAgreement/PartnerAgreement';
+import { supabase } from '@/utils/supabase';
 
 interface UserRegistrationFormProps {
   phoneNumber: string;
@@ -68,12 +69,29 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
       setIsLoading(true);
 
       try {
-        // Upload partner agreement to storage if blob exists
+        // Upload partner agreement to Supabase storage if blob exists
         let paUrl = '';
         if (blob) {
-          // Here you would upload the blob to your storage service
-          // For now, we'll create a placeholder URL
-          paUrl = `partner-agreements/${userName.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+          const fileName = `${userName.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+
+          const { data, error } = await supabase.storage
+            .from('pa')
+            .upload(fileName, blob, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          console.log('Supabase upload result:', data, error);
+
+          if (error) {
+            throw new Error(`Failed to upload partner agreement: ${error.message}`);
+          }
+
+          console.log(data);
+
+          if (data) {
+            paUrl = `https://kttdnoylgmnftrulhieg.supabase.co/storage/v1/object/public/pa/${encodeURIComponent(data.path)}`;
+          }
         }
 
         // Submit registration data
@@ -90,18 +108,19 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
         };
 
         const response = await axios.post('https://api.glazia.in/api/user/register', registrationData);
-        
+
         if (response.data.token) {
           localStorage.setItem('authToken', response.data.token);
           setMessage('User details saved successfully!');
-          
+
           // Redirect to dashboard
           setTimeout(() => {
             router.push('/account/dashboard');
           }, 2000);
         }
       } catch (error) {
-        setError('Failed to save details. Please try again.');
+        const errorMessage = error instanceof Error ? error.message : 'Failed to save details. Please try again.';
+        setError(errorMessage);
         console.error('Registration error:', error);
       } finally {
         setIsLoading(false);

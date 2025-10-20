@@ -17,7 +17,10 @@ import {
   Star,
   TrendingUp,
   Calendar,
-  CreditCard
+  CreditCard,
+  FileText,
+  Download,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
@@ -73,6 +76,7 @@ function DashboardContent() {
   const [orders, setOrders] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [partnerAgreementUrl, setPartnerAgreementUrl] = useState<string | null>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -80,6 +84,23 @@ function DashboardContent() {
       window.location.href = '/auth/login';
     }
   }, [isAuthenticated]);
+
+  // Load partner agreement URL from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('glazia-user');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          if (user.paUrl) {
+            setPartnerAgreementUrl(user.paUrl);
+          }
+        } catch (error) {
+          console.error('Error parsing user data from localStorage:', error);
+        }
+      }
+    }
+  }, []);
 
   // Load real orders from API
   useEffect(() => {
@@ -300,6 +321,59 @@ function DashboardContent() {
                 </div>
               )}
             </div>
+
+            {/* Partner Agreement Section */}
+            {partnerAgreementUrl && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <FileText className="w-5 h-5 mr-2 text-[#124657]" />
+                    Partner Agreement
+                  </h2>
+                  <div className="flex space-x-2">
+                    <a
+                      href={partnerAgreementUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      Open in New Tab
+                    </a>
+                    <a
+                      href={partnerAgreementUrl}
+                      download="Partner_Agreement.pdf"
+                      className="inline-flex items-center px-3 py-2 bg-[#124657] text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Download
+                    </a>
+                  </div>
+                </div>
+
+                {/* PDF Viewer */}
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <iframe
+                    src={partnerAgreementUrl}
+                    className="w-full h-96"
+                    title="Partner Agreement"
+                    style={{ border: 'none' }}
+                  />
+                </div>
+
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-start">
+                    <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <h3 className="text-sm font-medium text-blue-900">Agreement Status</h3>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Your partner agreement has been successfully signed and is active. This document contains the terms and conditions of our partnership.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}

@@ -66,6 +66,7 @@ export interface User {
   totalSpent: number;
   loyaltyPoints: number;
   isAuthenticated: boolean;
+  paUrl?: string;
 }
 
 export interface CartItem {
