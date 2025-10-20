@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Phone, ArrowLeft, Shield, Clock, User, Mail, MapPin, Building, FileText, Download } from 'lucide-react';
+import { Phone, ArrowLeft, Shield, Clock } from 'lucide-react';
 import axios from 'axios';
+import UserRegistrationForm from '@/components/UserRegistrationForm';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,14 +16,7 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(0);
   const [error, setError] = useState('');
 
-  // Registration form fields
-  const [userName, setUserName] = useState('');
-  const [email, setEmail] = useState('');
-  const [gstNumber, setGstNumber] = useState('');
-  const [pincode, setPincode] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [completeAddress, setCompleteAddress] = useState('');
+
 
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
@@ -158,153 +152,7 @@ export default function LoginPage() {
     }
   };
 
-  const generatePartnerAgreement = async () => {
-    const agreementContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #2563eb; font-size: 28px; margin-bottom: 10px;">GLAZIA</h1>
-          <h2 style="color: #374151; font-size: 24px; margin-bottom: 20px;">PARTNER AGREEMENT</h2>
-          <p style="color: #6b7280; font-size: 14px;">Date: ${new Date().toLocaleDateString()}</p>
-        </div>
 
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #374151; border-bottom: 2px solid #2563eb; padding-bottom: 5px;">Partner Information</h3>
-          <table style="width: 100%; margin-top: 15px;">
-            <tr><td style="padding: 8px 0; font-weight: bold; width: 150px;">Name:</td><td style="padding: 8px 0;">${userName}</td></tr>
-            <tr><td style="padding: 8px 0; font-weight: bold;">Email:</td><td style="padding: 8px 0;">${email}</td></tr>
-            <tr><td style="padding: 8px 0; font-weight: bold;">Phone:</td><td style="padding: 8px 0;">+91 ${phoneNumber}</td></tr>
-            <tr><td style="padding: 8px 0; font-weight: bold;">GST Number:</td><td style="padding: 8px 0;">${gstNumber}</td></tr>
-            <tr><td style="padding: 8px 0; font-weight: bold;">Address:</td><td style="padding: 8px 0;">${completeAddress}</td></tr>
-            <tr><td style="padding: 8px 0; font-weight: bold;">City:</td><td style="padding: 8px 0;">${city}</td></tr>
-            <tr><td style="padding: 8px 0; font-weight: bold;">State:</td><td style="padding: 8px 0;">${state}</td></tr>
-            <tr><td style="padding: 8px 0; font-weight: bold;">Pincode:</td><td style="padding: 8px 0;">${pincode}</td></tr>
-          </table>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #374151; border-bottom: 2px solid #2563eb; padding-bottom: 5px;">Terms and Conditions</h3>
-          <div style="margin-top: 15px; line-height: 1.6; color: #374151;">
-            <p><strong>1. Partnership Scope:</strong> This agreement establishes a business partnership between Glazia and the above-mentioned partner for the distribution and sale of aluminium profiles and hardware solutions.</p>
-
-            <p><strong>2. Product Range:</strong> Partner is authorized to sell Glazia's complete range of:</p>
-            <ul style="margin-left: 20px;">
-              <li>UPVC Window and Door Profiles</li>
-              <li>Aluminum Window and Door Profiles</li>
-              <li>Composite Profile Systems</li>
-              <li>Window and Door Hardware</li>
-              <li>Thermal Break Systems</li>
-            </ul>
-
-            <p><strong>3. Quality Assurance:</strong> All products supplied under this agreement meet international standards and are certified for performance and safety.</p>
-
-            <p><strong>4. Support:</strong> Glazia provides technical support, training, and marketing assistance to ensure partner success.</p>
-
-            <p><strong>5. Territory:</strong> Partner's operational territory is defined as ${city}, ${state} and surrounding areas as mutually agreed.</p>
-
-            <p><strong>6. Payment Terms:</strong> Payment terms and credit facilities will be established based on business volume and creditworthiness assessment.</p>
-
-            <p><strong>7. Validity:</strong> This agreement is valid from the date of signing and remains in effect until terminated by either party with 30 days written notice.</p>
-          </div>
-        </div>
-
-        <div style="margin-top: 50px;">
-          <div style="display: flex; justify-content: space-between;">
-            <div style="text-align: center; width: 45%;">
-              <div style="border-top: 1px solid #374151; padding-top: 10px; margin-top: 50px;">
-                <p style="margin: 0; font-weight: bold;">Partner Signature</p>
-                <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 14px;">${userName}</p>
-              </div>
-            </div>
-            <div style="text-align: center; width: 45%;">
-              <div style="border-top: 1px solid #374151; padding-top: 10px; margin-top: 50px;">
-                <p style="margin: 0; font-weight: bold;">Glazia Representative</p>
-                <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 14px;">Authorized Signatory</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
-          <p>GLAZIA - Premium Aluminium Profiles & Hardware Solutions</p>
-          <p>456 Aluminium Plaza, Industrial Estate Phase-II, Pune, Maharashtra 411019</p>
-          <p>Phone: +91 98765 43210 | Email: info@glazia.in | Website: www.glazia.in</p>
-        </div>
-      </div>
-    `;
-
-    const opt = {
-      margin: 1,
-      filename: `Glazia_Partner_Agreement_${userName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
-    };
-
-    // Dynamically import html2pdf to avoid SSR issues
-    const html2pdf = (await import('html2pdf.js')).default;
-    html2pdf().set(opt).from(agreementContent).save();
-  };
-
-  const handleRegistrationSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    // Validate required fields
-    if (!userName || !email || !pincode || !city || !state || !completeAddress) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    // Validate pincode
-    const pincodeRegex = /^[0-9]{6}$/;
-    if (!pincodeRegex.test(pincode)) {
-      setError('Please enter a valid 6-digit pincode');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Submit registration data
-      const registrationData = {
-        phoneNumber,
-        userName,
-        email,
-        gstNumber,
-        pincode,
-        city,
-        state,
-        completeAddress
-      };
-
-      const response = await axios.post("https://api.glazia.in/api/auth/register", registrationData);
-
-      if (response.data.success) {
-        // Generate and download partner agreement
-        await generatePartnerAgreement();
-
-        // Store token and redirect
-        localStorage.setItem("authToken", response.data.token);
-
-        // Show success message and redirect after a delay
-        alert('Registration successful! Partner agreement has been downloaded. Redirecting to dashboard...');
-        setTimeout(() => {
-          router.push("/account/dashboard");
-        }, 2000);
-      }
-    } catch (err) {
-      setError('Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -472,6 +320,8 @@ export default function LoginPage() {
                 </p>
               </div>
             </div>
+
+            <UserRegistrationForm phoneNumber={phoneNumber} />
 
             <form className="space-y-6" onSubmit={handleRegistrationSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
