@@ -38,7 +38,7 @@ export default function LoginPage() {
     
     // Simulate API call to send OTP
     try {
-      const response = await axios.post("https://api.glazia.in/api/auth/send-otp", { phoneNumber });
+      const response = await axios.post("http://localhost:5000/api/auth/send-otp", { phoneNumber });
       setStep('otp');
       setCountdown(30);
       startCountdown();
@@ -78,7 +78,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post("https://api.glazia.in/api/auth/verify-otp", { phoneNumber, otp: otpValue });
+      const response = await axios.post("http://localhost:5000/api/auth/verify-otp", { phoneNumber, otp: otpValue });
       const { userExists, token, existingUser } = response.data;
 
       console.log('🔐 Verify OTP Response:', response.data);
@@ -107,7 +107,8 @@ export default function LoginPage() {
           totalSpent: existingUser.totalSpent || 0,
           loyaltyPoints: existingUser.loyaltyPoints || 0,
           paUrl: existingUser.paUrl || '',
-          isAuthenticated: true
+          isAuthenticated: true,
+          dynamicPricing: existingUser.dynamicPricing
         };
 
         console.log('👤 Transformed User Data:', userData);
@@ -116,7 +117,7 @@ export default function LoginPage() {
         localStorage.setItem('glazia-user', JSON.stringify(userData));
 
         // Redirect to dashboard
-        router.push("/account/dashboard");
+        window.location.href="/";
       }
     } catch (err) {
       console.error('❌ OTP Verification Error:', err);

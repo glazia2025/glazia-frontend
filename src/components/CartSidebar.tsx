@@ -60,7 +60,7 @@ const numberToWordsIndian = (num: number): string => {
 };
 
 const CartSidebar: React.FC = () => {
-  const { cart, removeFromCart, updateCartQuantity, closeCart } = useCartState();
+  const { cart, removeFromCart, updateCartQuantity, closeCart, getAdjustedItemPrice } = useCartState();
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
   const [showOrderPlacement, setShowOrderPlacement] = useState(false);
@@ -203,16 +203,29 @@ const CartSidebar: React.FC = () => {
 
     // Prepare cart items for invoice
     const selectedProducts = cart.items.map((item, index) => {
-      const rate = parseFloat(item.price) || 0;
+      const adjustedRate = getAdjustedItemPrice(item);
+      let finalAmount;
+
+      if (item.category?.toLowerCase().includes('hardware')) {
+        // Hardware: adjusted rate × quantity
+        finalAmount = item.quantity * adjustedRate;
+      } else {
+        // Profiles: use the same calculation as cart total
+        const basePrice = (nalcoPrice / 1000) + 75;
+        const dynamicAdjustment = adjustedRate - parseFloat(item.price);
+        const adjustedPrice = basePrice + dynamicAdjustment;
+        finalAmount = adjustedPrice * item.quantity * (parseFloat(item.length) / 1000) * item.kgm;
+      }
+
       return {
         description: item.name,
         option: item.category || '',
         powderCoating: {},
         sapCode: item.id || `SAP${String(index + 1).padStart(3, '0')}`,
         quantity: item.quantity,
-        rate: rate,
+        rate: adjustedRate,
         per: 'Piece',
-        amount: item.quantity * rate
+        amount: finalAmount
       };
     });
 
@@ -573,8 +586,12 @@ const CartSidebar: React.FC = () => {
                       <h4 className="text-sm font-medium text-gray-900 truncate">{item.name}</h4>
                       <p className="text-xs text-gray-500">{item.brand}</p>
                       <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-sm font-semibold text-gray-900">₹{item.price}</span>
-                        
+                        <span className="text-sm font-semibold text-gray-900">
+                          ₹{getAdjustedItemPrice(item).toFixed(2)}
+                          {getAdjustedItemPrice(item) !== parseFloat(item.price) && (
+                            <span className="text-xs text-gray-500 line-through ml-1">₹{item.price}</span>
+                          )}
+                        </span>
                       </div>
                       
                       {/* Quantity Controls */}
@@ -604,7 +621,20 @@ const CartSidebar: React.FC = () => {
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <span className="text-sm font-semibold text-gray-900">
-                        ₹{item.category.toLowerCase() === 'hardware' ? (parseFloat(item.price) * item.quantity).toLocaleString() : (((nalcoPrice/1000) + 75) * item.quantity * (parseFloat(item.length) / 1000) * item.kgm).toLocaleString()}
+                        ₹{(() => {
+                          if (item.category?.toLowerCase().includes('hardware')) {
+                            // Hardware: (base price + dynamic adjustment) × quantity
+                            const adjustedPrice = getAdjustedItemPrice(item);
+                            return (adjustedPrice * item.quantity).toLocaleString();
+                          } else {
+                            // Profiles: ((nalcoPrice/1000 + 75) + dynamic adjustment) × quantity × (length/1000) × kgm
+                            const basePrice = (nalcoPrice / 1000) + 75;
+                            const dynamicAdjustment = getAdjustedItemPrice(item) - parseFloat(item.price);
+                            const adjustedPrice = basePrice + dynamicAdjustment;
+                            const total = adjustedPrice * item.quantity * (parseFloat(item.length) / 1000) * item.kgm;
+                            return total.toLocaleString();
+                          }
+                        })()}
                       </span>
                     </div>
                   </div>

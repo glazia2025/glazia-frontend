@@ -27,7 +27,7 @@ export interface NalcoCurrentResponse {
 }
 
 class NalcoApiService {
-  private baseUrl = 'https://api.glazia.in/api/admin';
+  private baseUrl = 'http://localhost:5000/api/admin';
 
   /**
    * Fetch all NALCO graph data

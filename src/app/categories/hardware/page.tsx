@@ -147,6 +147,7 @@ export default function HardwarePage() {
           image: product.image || '',
           inStock: true,
           category: 'Hardware',
+          subCategory: activeCategory, // Pass the hardware subcategory (e.g., "CORNER JOINERY")
           length: '1000', // Default length for hardware items
           per: 'piece',   // Hardware is sold per piece
           kgm: 1          // Default weight for hardware items

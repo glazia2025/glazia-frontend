@@ -172,6 +172,7 @@ export default function CategoryPage() {
           image: product.image || '/api/placeholder/300/300',
           inStock: product.isEnabled,
           category: `${activeCategory} - ${activeSubCategory}`,
+          subCategory: activeCategory, // Pass the main profile category (e.g., "Casement", "Sliding")
           kgm: product.kgm,
           length: product.length,
           per: product.per,

@@ -67,6 +67,15 @@ export interface User {
   loyaltyPoints: number;
   isAuthenticated: boolean;
   paUrl?: string;
+  dynamicPricing?: {
+    hardware: {
+      [key: string]: number; // e.g., "CORNER JOINERY": 100
+    };
+    profiles: {
+      [key: string]: number; // e.g., "Casement": 0
+    };
+    _id?: string;
+  };
 }
 
 export interface CartItem {
@@ -79,6 +88,7 @@ export interface CartItem {
   quantity: number;
   inStock: boolean;
   category: string;
+  subCategory?: string; // For hardware: "CORNER JOINERY", "PLASTIC PART", etc. For profiles: "Casement", "Sliding", etc.
   length: string;
   per: string;
   kgm: number;
@@ -206,6 +216,55 @@ const initialState: AppState = {
 // UTILITY FUNCTIONS
 // ============================================================================
 
+// Helper function to get dynamic pricing adjustment for an item
+const getDynamicPricingAdjustment = (item: CartItem): number => {
+  if (typeof window === 'undefined') return 0;
+
+  try {
+    const userData = localStorage.getItem('glazia-user');
+    if (!userData) return 0;
+
+    const user = JSON.parse(userData);
+    const dynamicPricing = user.dynamicPricing;
+    if (!dynamicPricing) return 0;
+
+    // Default adjustment value when specific pricing is not found
+    const DEFAULT_ADJUSTMENT = 120;
+
+    // Check if it's a hardware item
+    if (item.category?.toLowerCase().includes("hardware")) {
+      // For hardware items, use the subCategory to match against hardware pricing keys
+      if (item.subCategory) {
+        const adjustment = dynamicPricing.hardware?.[item.subCategory];
+        if (adjustment !== undefined && typeof adjustment === 'number') {
+          console.log(`🎯 Dynamic pricing applied for hardware "${item.subCategory}": +${adjustment}`);
+          return adjustment;
+        } else {
+          console.log(`🎯 Default pricing applied for hardware "${item.subCategory}": +${DEFAULT_ADJUSTMENT} (subcategory not found in pricing)`);
+          return DEFAULT_ADJUSTMENT;
+        }
+      }
+    } else {
+      // For profile items, use the subCategory to match against profile pricing keys
+      if (item.subCategory) {
+        const adjustment = dynamicPricing.profiles?.[item.subCategory];
+        if (adjustment !== undefined && typeof adjustment === 'number') {
+          console.log(`🎯 Dynamic pricing applied for profile "${item.subCategory}": +${adjustment}`);
+          return adjustment;
+        } else {
+          console.log(`🎯 Default pricing applied for profile "${item.subCategory}": +${DEFAULT_ADJUSTMENT} (subcategory not found in pricing)`);
+          return DEFAULT_ADJUSTMENT;
+        }
+      }
+    }
+
+    return 0;
+  } catch (error) {
+    console.error('Error getting dynamic pricing:', error);
+    return 0;
+  }
+};
+
 const calculateCartTotal = (items: CartItem[]): number => {
   let total = 0;
 
@@ -214,19 +273,31 @@ const calculateCartTotal = (items: CartItem[]): number => {
   console.log('NALCO Price from localStorage:', nalcoPriceStr, 'Parsed:', nalcoPrice);
 
   items.forEach((item) => {
+    const dynamicAdjustment = getDynamicPricingAdjustment(item);
+
     if (item.category?.toLowerCase().includes("hardware")) {
-      // Hardware category → price × quantity
-      const itemPrice = parseFloat(item.price) || 0; // Handle string prices properly
-      total = total + itemPrice * item.quantity;
+      // Hardware category → (price + dynamic adjustment) × quantity
+      const basePrice = parseFloat(item.price) || 0; // Handle string prices properly
+      const adjustedPrice = basePrice + dynamicAdjustment;
+      total = total + adjustedPrice * item.quantity;
+
+      if (dynamicAdjustment > 0) {
+        console.log(`💰 Hardware item "${item.name}": Base price ${basePrice} + Dynamic ${dynamicAdjustment} = ${adjustedPrice} × ${item.quantity}`);
+      }
     } else {
-      // Other categories → (nalcoPrice/1000 + 75) × quantity × (length/1000) × kgm
+      // Other categories → ((nalcoPrice/1000 + 75) + dynamic adjustment) × quantity × (length/1000) × kgm
       const itemLength = parseFloat(item.length) || 1000; // Default to 1000 if invalid
       const itemKgm = item.kgm || 1; // Default to 1 if invalid
       const basePrice = (nalcoPrice / 1000) + 75;
-      const itemTotal = basePrice * item.quantity * (itemLength / 1000) * itemKgm;
+      const adjustedPrice = basePrice + dynamicAdjustment;
+      const itemTotal = adjustedPrice * item.quantity * (itemLength / 1000) * itemKgm;
       total = total + itemTotal;
 
-      console.log(`Item: ${item.name}, NALCO: ${nalcoPrice}, Length: ${itemLength}, KGM: ${itemKgm}, Qty: ${item.quantity}, Total: ${itemTotal}`);
+      if (dynamicAdjustment > 0) {
+        console.log(`💰 Profile item "${item.name}": Base price ${basePrice} + Dynamic ${dynamicAdjustment} = ${adjustedPrice}, Total: ${itemTotal}`);
+      } else {
+        console.log(`Item: ${item.name}, NALCO: ${nalcoPrice}, Length: ${itemLength}, KGM: ${itemKgm}, Qty: ${item.quantity}, Total: ${itemTotal}`);
+      }
     }
   });
 
@@ -236,6 +307,22 @@ const calculateCartTotal = (items: CartItem[]): number => {
 
 const calculateCartItemCount = (items: CartItem[]): number => {
   return items.reduce((count, item) => count + item.quantity, 0);
+};
+
+// Helper function to get the adjusted price for display purposes
+const getAdjustedItemPrice = (item: CartItem): number => {
+  const dynamicAdjustment = getDynamicPricingAdjustment(item);
+
+  if (item.category?.toLowerCase().includes("hardware")) {
+    // Hardware category → base price + dynamic adjustment
+    const basePrice = parseFloat(item.price) || 0;
+    return basePrice + dynamicAdjustment;
+  } else {
+    // Profile items → base price + dynamic adjustment (but this is more complex for profiles)
+    // For display purposes, we'll show the base price + adjustment
+    const basePrice = parseFloat(item.price) || 0;
+    return basePrice + dynamicAdjustment;
+  }
 };
 
 // ============================================================================
@@ -475,6 +562,7 @@ interface AppContextType {
   getFilteredProducts: () => Product[];
   getCartItem: (id: string) => CartItem | undefined;
   getProductById: (id: string) => Product | undefined;
+  getAdjustedItemPrice: (item: CartItem) => number;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -660,6 +748,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return state.products.find(product => product.id === id);
   }, [state.products]);
 
+  const getAdjustedItemPriceCallback = useCallback((item: CartItem): number => {
+    return getAdjustedItemPrice(item);
+  }, []);
+
   // ============================================================================
   // CONTEXT VALUE
   // ============================================================================
@@ -704,6 +796,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getFilteredProducts,
     getCartItem,
     getProductById,
+    getAdjustedItemPrice: getAdjustedItemPriceCallback,
   };
 
   return (
@@ -756,7 +849,7 @@ export const useAuth = () => {
 };
 
 export const useCartState = () => {
-  const { state, addToCart, removeFromCart, updateCartQuantity, clearCart, toggleCart, openCart, closeCart, getCartItem } = useApp();
+  const { state, addToCart, removeFromCart, updateCartQuantity, clearCart, toggleCart, openCart, closeCart, getCartItem, getAdjustedItemPrice } = useApp();
   return {
     cart: state.cart,
     addToCart,
@@ -767,6 +860,7 @@ export const useCartState = () => {
     openCart,
     closeCart,
     getCartItem,
+    getAdjustedItemPrice,
   };
 };
 
