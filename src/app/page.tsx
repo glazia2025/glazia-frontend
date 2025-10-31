@@ -39,7 +39,6 @@ export default function Home() {
         </div>
       </div>
       <FeaturedCategories />
-
       <TechnicalSpecs />
         <Footer />
       </div>

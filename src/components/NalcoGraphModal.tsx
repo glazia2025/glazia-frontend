@@ -221,7 +221,7 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
                     { key: '7d', label: '7 Days' },
                     { key: '30d', label: '30 Days' },
                     { key: '90d', label: '90 Days' },
-                    { key: 'all', label: 'All Time' },
+                    { key: 'all', label: 'Year To Date' },
                   ].map(period => (
                     <button
                       key={period.key}
@@ -243,7 +243,6 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center space-x-2 mb-1">
-                      <DollarSign className="w-4 h-4 text-[#124657]" />
                       <span className="text-sm text-gray-600">Current</span>
                     </div>
                     <p className="text-lg font-semibold text-gray-900">
@@ -293,7 +292,7 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
 
               {/* Data Table */}
               <div className="mt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Recent Data Points</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Last 10 Days</h3>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">

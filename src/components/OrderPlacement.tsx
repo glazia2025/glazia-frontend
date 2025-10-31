@@ -198,7 +198,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
           <div className="text-left space-y-2 max-w-md mx-auto">
             <div className="flex justify-between py-2 border-b border-green-200">
               <span className="font-medium text-gray-700">Entity:</span>
-              <span className="text-gray-900">Glazia Aluminium Pvt Ltd</span>
+              <span className="text-gray-900">Glazia Windoors Pvt Ltd</span>
             </div>
             <div className="flex justify-between py-2 border-b border-green-200">
               <span className="font-medium text-gray-700">Bank:</span>

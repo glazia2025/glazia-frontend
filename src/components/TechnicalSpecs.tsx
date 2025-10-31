@@ -94,44 +94,7 @@ export default function TechnicalSpecs() {
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Technical Specifications
-          </h2>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Our windoors systems meet the highest international standards for performance, 
-            security, and energy efficiency.
-          </p>
-        </div>
-
-        {/* Specifications Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-          {specifications.map((spec, index) => {
-            const IconComponent = spec.icon;
-            return (
-              <div key={index} className="bg-gray-50 rounded-lg p-6">
-                <div className={`${spec.color} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
-                  <IconComponent className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                  {spec.category}
-                </h3>
-                <div className="space-y-3">
-                  {spec.specs.map((item, idx) => (
-                    <div key={idx} className="border-b border-gray-200 pb-2 last:border-b-0">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium text-gray-700">{item.label}</span>
-                        <span className="text-sm font-bold text-[#124657}">{item.value}</span>
-                      </div>
-                      <p className="text-xs text-gray-500">{item.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+       
 
         {/* Performance Features */}
         <div className="mb-16">
@@ -158,24 +121,6 @@ export default function TechnicalSpecs() {
           </div>
         </div>
 
-        {/* Certifications */}
-        <div className="bg-gray-50 rounded-lg p-8">
-          <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">
-            Certifications & Standards
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {certifications.map((cert, index) => (
-              <div key={index} className="bg-white rounded-lg p-6 text-center shadow-sm">
-                <div className="w-16 h-16 bg-gray-200 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                  <span className="text-gray-500 text-xs">CERT</span>
-                </div>
-                <h4 className="font-semibold text-gray-900 mb-2">{cert.name}</h4>
-                <p className="text-sm text-gray-600">{cert.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Technical Data Sheet Download */}
         <div className="text-center mt-12">
           <div className="bg-blue-50 rounded-lg p-8 max-w-2xl mx-auto">
@@ -192,6 +137,10 @@ export default function TechnicalSpecs() {
                   Contact Us
                 </button>
               </Link>
+
+              <button className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-colors">
+                  Download Techincal Catalogue
+              </button>
               
             </div>
           </div>

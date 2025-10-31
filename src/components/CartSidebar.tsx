@@ -86,8 +86,8 @@ const CartSidebar: React.FC = () => {
     } else if (orderValue >= 500000) {
       // 5L-9.99L gets 5,000 off
       return 5000;
-    } else if (orderValue >= 1) {
-      // 1-4.99L gets 2,500 off
+    } else if (orderValue >= 250000) {
+      // 2.50L-4.99L gets 2,500 off
       return 2500;
     }
     return 0;
@@ -118,7 +118,7 @@ const CartSidebar: React.FC = () => {
         nextTier: { amount: 1000000, discount: 10000 },
         color: "green"
       };
-    } else if (orderValue >= 1) {
+    } else if (orderValue >= 250000) {
       return {
         discount,
         message: `₹${discount.toLocaleString()} shipping discount applied!`,
@@ -129,7 +129,7 @@ const CartSidebar: React.FC = () => {
       return {
         discount: 0,
         message: "Add items to get shipping discount",
-        nextTier: { amount: 1, discount: 2500 },
+        nextTier: { amount: 250000, discount: 2500 },
         color: "gray"
       };
     }

@@ -19,7 +19,7 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="border-t" style={{ backgroundColor: '#D2D7DA' }}>
+    <nav className="border-t" style={{ backgroundColor: '#FFF', borderTop: '1px solid #097d13ff' }}>
       <div className="container mx-auto px-4">
         {/* Mobile Menu Button */}
         <div className="md:hidden flex justify-between items-center py-4">
