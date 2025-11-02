@@ -36,7 +36,7 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
     setError('');
 
     // Validate required fields
-    if (!userName || !email || !pincode || !city || !state || !completeAddress) {
+    if (!userName || !email || !gstNumber || !pincode || !city || !state || !completeAddress) {
       setError('All fields are required.');
       return;
     }
@@ -52,6 +52,13 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
     const pincodeRegex = /^[0-9]{6}$/;
     if (!pincodeRegex.test(pincode)) {
       setError('Please enter a valid 6-digit pincode');
+      return;
+    }
+
+    // Validate GST number format (optional - basic validation)
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (gstNumber && !gstRegex.test(gstNumber)) {
+      setError('Please enter a valid GST number (e.g., 12ABCDE1234PZ)');
       return;
     }
 
@@ -184,7 +191,7 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
 
           <div>
             <label htmlFor="gstNumber" className="block text-sm font-medium text-gray-700 mb-2">
-              GST Number (Optional)
+              GST Number *
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -194,8 +201,9 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
                 id="gstNumber"
                 name="gstNumber"
                 type="text"
+                required
                 className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Enter GST number (if applicable)"
+                placeholder="Enter GST number"
                 value={gstNumber}
                 onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
               />
@@ -309,7 +317,7 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
               <div><strong>Name:</strong> {userName}</div>
               <div><strong>Email:</strong> {email}</div>
               <div><strong>Phone:</strong> +91 {phoneNumber}</div>
-              <div><strong>GST:</strong> {gstNumber || 'Not provided'}</div>
+              <div><strong>GST:</strong> {gstNumber}</div>
               <div><strong>City:</strong> {city}</div>
               <div><strong>State:</strong> {state}</div>
               <div className="md:col-span-2"><strong>Address:</strong> {completeAddress}</div>
