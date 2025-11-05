@@ -1,3 +1,5 @@
+"use client";
+
 import { CheckCircle, Award, Shield, Thermometer, Volume2, Lock } from "lucide-react";
 import Link from "next/link";
 
@@ -91,6 +93,19 @@ const performanceFeatures = [
 ];
 
 export default function TechnicalSpecs() {
+  const handleDownloadCatalogue = () => {
+    // Create a link element to trigger the download
+    const link = document.createElement('a');
+    link.href = '/Glazia Aluminium Catalogue.pdf'; // Path to the PDF file in public folder
+    link.download = 'Glazia Aluminium Catalogue.pdf'; // Name for the downloaded file
+    link.target = '_blank'; // Open in new tab as fallback
+
+    // Append to body, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
@@ -138,8 +153,11 @@ export default function TechnicalSpecs() {
                 </button>
               </Link>
 
-              <button className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-colors">
-                  Download Techincal Catalogue
+              <button
+                onClick={handleDownloadCatalogue}
+                className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-colors"
+              >
+                Download Technical Catalogue
               </button>
               
             </div>

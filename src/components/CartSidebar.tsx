@@ -239,213 +239,281 @@ const CartSidebar: React.FC = () => {
     });
 
     const rows = selectedProducts.map((p, i) => `
-    <tr>
-      <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${i + 1}</td>
-      <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; word-wrap: break-word; overflow-wrap: break-word; max-width: 120px; vertical-align: top; line-height: 1.2;">
-        ${p.description}
-      </td>
-      <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; word-wrap: break-word; overflow-wrap: break-word; max-width: 80px; vertical-align: top; line-height: 1.2;">
-        ${p.option ? `(${p.option})` : ""}
-        ${p.powderCoating && Object.keys(p.powderCoating).length ? ` - ${JSON.stringify(p.powderCoating)}` : ""}
-      </td>
-      <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${p.sapCode}</td>
-      <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${p.quantity}</td>
-      <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: right; vertical-align: top;">${Number(p.rate).toFixed(2)}</td>
-      <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${p.per || "Piece"}</td>
-      <td style="border-bottom: 1px solid #000; padding: 4px; text-align: right; vertical-align: top;">${Number(p.amount).toFixed(2)}</td>
-    </tr>
-  `).join("");
+      <tr>
+        <td style="border: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${i + 1}</td>
+        <td style="border: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word; line-height: 1.2;">
+          ${p.description}
+        </td>
+        <td style="border: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word; line-height: 1.2;">
+          ${p.option ? `(${p.option})` : ""}
+          ${p.powderCoating && Object.keys(p.powderCoating).length ? ` - ${JSON.stringify(p.powderCoating)}` : ""}
+        </td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${p.sapCode}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${p.quantity}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: right; vertical-align: top;">₹${Number(p.rate).toFixed(2)}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${p.per || "Piece"}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: right; vertical-align: top;">₹${Number(p.amount).toFixed(2)}</td>
+      </tr>
+    `).join("");
 
     const invoiceHTML = `
-      <div style="margin: 0; padding: 10px; font-family: Arial, sans-serif; border: 1px solid #000; max-width: 100%; box-sizing: border-box;">
-        <div style="text-align: center; border-bottom: 1px solid #000; font-size: 16px; padding: 8px; font-weight: bold;">
-          Glazia Windoors Pvt Ltd.
-        </div>
+      <div style="margin: 0; padding: 8px; font-family: Arial, sans-serif; font-size: 10px; line-height: 1.2; width: 100%; box-sizing: border-box;">
+        <!-- Company Header -->
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #000;">
+          <tr>
+            <td style="text-align: center; border-bottom: 1px solid #000; font-size: 16px; padding: 8px; font-weight: bold;">
+              Glazia Windoors Pvt Ltd.
+            </td>
+          </tr>
+          <tr>
+            <td style="border-bottom: 1px solid #000; font-size: 10px; padding: 6px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="width: 70%; vertical-align: top;">
+                    Khevat/ Khata No. 361, Rect. No. 21 4/70-18 Kherki Dhaula Village Road, Gurgaon, Harana, 122001
+                  </td>
+                  <td style="width: 30%; text-align: right; vertical-align: top;">
+                    Phone: 9958053708<br/>Email: sales@glazia.com
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000; font-size: 10px; padding: 6px; line-height: 1.2;">
-          <div style="flex: 1; margin-right: 10px;">Khevat/ Khata No. 361, Rect. No. 21 4/70-18 Kherki Dhaula Village Road, Gurgaon, Harana, 122001</div>
-          <div style="flex-shrink: 0; text-align: right;">Phone: 9958053708<br/>Email: sales@glazia.com</div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; font-size: 10px; line-height: 1.3; border-collapse: collapse;">
-          <div style="border-right: 1px solid #000; font-weight: bold; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">Consignee (Ship To)</div>
-          <div style="border-right: 1px solid #000; font-weight: bold; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">Invoice No.</div>
-          <div style="padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">Date</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word;">${user.name || 'N/A'}</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">GW/25/26/PI/0023</div>
-          <div style="padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">${new Date().toLocaleDateString()}</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word; max-width: 0;">${user.completeAddress || 'N/A'}</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">Delivery Note No.</div>
-          <div style="padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">Delivery Note Date</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word;">${user.city || 'N/A'}, ${user.state || 'N/A'}-${user.pincode || 'N/A'}</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">................................</div>
-          <div style="padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">................................</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word;">${user.gstNumber || 'N/A'}</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">Reference No. : 0023</div>
-          <div style="padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">Mode of Payment</div>
-          <div style="border-right: 1px solid #000; font-weight: bold; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">Buyer (Bill To)</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">................................</div>
-          <div style="padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">................................</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word;">${user.name || 'N/A'}</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">Dispatch Mode</div>
-          <div style="padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">Destination</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word; max-width: 0;">${user.completeAddress || 'N/A'}</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">By Road</div>
-          <div style="padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word;">${user.city || 'N/A'}, ${user.state || 'N/A'}</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word;">${user.city || 'N/A'}, ${user.state || 'N/A'}-${user.pincode || 'N/A'}</div>
-          <div style="border-right: 1px solid #000; padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">................................</div>
-          <div style="padding: 4px; border-bottom: 1px solid #000; word-wrap: break-word;">................................</div>
-        </div>
-        <div style="width: 100%; height: 8px; border-bottom: 1px solid #000;"></div>
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed;">
-          <colgroup>
-            <col style="width: 8%;">
-            <col style="width: 25%;">
-            <col style="width: 15%;">
-            <col style="width: 12%;">
-            <col style="width: 8%;">
-            <col style="width: 12%;">
-            <col style="width: 8%;">
-            <col style="width: 12%;">
-          </colgroup>
+        <!-- Customer Information Table -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+          <tr>
+            <td style="width: 40%; border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
+              Consignee (Ship To)
+            </td>
+            <td style="width: 30%; border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
+              Invoice No.
+            </td>
+            <td style="width: 30%; border-bottom: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
+              Date
+            </td>
+          </tr>
+          <tr>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word;">
+              ${user.name || 'N/A'}
+            </td>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              GW/25/26/PI/0023
+            </td>
+            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              ${new Date().toLocaleDateString()}
+            </td>
+          </tr>
+          <tr>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word;">
+              ${user.completeAddress || 'N/A'}
+            </td>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              Delivery Note No.
+            </td>
+            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              Delivery Note Date
+            </td>
+          </tr>
+          <tr>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              ${user.city || 'N/A'}, ${user.state || 'N/A'}-${user.pincode || 'N/A'}
+            </td>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              ................................
+            </td>
+            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              ................................
+            </td>
+          </tr>
+          <tr>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              GST: ${user.gstNumber || 'N/A'}
+            </td>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              Reference No. : 0023
+            </td>
+            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              Mode of Payment
+            </td>
+          </tr>
+          <tr>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
+              Buyer (Bill To)
+            </td>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              ................................
+            </td>
+            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              ................................
+            </td>
+          </tr>
+          <tr>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word;">
+              ${user.name || 'N/A'}
+            </td>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              Dispatch Mode
+            </td>
+            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              Destination
+            </td>
+          </tr>
+          <tr>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word;">
+              ${user.completeAddress || 'N/A'}
+            </td>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              By Road
+            </td>
+            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              ${user.city || 'N/A'}, ${user.state || 'N/A'}
+            </td>
+          </tr>
+          <tr>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              ${user.city || 'N/A'}, ${user.state || 'N/A'}-${user.pincode || 'N/A'}
+            </td>
+            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              ................................
+            </td>
+            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
+              ................................
+            </td>
+          </tr>
+        </table>
+        <!-- Products Table -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 2px;">
           <thead>
             <tr>
-              <th style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">S.No</th>
-              <th style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Description</th>
-              <th style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Series</th>
-              <th style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">SAP Code</th>
-              <th style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Qty</th>
-              <th style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Rate</th>
-              <th style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Per</th>
-              <th style="border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Amount</th>
+              <td style="width: 6%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">S.No</td>
+              <td style="width: 28%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Description</td>
+              <td style="width: 16%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Series</td>
+              <td style="width: 12%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">SAP Code</td>
+              <td style="width: 8%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Qty</td>
+              <td style="width: 12%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Rate</td>
+              <td style="width: 8%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Per</td>
+              <td style="width: 10%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Amount</td>
             </tr>
           </thead>
           <tbody>
             ${rows}
+            <!-- Empty row for spacing -->
             <tr>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-bottom: 1px solid #000; padding: 4px; height: 20px;"></td>
+              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
             </tr>
+            <!-- Total row -->
             <tr>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px; text-align: center; font-weight: bold;">Total</td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px; text-align: center; font-weight: bold;">${totalQuantity}</td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; height: 20px;"> </td>
-              <td style="border-bottom: 1px solid #000; padding: 4px; height: 20px; text-align: right; font-weight: bold;">${subtotal.toFixed(2)}</td>
+              <td style="border: 1px solid #000; padding: 4px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">Total</td>
+              <td style="border: 1px solid #000; padding: 4px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">${totalQuantity}</td>
+              <td style="border: 1px solid #000; padding: 4px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px;">&nbsp;</td>
+              <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">₹${subtotal.toFixed(2)}</td>
             </tr>
           </tbody>
         </table>
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed;">
+        <!-- Tax and Total Calculation Table -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 2px;">
           <tr>
-            <td colspan="7" style="width: 87.5%; border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">
+            <td style="width: 88%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">
               SGST@9%
             </td>
-            <td style="width: 12.5%; border-bottom: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">
-              ${(gst / 2).toFixed(2)}
+            <td style="width: 12%; border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">
+              ₹${(gst / 2).toFixed(2)}
             </td>
           </tr>
           <tr>
-            <td colspan="7" style="width: 87.5%; border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">
+            <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">
               CGST@9%
             </td>
-            <td style="width: 12.5%; border-bottom: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">
-              ${(gst / 2).toFixed(2)}
+            <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">
+              ₹${(gst / 2).toFixed(2)}
             </td>
           </tr>
           <tr>
-            <td colspan="7" style="width: 87.5%; border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f0f0f0;">
+            <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f0f0f0;">
               Total
             </td>
-            <td style="width: 12.5%; border-bottom: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; background-color: #f0f0f0;">
-              ${net.toFixed(2)}
+            <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; background-color: #f0f0f0;">
+              ₹${net.toFixed(2)}
             </td>
           </tr>
           <tr>
-            <td colspan="7" style="width: 87.5%; border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">
+            <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">
               Rounded Off
             </td>
-            <td style="width: 12.5%; border-bottom: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">
-              ${Math.round(net)}
+            <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">
+              ₹${Math.round(net)}
             </td>
           </tr>
         </table>
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed;">
+        <!-- Amount in Words and Details Table -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 2px;">
           <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; width: 30%;">
+            <td style="width: 30%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; vertical-align: top;">
               Amount Chargeable in Words
             </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; word-wrap: break-word; overflow-wrap: break-word; width: 70%;">
+            <td style="width: 70%; border: 1px solid #000; padding: 4px; word-wrap: break-word; vertical-align: top;">
               ${numberToWordsIndian(Math.round(net))}
             </td>
           </tr>
           <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-weight: bold;">
+            <td style="border: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
               Bank Detail:
             </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; font-weight: bold;">
+            <td style="border: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
               Company Detail:
             </td>
           </tr>
           <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; line-height: 1.3;">
-              Bank Name: HDFC Bank
-            </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; line-height: 1.3;">
-              Glazia Windoors Pvt. Ltd.
-            </td>
-          </tr>
-          <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; line-height: 1.3;">
-              A/c No: 50200084871361
-            </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; line-height: 1.3; word-wrap: break-word;">
-              Kherki Dhaula Village Road, Gurgaon, Harana, 122001
-            </td>
-          </tr>
-          <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; line-height: 1.3;">
+            <td style="border: 1px solid #000; padding: 4px; vertical-align: top; line-height: 1.3;">
+              Bank Name: HDFC Bank<br/>
+              A/c No: 50200084871361<br/>
               RTGS/NEFT/IFSC Code: HDFC0004809
             </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; line-height: 1.3;">
-              06AAKCG7530J1ZE
+            <td style="border: 1px solid #000; padding: 4px; vertical-align: top; line-height: 1.3; word-wrap: break-word;">
+              Glazia Windoors Pvt. Ltd.<br/>
+              Kherki Dhaula Village Road, Gurgaon, Harana, 122001<br/>
+              GST: 06AAKCG7530J1ZE
             </td>
           </tr>
         </table>
-        <div style="text-align: center; border-bottom: 1px solid #000; font-size: 14px; padding: 6px; font-weight: bold;">
-          Terms & Conditions
-        </div>
-        <div style="border-bottom: 1px solid #000; font-size: 9px; padding: 4px; line-height: 1.4;">
-          <div style="margin-bottom: 2px;"><strong>1. PI Validity Period</strong></div>
-          <div style="margin-left: 12px;">
-            <div>a. 15 days from date of issuance irrespective of selling price</div>
-            <div>b. PI shall be treated as null & void in all respect in absence of advance payment as per PI terms</div>
-          </div>
-        </div>
-        <div style="border-bottom: 1px solid #000; font-size: 9px; padding: 4px; line-height: 1.4;">
-          <strong>2. Selling Price:</strong> Selling Price is governed by NALCO Billet price on the date of material dispatch.
-        </div>
-        <div style="border-bottom: 1px solid #000; font-size: 9px; padding: 4px; line-height: 1.4;">
-          <strong>3. Supply Schedule:</strong> Supply schedule will be discussed & finalized after advance payment.
-        </div>
-        <div style="border-bottom: 1px solid #000; font-size: 9px; padding: 4px; line-height: 1.4;">
-          <div style="margin-bottom: 2px;"><strong>4. Advance Payment:</strong> Advance payment will be governed as per below schedule</div>
-          <div style="margin-left: 12px;">
-            <div>a. 100% advance for PI having value Rs. >0 ~ => 2,00,000</div>
-            <div>b. 50% advance for PI having value Rs. >0 ~ =< 2,00,000</div>
-          </div>
-        </div>
-        <div style="border-bottom: 1px solid #000; font-size: 9px; padding: 4px; line-height: 1.4;">
-          <strong>5. Transportation:</strong> In customer scope, No claim or responsibility in any form related to transportation will be levied.
-        </div>
+        <!-- Terms & Conditions -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 2px;">
+          <tr>
+            <td style="border: 1px solid #000; text-align: center; font-size: 12px; padding: 6px; font-weight: bold;">
+              Terms & Conditions
+            </td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #000; font-size: 9px; padding: 6px; line-height: 1.4; vertical-align: top;">
+              <strong>1. PI Validity Period:</strong><br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;a. 15 days from date of issuance irrespective of selling price<br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;b. PI shall be treated as null & void in all respect in absence of advance payment as per PI terms<br/><br/>
+
+              <strong>2. Selling Price:</strong> Selling Price is governed by NALCO Billet price on the date of material dispatch.<br/><br/>
+
+              <strong>3. Supply Schedule:</strong> Supply schedule will be discussed & finalized after advance payment.<br/><br/>
+
+              <strong>4. Advance Payment:</strong> Advance payment will be governed as per below schedule<br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;a. 100% advance for PI having value Rs. >0 ~ => 2,00,000<br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;b. 50% advance for PI having value Rs. >0 ~ =< 2,00,000<br/><br/>
+
+              <strong>5. Transportation:</strong> In customer scope, No claim or responsibility in any form related to transportation will be levied.
+            </td>
+          </tr>
+        </table>
       </div>
     `;
 

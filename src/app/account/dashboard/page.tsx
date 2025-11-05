@@ -239,28 +239,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {quickActions.map((action, index) => (
-                  <Link
-                    key={index}
-                    href={action.href}
-                    className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-                  >
-                    <div className={`${action.color} p-3 rounded-lg`}>
-                      <action.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="ml-4">
-                      <h3 className="font-medium text-gray-900">{action.title}</h3>
-                      <p className="text-sm text-gray-600">{action.description}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
             {/* Recent Orders */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
@@ -411,9 +389,9 @@ function DashboardContent() {
             </div>
             {/* Support */}
             <div className="bg-blue-50 rounded-lg p-6">
-              <h3 className="font-semibold text-blue-900 mb-2">Need Help?</h3>
+              <h3 className="font-semibold text-blue-900 mb-2">Want to update your details?</h3>
               <p className="text-sm text-blue-700 mb-4">
-                Our windoors experts are here to help you with product selection and technical support.
+                Simply contact us and we’ll take care of it.
               </p>
               <Link
                 href="/contact"

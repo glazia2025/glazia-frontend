@@ -105,7 +105,7 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
     }
     
     return (
-      <div className="h-64 relative bg-gray-50 rounded-lg p-4">
+      <div className="h-64 relative bg-gray-50 rounded-lg p-4 pl-16">
         <svg className="w-full h-full" viewBox="0 0 800 200">
           {/* Grid lines */}
           {[0, 1, 2, 3, 4].map(i => (
@@ -119,7 +119,7 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
               strokeWidth="1"
             />
           ))}
-          
+
           {/* Price line */}
           <polyline
             fill="none"
@@ -131,7 +131,7 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
               return `${x},${y}`;
             }).join(' ')}
           />
-          
+
           {/* Data points */}
           {filteredData.map((point, index) => {
             const x = (index / (filteredData.length - 1)) * 800;
@@ -149,12 +149,12 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
             );
           })}
         </svg>
-        
-        {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 -ml-16">
-          <span>{nalcoApiService.formatPrice(maxPrice)}</span>
-          <span>{nalcoApiService.formatPrice((maxPrice + minPrice) / 2)}</span>
-          <span>{nalcoApiService.formatPrice(minPrice)}</span>
+
+        {/* Y-axis labels - showing rate values with Indian Rupees symbol */}
+        <div className="absolute left-2 top-4 h-56 flex flex-col justify-between text-xs text-gray-600 font-medium">
+          <span className="bg-white px-1 rounded">₹{maxPrice.toFixed(0)}</span>
+          <span className="bg-white px-1 rounded">₹{((maxPrice + minPrice) / 2).toFixed(0)}</span>
+          <span className="bg-white px-1 rounded">₹{minPrice.toFixed(0)}</span>
         </div>
       </div>
     );
