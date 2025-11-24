@@ -122,11 +122,10 @@ function DashboardContent() {
         // Get recent 3 orders
         const recent = orders.slice(0, 3).map(order => ({
           id: order.id,
-          date: order.date,
-          items: order.items.length,
-          total: order.total,
-          status: order.status,
-          statusText: order.statusText
+          date: order.createdAt,
+          items: order.products.length,
+          total: order.totalAmount,
+          status: order.deliveryType,
         }));
 
         console.log('📦 Dashboard - Recent Orders:', recent);
@@ -233,7 +232,7 @@ function DashboardContent() {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm text-gray-600">Total Spent</p>
-                    <p className="text-2xl font-bold text-gray-900">₹{orders.reduce((acc, order) => acc + order.total, 0).toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-gray-900">₹{orders.reduce((acc, order) => acc + order.totalAmount, 0).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -391,7 +390,7 @@ function DashboardContent() {
             <div className="bg-blue-50 rounded-lg p-6">
               <h3 className="font-semibold text-blue-900 mb-2">Want to update your details?</h3>
               <p className="text-sm text-blue-700 mb-4">
-                Simply contact us and we’ll take care of it.
+                Simply contact us and we&apos;ll take care of it.
               </p>
               <Link
                 href="/contact"

@@ -326,7 +326,7 @@ export class DataService {
   }
 
   // User
-  static async getUserData(): Promise<User | null> {
+  static async getUserData() {
     await this.delay();
     const token = localStorage.getItem('authToken');
     if (!token) return null;
@@ -343,7 +343,7 @@ export class DataService {
 
   }
   // Orders
-  static async getUserOrders(): Promise<Order[]> {
+  static async getUserOrders(): Promise<any[]> {
     const token = localStorage.getItem('authToken');
     if (!token) {
       console.log('No auth token, returning empty orders');
@@ -360,53 +360,25 @@ export class DataService {
 
       if (!response.ok) {
         console.error('Failed to fetch orders:', response.status);
+        return [];
       }
 
       const data = await response.json();
       console.log('📦 Orders API Response:', data);
       console.log('📦 Number of orders in response:', data?.length || 0);
 
-      // Transform API orders to app Order format
-      if (data && Array.isArray(data)) {
-        const transformedOrders = data.map((apiOrder: any) => ({
-          id: apiOrder._id || apiOrder.id,
-          date: apiOrder.createdAt ? new Date(apiOrder.createdAt).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-          }) : 'N/A',
-          items: apiOrder.products?.map((product: any) => ({
-            id: product.productId || product._id,
-            name: product.description || product.name || 'Product',
-            brand: 'Glazia',
-            price: product.amount || 0,
-            originalPrice: product.amount || 0,
-            image: product.image || '/api/placeholder/300/300',
-            quantity: product.quantity || 1,
-            inStock: true,
-            category: product.category || 'General'
-          })) || [],
-          total: apiOrder.totalAmount || 0,
-          status: this.mapOrderStatus(apiOrder.status),
-          statusText: this.formatOrderStatus(apiOrder.status),
-          shippingAddress: apiOrder.user?.completeAddress || apiOrder.shippingAddress || 'N/A',
-          trackingNumber: apiOrder.trackingNumber || undefined,
-        }));
-
-        console.log('✅ Transformed Orders:', transformedOrders);
-        console.log('✅ Returning', transformedOrders.length, 'orders');
-        return transformedOrders;
-      }
-
-      console.warn('⚠️ No orders array in response, returning mock orders');
+      // Return the raw API response structure
+      return data || [];
     } catch (error) {
       console.error('Error fetching orders:', error);
+      return [];
     }
   }
 
-  static async getOrderById(id: string): Promise<Order | null> {
+  static async getOrderById(id: string): Promise<any | null> {
     const orders = await this.getUserOrders();
-    return orders.find(order => order.id === id) || null;
+    console.log(orders, 'orders main');
+    return orders.find(order => order._id === id) || null;
   }
 
   // Helper method to map API order status to app status

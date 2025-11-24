@@ -5,6 +5,7 @@ export * from './cartApi';
 export * from './authApi';
 export * from './profileApi';
 export * from './hardwareApi';
+export * from './railingsApi';
 
 // Re-export commonly used services for convenience
 export { productApi, categoryApi, userApi } from './productApi';
@@ -12,6 +13,7 @@ export { cartApi, orderApi, checkoutApi } from './cartApi';
 export { authApi } from './authApi';
 export { profileApi } from './profileApi';
 export { hardwareApi } from './hardwareApi';
+export { railingsApi } from './railingsApi';
 
 // API Error handling utilities
 export class ApiError extends Error {

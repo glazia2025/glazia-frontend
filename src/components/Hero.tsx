@@ -22,6 +22,15 @@ const slides = [
     image: "/hero-slide-2.jpg",
     cta: "Shop Hardware",
     link: "/categories/hardware"
+  },
+  {
+    id: 3,
+    title: "Premium Railings",
+    subtitle: "Elegant Aluminum Railing Systems",
+    description: "Explore our comprehensive range of aluminum railings for balconies, staircases, and architectural applications. Combining safety, durability, and aesthetic appeal.",
+    image: "/hero-slide-3.jpg",
+    cta: "View Railings",
+    link: "/categories/railings"
   }
 ];
 

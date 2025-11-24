@@ -25,6 +25,17 @@ export const API_ENDPOINTS = {
     FILTERS: '/api/admin/getHardwares?reqOption=CORNER%20JOINERY',
   },
 
+  // Railings endpoints (using profiles endpoint but filtering for railings data)
+  RAILINGS: {
+    OPTIONS: '/api/user/getProducts',
+    CATEGORIES: '/api/railings/categories',
+    CATEGORY_PRODUCTS: '/api/user/getProducts',
+    CATEGORY_RATES: '/railings/categories/:category/rates',
+    PRODUCT_DETAIL: '/railings/products/:id',
+    SEARCH: '/railings/search',
+    FILTERS: '/railings/filters',
+  },
+
   // Legacy product endpoints (for backward compatibility)
   PRODUCTS: {
     LIST: '/products',

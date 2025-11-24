@@ -46,6 +46,28 @@ export default function OrdersPage() {
     loadOrders();
   }, []);
 
+  // Helper functions to work with raw API data
+  const getOrderStatus = (order: any) => {
+    if (order.isComplete) return 'delivered';
+
+    const hasApprovedPayments = order.payments?.some((p: any) => p.isApproved);
+    const allPaymentsApproved = order.payments?.every((p: any) => p.isApproved);
+
+    if (allPaymentsApproved) return 'shipped';
+    if (hasApprovedPayments) return 'processing';
+    return 'pending';
+  };
+
+  const getOrderStatusText = (order: any) => {
+    const status = getOrderStatus(order);
+    switch (status) {
+      case 'delivered': return 'Delivered';
+      case 'shipped': return 'Shipped';
+      case 'processing': return 'Processing';
+      default: return 'Pending Payment';
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'delivered':
@@ -70,6 +92,14 @@ export default function OrdersPage() {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
   };
 
   return (
@@ -110,51 +140,39 @@ export default function OrdersPage() {
         {!loading && (
           <div className="space-y-6">
             {orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div key={order._id} className="bg-white rounded-lg shadow-sm border border-gray-200">
               {/* Order Header */}
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    {getStatusIcon(order.status)}
+                    {getStatusIcon(getOrderStatus(order))}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{order.id}</h3>
-                      <p className="text-sm text-gray-600">Ordered on {order.date}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">Order #{order._id}</h3>
+                      <p className="text-sm text-gray-600">Ordered on {formatDate(order.createdAt)}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-gray-900">₹{order.total.toLocaleString()}</p>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                      {order.statusText}
+                    <p className="text-lg font-semibold text-gray-900">₹{order.totalAmount.toLocaleString()}</p>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(getOrderStatus(order))}`}>
+                      {getOrderStatusText(order)}
                     </span>
                   </div>
                 </div>
 
-                {/* Status Information */}
+                {/* Customer Information */}
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  {order.trackingNumber && (
-                    <div>
-                      <p className="text-gray-600">Tracking Number</p>
-                      <p className="font-medium text-gray-900">{order.trackingNumber}</p>
-                    </div>
-                  )}
-                  {order.deliveryDate && (
-                    <div>
-                      <p className="text-gray-600">Delivered On</p>
-                      <p className="font-medium text-gray-900">{order.deliveryDate}</p>
-                    </div>
-                  )}
-                  {order.estimatedDelivery && (
-                    <div>
-                      <p className="text-gray-600">Estimated Delivery</p>
-                      <p className="font-medium text-gray-900">{order.estimatedDelivery}</p>
-                    </div>
-                  )}
-                  {order.estimatedShipping && (
-                    <div>
-                      <p className="text-gray-600">Estimated Shipping</p>
-                      <p className="font-medium text-gray-900">{order.estimatedShipping}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-gray-600">Customer</p>
+                    <p className="font-medium text-gray-900">{order.user?.name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">City</p>
+                    <p className="font-medium text-gray-900">{order.user?.city || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Delivery Type</p>
+                    <p className="font-medium text-gray-900">{order.deliveryType || 'N/A'}</p>
+                  </div>
                 </div>
               </div>
 
@@ -162,18 +180,19 @@ export default function OrdersPage() {
               <div className="p-6">
                 <h4 className="font-medium text-gray-900 mb-4">Order Items</h4>
                 <div className="space-y-3">
-                  {order.items.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between py-2">
+                  {order.products?.map((product: any, index: number) => (
+                    <div key={product._id || index} className="flex items-center justify-between py-2">
                       <div className="flex items-center">
                         <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
                           <Package className="w-6 h-6 text-gray-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{item.name}</p>
-                          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                          <p className="font-medium text-gray-900">{product.description}</p>
+                          <p className="text-sm text-gray-600">Quantity: {product.quantity}</p>
+                          <p className="text-sm text-gray-600">Product ID: {product.productId}</p>
                         </div>
                       </div>
-                      <p className="font-semibold text-gray-900">₹{item.price.toLocaleString()}</p>
+                      <p className="font-semibold text-gray-900">₹{product.amount.toLocaleString()}</p>
                     </div>
                   ))}
                 </div>
@@ -182,23 +201,26 @@ export default function OrdersPage() {
               {/* Order Actions */}
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  {order.trackingNumber && (
+                  {getOrderStatus(order) === 'shipped' && (
                     <button className="flex items-center text-[#124657} hover:text-blue-700 text-sm font-medium">
                       <Truck className="w-4 h-4 mr-1" />
                       Track Order
                     </button>
                   )}
-                  <button className="flex items-center text-[#124657} hover:text-blue-700 text-sm font-medium">
+                  <Link
+                    href={`/account/orders/${order._id}`}
+                    className="flex items-center text-[#124657} hover:text-blue-700 text-sm font-medium"
+                  >
                     <Eye className="w-4 h-4 mr-1" />
                     View Details
-                  </button>
+                  </Link>
                 </div>
                 <div className="flex items-center space-x-4">
                   <button className="flex items-center text-gray-600 hover:text-gray-700 text-sm font-medium">
                     <Download className="w-4 h-4 mr-1" />
                     Download Invoice
                   </button>
-                  {order.status === 'delivered' && (
+                  {order.isComplete && (
                     <button className="bg-[#124657} hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
                       Reorder
                     </button>

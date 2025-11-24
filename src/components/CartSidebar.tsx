@@ -826,7 +826,7 @@ const CartSidebar: React.FC = () => {
       {showOrderPlacement && (
         <>
           {/* Modal Overlay */}
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-[10002]" onClick={handleOrderCancel} />
+          <div className="fixed inset-0 bg-[#00000033] bg-opacity-50 z-[10002]" onClick={handleOrderCancel} />
 
           {/* Modal Content */}
           <div className="fixed inset-0 z-[10002] flex items-center justify-center md:p-4">
