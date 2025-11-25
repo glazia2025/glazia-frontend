@@ -84,7 +84,7 @@ export default function Header() {
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center space-x-1 text-gray-700 hover:text-[#124657} focus:outline-none"
                   >
-                    <div className="w-8 h-8 bg-[#000000} rounded-full flex items-center justify-center text-black font-semibold text-sm">
+                    <div className="w-8 h-8 bg-[#000000} border rounded-full flex items-center justify-center text-black font-semibold text-sm">
                       <User className="w-4 h-4" />
                     </div>
                     <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
