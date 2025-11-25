@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, User, Phone, LogOut, ChevronDown } from "lucide-react";
+import { ShoppingCart, User, Phone, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
 import { useCartState, useAuth } from "@/contexts/AppContext";
 import NalcoPriceDisplay from "./NalcoPriceDisplay";
 import NalcoGraphModal from "./NalcoGraphModal";
@@ -77,10 +77,6 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <Link href="/account/dashboard" className="hidden md:flex items-center space-x-1 text-gray-700 hover:text-[#124657}">
-                  <span>Dashboard</span>
-                </Link>
-
 
                 {/* User Avatar Dropdown */}
                 <div className="relative" ref={dropdownRef}>
@@ -88,7 +84,7 @@ export default function Header() {
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center space-x-1 text-gray-700 hover:text-[#124657} focus:outline-none"
                   >
-                    <div className="w-8 h-8 bg-[#124657} rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                    <div className="w-8 h-8 bg-[#000000} rounded-full flex items-center justify-center text-black font-semibold text-sm">
                       <User className="w-4 h-4" />
                     </div>
                     <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -96,6 +92,14 @@ export default function Header() {
 
                   {isDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                       <Link href="/account/dashboard">
+                        <button
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <LayoutDashboard className="w-4 h-4 mr-3" />
+                          Dashboard
+                        </button>
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"

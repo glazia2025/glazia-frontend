@@ -122,6 +122,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <p className="text-xs text-gray-500 capitalize">{adminUser?.role.replace('_', ' ')}</p>
               </div>
             </div>
+            <Link href="/account/dashboard" className="hidden md:flex items-center space-x-1 text-gray-700 hover:text-[#124657}">
+              <span>Dashboard</span>
+            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
