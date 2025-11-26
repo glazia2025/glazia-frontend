@@ -5,6 +5,7 @@ import { AppProvider } from "@/contexts/AppContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import CartSidebar from "@/components/CartSidebar";
 import DataInitializer from "@/components/DataInitializer";
+import AnalyticsWrapper from "@/components/AnalyticsWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=G-VVEW7G623L`}
+        />
+
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}
@@ -35,7 +53,9 @@ export default function RootLayout({
         <AppProvider>
           <AdminProvider>
             <DataInitializer />
-            {children}
+            <AnalyticsWrapper>
+                {children}
+            </AnalyticsWrapper>
             <CartSidebar />
           </AdminProvider>
         </AppProvider>
