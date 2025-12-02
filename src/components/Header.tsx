@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, User, Phone, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, User, Phone, LogOut, ChevronDown, LayoutDashboard, Dock } from "lucide-react";
 import { useCartState, useAuth } from "@/contexts/AppContext";
 import NalcoPriceDisplay from "./NalcoPriceDisplay";
 import NalcoGraphModal from "./NalcoGraphModal";
@@ -98,6 +98,14 @@ export default function Header() {
                         >
                           <LayoutDashboard className="w-4 h-4 mr-3" />
                           Dashboard
+                        </button>
+                      </Link>
+                      <Link href="/quotations">
+                        <button
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <Dock className="w-4 h-4 mr-3" />
+                          Quotations
                         </button>
                       </Link>
                       <button

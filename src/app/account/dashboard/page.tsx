@@ -167,7 +167,13 @@ function DashboardContent() {
       href: '/account/orders',
       color: 'bg-green-500'
     },
-
+    {
+      title: 'Create Quotation',
+      description: 'Generate quotes for customers',
+      icon: FileText,
+      href: '/quotations/create',
+      color: 'bg-orange-500'
+    },
     {
       title: 'Profile Settings',
       description: 'Update your information',
