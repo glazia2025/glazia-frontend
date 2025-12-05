@@ -109,70 +109,87 @@ const baseRateTable = {
   'Casement': {
     "40mm": {
       "Fix": [200, 170, 145],
+
       "Left Openable Window": [300, 255, 217],
       "Right Openable Window": [300, 255, 217],
-      "Left Openable Door": [350, 298, 253],
-      "Right Openable Door": [350, 298, 253],
-      "2 Track 2 Glass Panel": [400, 340, 289],
-      "3 Panel (1+2)": [500, 425, 361],
-      "3 Panel (2+1)": [500, 425, 361],
-      "4 Panel (2+2)": [600, 510, 434],
-      "6 Panel (3+3)": [800, 680, 578],
+      "Top Hung Window": [300, 255, 217],
+      "Bottom Hung Window": [300, 255, 217],
+
+      "French Window": [330, 281, 238],
+
+      "default": [0, 0, 0]
     },
+
     "50mm": {
-      "Fix": [220, 187, 159],
-      "Left Openable Window": [320, 272, 231],
-      "Right Openable Window": [320, 272, 231],
-      "Left Openable Door": [370, 315, 268],
-      "Right Openable Door": [370, 315, 268],
-      "2 Track 2 Glass Panel": [420, 357, 304],
-      "3 Panel (1+2)": [520, 442, 376],
-      "3 Panel (2+1)": [520, 442, 376],
-      "4 Panel (2+2)": [620, 527, 448],
-      "6 Panel (3+3)": [820, 697, 593],
+      "Fix": [250, 213, 181],
+
+      "Left Openable Window": [375, 319, 271],
+      "Right Openable Window": [375, 319, 271],
+      "Top Hung Window": [375, 319, 271],
+      "Bottom Hung Window": [375, 319, 271],
+
+      "Tilt and Turn Window": [1000, 1000, 1000],
+      "Parallel Window": [1000, 1000, 1000],
+
+      "French Window": [400, 340, 289],
+
+      "Left Openable Door": [450, 450, 450],
+      "Right Openable Door": [450, 450, 450],
+      "French Door": [475, 475, 475],
+
+      "default": [0, 0, 0]
     },
-    "65mm": {
-      "Fix": [240, 204, 173],
-      "Left Openable Window": [340, 289, 246],
-      "Right Openable Window": [340, 289, 246],
-      "Left Openable Door": [390, 332, 282],
-      "Right Openable Door": [390, 332, 282],
-      "2 Track 2 Glass Panel": [440, 374, 318],
-      "3 Panel (1+2)": [540, 459, 390],
-      "3 Panel (2+1)": [540, 459, 390],
-      "4 Panel (2+2)": [640, 544, 463],
-      "6 Panel (3+3)": [840, 714, 607],
+
+    "114mm": {
+      "Left Openable": [750, 750, 750],
+      "Right Openable": [750, 750, 750],
+
+      "Left Openable + Fixed": [650, 650, 650],
+      "Fixed + Right Openable": [650, 650, 650],
+      "Left Openable + Fixed + right Openable": [650, 650, 650],
+
+      "default": [0, 0, 0]
     }
   },
+
   'Sliding': {
-    "40mm": {
-      "2 Track 2 Glass Panel": [350, 298, 253],
-      "3 Panel (1+2)": [450, 383, 325],
-      "3 Panel (2+1)": [450, 383, 325],
-      "4 Panel (2+2)": [550, 468, 398],
-      "6 Panel (3+3)": [750, 638, 542],
+    "29mm": {
+      "2 Track 2 Glass Panel": [500, 425, 361],
+      "2 Track 3 Glass Panel": [550, 468, 397],
+      "2 Track 4 Glass Panel": [600, 510, 434],
+
+      "3 Track 2 Glass 1 Mesh Panel": [600, 510, 434],
+      "3 Track 3 Glass Panel": [625, 531, 452],
+      "3 Track 3 Glass 1 Mesh Panel": [650, 553, 470],
+      "3 Track 4 Glass Panel 2 Mesh Panel": [700, 595, 506],
+
+      "default": [0, 0, 0]
     },
-    "50mm": {
-      "2 Track 2 Glass Panel": [370, 315, 268],
-      "3 Panel (1+2)": [470, 400, 340],
-      "3 Panel (2+1)": [470, 400, 340],
-      "4 Panel (2+2)": [570, 485, 412],
-      "6 Panel (3+3)": [770, 655, 557],
-    },
-    "65mm": {
-      "2 Track 2 Glass Panel": [390, 332, 282],
-      "3 Panel (1+2)": [490, 417, 354],
-      "3 Panel (2+1)": [490, 417, 354],
-      "4 Panel (2+2)": [590, 502, 427],
-      "6 Panel (3+3)": [790, 672, 571],
+
+    "44mm": {
+      "2 Track 2 Glass Panel": [625, 531, 452],
+      "2 Track 3 Glass Panel": [688, 584, 497],
+      "2 Track 4 Glass Panel": [750, 638, 542],
+
+      "3 Track 2 Glass 1 Mesh Panel": [750, 638, 542],
+      "3 Track 3 Glass Panel": [781, 664, 564],
+      "3 Track 3 Glass 1 Mesh Panel": [813, 691, 587],
+      "3 Track 4 Glass 2 Mesh Panel": [875, 744, 632],
+      "3 Track 6 Glass Panel": [900, 765, 650],
+
+      "default": [0, 0, 0]
     }
   },
-  'Slide N Fold': {
-    "65mm": {
-      "3 Panel (1+2)": [600, 510, 434],
-      "3 Panel (2+1)": [600, 510, 434],
-      "4 Panel (2+2)": [700, 595, 506],
-      "6 Panel (3+3)": [900, 765, 650],
+
+  "Slide n Fold": {
+    "Glazia GU": {
+      "2 Panel (1+1)": [1300, 1170, 1053],
+      "3 Panel (1+2)": [1250, 1125, 1013],
+      "4 Panel (1+3)": [1200, 1080, 972],
+      "5 Panel (1+4)": [1150, 1035, 932],
+      "6 Panel (1+5)": [1100, 990, 891],
+
+      "default": [0, 0, 0]
     }
   }
 };
@@ -410,12 +427,16 @@ export default function EditQuotationPage() {
 
   const calculateRate = (item: QuotationItem) => {
     const system = baseRateTable[item.systemType as keyof typeof baseRateTable];
+    console.log('system', system);
     if (!system) return 0;
 
     const series = system[item.series as keyof typeof system];
+    console.log('series', series);
     if (!series) return 0;
 
-    const descriptionRates = series[item.description] || series["default"];
+    console.log(item.description, 'description');
+    const descriptionRates = series[item.description];
+    console.log('descriptionRates', descriptionRates);
     if (!descriptionRates) return 0;
 
     const slab = AREA_SLABS.find(s => item.area <= s.max);
@@ -424,6 +445,8 @@ export default function EditQuotationPage() {
     const glassRate = getGlassRate(item.glassSpec);
     const handleRate = getTotalHandleCost(item);
     const meshRate = getMeshRate(item);
+
+    console.log(baseRate, colorRate, glassRate, handleRate, meshRate, 'rates');
 
     const rate = baseRate + colorRate + glassRate + handleRate + meshRate;
     return rate || 0;
@@ -462,6 +485,7 @@ export default function EditQuotationPage() {
 
         if (field !== 'rate') {
           const rate = calculateRate(updatedItem);
+          console.log(rate);
           updatedItem.rate = rate;
         }
 
@@ -514,7 +538,9 @@ export default function EditQuotationPage() {
   };
 
   const calculateTotalArea = () => {
-    return items.reduce((total, item) => total + item.area, 0);
+    const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
+    const totalArea = items.reduce((total, item) => total + item.area, 0);
+    return totalArea * totalQuantity;
   };
 
   const calculateTotalQuantity = () => {
