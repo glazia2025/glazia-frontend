@@ -14,97 +14,6 @@ const AREA_SLABS = [
   { max: Infinity, index: 2 }
 ];
 
-const handleCountTable: Record<string, Record<string, Record<string, number>>> = {
-  Casement: {
-    "40mm": {
-      "Fix": 0,
-      "Left Openable Window": 1,
-      "Right Openable Window": 1,
-      "Top Hung Window": 1,
-      "Bottom Hung Window": 1,
-      "French Window": 2,
-    },
-    "50mm": {
-      "Fix": 0,
-      "Left Openable Window": 1,
-      "Right Openable Window": 1,
-      "Top Hung Window": 1,
-      "Bottom Hung Window": 1,
-      "Tilt and Turn Window": 1,
-      "Parallel Window": 2,
-      "French Window": 2,
-      "Left Openable Door": 1,
-      "Right Openable Door": 1,
-      "French Door": 2,
-    },
-    "114mm": {
-      "Left Openable": 2,
-      "Right Openable": 2,
-      "Left Openable + Fixed": 2,
-      "Fixed + Right Openable": 2,
-      "Left Openable + Fixed + right Openable": 4,
-    },
-  },
-  Sliding: {
-    "29mm": {
-      "2 Track 2 Glass Panel": 2,
-      "2 Track 3 Glass Panel": 2,
-      "2 Track 4 Glass Panel": 2,
-      "3 Track 2 Glass 1 Mesh Panel": 3,
-      "3 Track 3 Glass Panel": 3,
-      "3 Track 3 Glass 1 Mesh Panel": 3,
-      "3 Track 4 Glass Panel 2 Mesh Panel": 4,
-    },
-    "44mm": {
-      "2 Track 2 Glass Panel": 2,
-      "2 Track 3 Glass Panel": 2,
-      "2 Track 4 Glass Panel": 2,
-      "3 Track 2 Glass 1 Mesh Panel": 3,
-      "3 Track 3 Glass Panel": 3,
-      "3 Track 3 Glass 1 Mesh Panel": 3,
-      "3 Track 4 Glass 2 Mesh Panel": 4,
-      "3 Track 6 Glass Panel": 3,
-    }
-  },
-  "Slide n Fold": {
-    "Glazia GU": {
-      "2 Panel (1+1)": 2,
-      "3 Panel (1+2)": 3,
-      "4 Panel (1+3)": 4,
-      "5 Panel (1+4)": 5,
-      "6 Panel (1+5)": 6,
-    }
-  }
-};
-
-const handleRateTable: Record<string, Record<string, Record<string, number>>> = {
-  Sliding: {
-    "Metro Handle": { Black: 650, Silver: 650 },
-    "Touch Lock": { Black: 250, Silver: 250 },
-    "D handle": { Black: 600, Silver: 600 },
-    "Pop-up handle": { Black: 350, Silver: 350 }
-  },
-  Casement: {
-    "Mortise Handle with lock": { Black: 1500, Silver: 1500 },
-    "L handle": { Black: 350, Silver: 350 },
-    "Cremone Handle": { Black: 250, Silver: 250 },
-    "Cocksper Handle": { Black: 100, Silver: 100 }
-  }
-};
-
-const meshRateTable: Record<string, Record<string, number>> = {
-  Yes: {
-    "SS Mesh - Black": 25,
-    "SS Mesh - Natural": 22,
-    "Pleated Mesh": 200
-  },
-  No: {
-     "SS Mesh - Black": 0,
-    "SS Mesh - Natural": 0,
-    "Pleated Mesh": 0
-  }
-};
-
 const baseRateTable = {
   'Casement': {
     "40mm": {
@@ -193,6 +102,107 @@ const baseRateTable = {
     }
   }
 };
+
+const AREA_SLABS = [
+  { max: 20,   index: 0 },
+  { max: 40,   index: 1 },
+  { max: Infinity, index: 2 }
+];
+
+const handleCountTable: Record<string, Record<string, Record<string, number>>> = {
+  Casement: {
+    "40mm": {
+      "Fix": 0,
+      "Left Openable Window": 1,
+      "Right Openable Window": 1,
+      "Top Hung Window": 1,
+      "Bottom Hung Window": 1,
+      "French Window": 2,
+    },
+    "50mm": {
+      "Fix": 0,
+      "Left Openable Window": 1,
+      "Right Openable Window": 1,
+      "Top Hung Window": 1,
+      "Bottom Hung Window": 1,
+      "Tilt and Turn Window": 1,
+      "Parallel Window": 2,
+      "French Window": 2,
+      "Left Openable Door": 1,
+      "Right Openable Door": 1,
+      "French Door": 2,
+    },
+    "114mm": {
+      "Left Openable": 2,
+      "Right Openable": 2,
+      "Left Openable + Fixed": 2,
+      "Fixed + Right Openable": 2,
+      "Left Openable + Fixed + right Openable": 4,
+    },
+  },
+
+  Sliding: {
+    "29mm": {
+      "2 Track 2 Glass Panel": 2,
+      "2 Track 3 Glass Panel": 2,
+      "2 Track 4 Glass Panel": 2,
+      "3 Track 2 Glass 1 Mesh Panel": 3,
+      "3 Track 3 Glass Panel": 3,
+      "3 Track 3 Glass 1 Mesh Panel": 3,
+      "3 Track 4 Glass Panel 2 Mesh Panel": 4,
+    },
+    "44mm": {
+      "2 Track 2 Glass Panel": 2,
+      "2 Track 3 Glass Panel": 2,
+      "2 Track 4 Glass Panel": 2,
+      "3 Track 2 Glass 1 Mesh Panel": 3,
+      "3 Track 3 Glass Panel": 3,
+      "3 Track 3 Glass 1 Mesh Panel": 3,
+      "3 Track 4 Glass 2 Mesh Panel": 4,
+      "3 Track 6 Glass Panel": 3,
+    }
+  },
+
+  "Slide n Fold": {
+    "Glazia GU": {
+      "2 Panel (1+1)": 2,
+      "3 Panel (1+2)": 3,
+      "4 Panel (1+3)": 4,
+      "5 Panel (1+4)": 5,
+      "6 Panel (1+5)": 6,
+    }
+  }
+};
+
+
+const handleRateTable: Record<string, Record<string, Record<string, number>>> = {
+  Sliding: {
+    "Metro Handle": { Black: 650, Silver: 650 },
+    "Touch Lock": { Black: 250, Silver: 250 },
+    "D handle": { Black: 600, Silver: 600 },
+    "Pop-up handle": { Black: 350, Silver: 350 }
+  },
+  Casement: {
+    "Mortise Handle with lock": { Black: 1500, Silver: 1500 },
+    "L handle": { Black: 350, Silver: 350 },
+    "Cremone Handle": { Black: 250, Silver: 250 },
+    "Cocksper Handle": { Black: 100, Silver: 100 }
+  }
+};
+
+const meshRateTable: Record<string, Record<string, number>> = {
+  Yes: {
+    "SS Mesh - Black": 25,
+    "SS Mesh - Natural": 22,
+    "Pleated Mesh": 200
+  },
+  No: {
+     "SS Mesh - Black": 0,
+    "SS Mesh - Natural": 0,
+    "Pleated Mesh": 0
+  }
+};
+
 
 interface CustomerDetails {
   name: string;
@@ -454,11 +464,30 @@ export default function EditQuotationPage() {
 
   // Function to get image path based on description
   const getImagePath = (description: string): string => {
+
     if (!description) return "";
 
+    if (description === 'Fix') {
+      console.log(description, 'description', '/Quotations/Fix.png');
+      return '/Quotations/Fix.png';
+    }
+
     if (description === 'French Door' || description === 'French Window') {
+      console.log(description, 'description', '/Quotations/French Door-Window.jpg');
       return '/Quotations/French Door-Window.jpg';
     }
+
+    if (description === 'Left Openable Window' || description === 'Left Openable Door') {
+      console.log(description, 'description', '/Quotations/Left Openable Door-Window.jpg');
+      return '/Quotations/Left Openable Door-Window.jpg';
+    }
+
+    if (description === 'Right Openable Window' || description === 'Right Openable Door') {
+      console.log(description, 'description', '/Quotations/Right Openable Door-Window.jpg');
+      return '/Quotations/Right Openable Door-Window.jpg';
+    }
+
+    console.log(description, 'description', `/Quotations/${description}.jpg`);
 
     return description ? `/Quotations/${description}.jpg` : "";
   };
@@ -640,142 +669,136 @@ export default function EditQuotationPage() {
         <div className="space-y-8">
           {/* Quotation Details */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Quotation Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quotation Number
-                </label>
-                <input
-                  type="text"
-                  value={quotationDetails.quotationNumber}
-                  onChange={(e) => setQuotationDetails({...quotationDetails, quotationNumber: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  readOnly
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={quotationDetails.date}
-                  onChange={(e) => setQuotationDetails({...quotationDetails, date: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Valid Until
-                </label>
-                <input
-                  type="date"
-                  value={quotationDetails.validUntil}
-                  onChange={(e) => setQuotationDetails({...quotationDetails, validUntil: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Quotation Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Quotation Number
+                  </label>
+                  <input
+                    type="text"
+                    value={quotationDetails.quotationNumber}
+                    onChange={(e) => setQuotationDetails({...quotationDetails, quotationNumber: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={quotationDetails.date}
+                    onChange={(e) => setQuotationDetails({...quotationDetails, date: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Opportunity Stage
+                  </label>
+                  <select
+                    value={quotationDetails.opportunity}
+                    onChange={(e) => setQuotationDetails({...quotationDetails, opportunity: e.target.value})}
+                    defaultValue="Enquiry"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
+                  >
+                    <option value="Enquiry">Enquiry</option>
+                    <option value="Quoted">Quoted</option>
+                    <option value="Under Negotiation">Under Negotiation</option>
+                    <option value="Order Confirmed">Order Confirmed</option>
+                    <option value="Order Lost">Order Lost</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
 
           {/* Customer Details */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Customer Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Customer Name *
-                </label>
-                <input
-                  type="text"
-                  value={customerDetails.name}
-                  onChange={(e) => setCustomerDetails({...customerDetails, name: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Name
-                </label>
-                <input
-                  type="text"
-                  value={customerDetails.company}
-                  onChange={(e) => setCustomerDetails({...customerDetails, company: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  value={customerDetails.email}
-                  onChange={(e) => setCustomerDetails({...customerDetails, email: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  value={customerDetails.phone}
-                  onChange={(e) => setCustomerDetails({...customerDetails, phone: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  required
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Address
-                </label>
-                <textarea
-                  value={customerDetails.address}
-                  onChange={(e) => setCustomerDetails({...customerDetails, address: e.target.value})}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={customerDetails.city}
-                  onChange={(e) => setCustomerDetails({...customerDetails, city: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  State
-                </label>
-                <input
-                  type="text"
-                  value={customerDetails.state}
-                  onChange={(e) => setCustomerDetails({...customerDetails, state: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  PIN Code
-                </label>
-                <input
-                  type="text"
-                  value={customerDetails.pincode}
-                  onChange={(e) => setCustomerDetails({...customerDetails, pincode: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Customer Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Customer Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={customerDetails.name}
+                    onChange={(e) => setCustomerDetails({...customerDetails, name: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={customerDetails.email}
+                    onChange={(e) => setCustomerDetails({...customerDetails, email: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    value={customerDetails.phone}
+                    onChange={(e) => setCustomerDetails({...customerDetails, phone: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Address
+                  </label>
+                  <textarea
+                    value={customerDetails.address}
+                    onChange={(e) => setCustomerDetails({...customerDetails, address: e.target.value})}
+                    rows={1}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={customerDetails.city}
+                    onChange={(e) => setCustomerDetails({...customerDetails, city: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    State
+                  </label>
+                  <input
+                    type="text"
+                    value={customerDetails.state}
+                    onChange={(e) => setCustomerDetails({...customerDetails, state: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    PIN Code
+                  </label>
+                  <input
+                    type="text"
+                    value={customerDetails.pincode}
+                    onChange={(e) => setCustomerDetails({...customerDetails, pincode: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
           {/* Items Section */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -1028,41 +1051,124 @@ export default function EditQuotationPage() {
                           </select>
                         </td>
                       <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.colorFinish}
-                          onChange={(e) => updateItem(item.id, 'colorFinish', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          placeholder="Color finish..."
-                        />
-                      </td>
+                          <select
+                            value={item.colorFinish}
+                            onChange={(e) => updateItem(item.id, 'colorFinish', e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
+                          >
+                            <option value="">Select Color Finish</option>
+
+                            {/* Powder Coating Options */}
+                            <optgroup label="Powder Coating">
+                              <option value="Grey-Tex 2200">Grey-Tex 2200</option>
+                              <option value="Grey-Tex 2900">Grey-Tex 2900</option>
+                              <option value="Matt Black-9005">Matt Black - 9005</option>
+                              <option value="White-9003">White - 9003</option>
+                              <option value="Anodic Bronze-SW28BN">Anodic Bronze - SW28BN</option>
+                              <option value="Champagne-SDA53N">Champagne - SDA53N</option>
+                            </optgroup>
+
+                            {/* Anodizing Options */}
+                            <optgroup label="Anodizing">
+                              <option value="Champagne">Champagne</option>
+                              <option value="Black">Black</option>
+                            </optgroup>
+
+                            {/* Wooden Options */}
+                            <optgroup label="Wooden">
+                              <option value="Wenge">Wenge</option>
+                              <option value="XYZ">XYZ</option>
+                              <option value="ABC">ABC</option>
+                            </optgroup>
+                          </select>
+                        </td>
                       <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.glassSpec}
-                          onChange={(e) => updateItem(item.id, 'glassSpec', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          placeholder="Glass spec..."
-                        />
-                      </td>
+                          <select
+                            value={item.glassSpec}
+                            onChange={(e) => updateItem(item.id, 'glassSpec', e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
+                          >
+                            <option value="">Select Glass Spec</option>
+
+                            {/* Clear Toughened Glass Options */}
+                            <optgroup label="Clear Toughened Glass">
+                              <option value="5mm Clear Toughened">5mm Clear Toughened</option>
+                              <option value="6mm Clear Toughened">6mm Clear Toughened</option>
+                              <option value="8mm Clear Toughened">8mm Clear Toughened</option>
+                              <option value="10mm Clear Toughened">10mm Clear Toughened</option>
+                              <option value="12mm Clear Toughened">12mm Clear Toughened</option>
+                            </optgroup>
+
+                            {/* Frosted Toughened Glass Options */}
+                            <optgroup label="Frosted Toughened Glass">
+                              <option value="5/6mm Frosted Toughened">5/6mm Frosted Toughened</option>
+                            </optgroup>
+
+                            {/* DGU Glass Options */}
+                            <optgroup label="DGU Glass">
+                              <option value="20mm (5+10+5) DGU Glass">20mm (5+10+5) DGU Glass</option>
+                              <option value="24mm (6+12+6) DGU Glass">24mm (6+12+6) DGU Glass</option>
+                              <option value="32mm (8+12+8) DGU Glass">32mm (8+12+8) DGU Glass</option>
+                            </optgroup>
+
+                            {/* Security/Laminated Glass Options */}
+                            <optgroup label="Security/Laminated Glass">
+                              <option value="11.52mm (5+1.52+5) Laminated Glass">11.52mm (5+1.52+5) Laminated Glass</option>
+                              <option value="13.52mm (6+1.52+6) Laminated Glass">13.52mm (6+1.52+6) Laminated Glass</option>
+                              <option value="17.52mm (8+1.52+8) Laminated Glass">17.52mm (8+1.52+8) Laminated Glass</option>
+                            </optgroup>
+
+                            {/* DGU Laminated Glass Options */}
+                            <optgroup label="DGU Laminated Glass">
+                              <option value="31.52mm (6+1.52+6+12+6) DGU Laminated Glass">31.52mm (6+1.52+6+12+6) DGU Laminated Glass</option>
+                            </optgroup>
+
+                            {/* Clear Float Glass Options */}
+                            <optgroup label="Clear Float Glass">
+                              <option value="5/6mm Clear Float Glass">5/6mm Clear Float Glass</option>
+                            </optgroup>
+                          </select>
+                        </td>
                       <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.handleType}
-                          onChange={(e) => updateItem(item.id, 'handleType', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          placeholder="Handle type..."
-                        />
-                      </td>
+                          <select
+                            value={item.handleType}
+                            onChange={(e) => updateItem(item.id, 'handleType', e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
+                          >
+                            <option value="">Select Handle</option>
+                            {
+                              item.systemType === 'Sliding' && (
+                                <>
+                                  <option value="Metro Handle">Metro Handle</option>
+                                  <option value="Touch Lock">Touch Lock</option>
+                                  <option value="D handle">D handle</option>
+                                  <option value="Pop-up handle">Pop-up handle</option>
+                                </>
+                              )
+                            }
+                            {
+                              (item.systemType === 'Casement' || item.systemType === 'Slide N Fold') && (
+                                <>
+                                  <option value="Mortise Handle with lock">Mortise Handle with lock</option>
+                                  <option value="L handle">L handle</option>
+                                  <option value="Cremone Handle">Cremone Handle</option>
+                                  <option value="Cocksper Handle">Cocksper Handle</option>
+                                </>
+                              )
+                            }
+                          </select>
+                        </td>
                       <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.handleColor}
-                          onChange={(e) => updateItem(item.id, 'handleColor', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          placeholder="Handle color..."
-                        />
-                      </td>
+                          <select
+                            value={item.handleColor}
+                            onChange={(e) => updateItem(item.id, 'handleColor', e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
+                          >
+                            <option value="">Select Color</option>
+                            <option value="Black">Black</option>
+                            <option value="Silver">Silver</option>
+                          </select>
+                        </td>
                       <td className="border border-gray-300 px-2 py-2">
                         <select
                           value={item.meshPresent}
@@ -1075,14 +1181,17 @@ export default function EditQuotationPage() {
                         </select>
                       </td>
                       <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.meshType}
-                          onChange={(e) => updateItem(item.id, 'meshType', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          placeholder="Mesh type..."
-                        />
-                      </td>
+                          <select
+                            value={item.meshType}
+                            onChange={(e) => updateItem(item.id, 'meshType', e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
+                          >
+                            <option value="">Select Mesh</option>
+                            <option value="SS Mesh - Black">SS Mesh - Black</option>
+                            <option value="SS Mesh - Natural">SS Mesh - Natural</option>
+                            <option value="Pleated Mesh">Pleated Mesh</option>
+                          </select>
+                        </td>
                       <td className="border border-gray-300 px-2 py-2">
                         <input
                           type="number"

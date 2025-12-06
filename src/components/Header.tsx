@@ -100,14 +100,6 @@ export default function Header() {
                           Dashboard
                         </button>
                       </Link>
-                      <Link href="/quotations">
-                        <button
-                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                        >
-                          <Dock className="w-4 h-4 mr-3" />
-                          Quotations
-                        </button>
-                      </Link>
                       <button
                         onClick={handleLogout}
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
@@ -141,6 +133,14 @@ export default function Header() {
                 </span>
               )}
             </button>
+            <Link href="/quotations">
+              <button
+                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <Dock className="w-4 h-4 mr-3" />
+                Quotations
+              </button>
+            </Link>
           </div>
         </div>
 

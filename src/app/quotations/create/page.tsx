@@ -476,11 +476,30 @@ function getMeshRate(item: QuotationItem) {
 
   // Function to get image path based on description
   const getImagePath = (description: string): string => {
+
     if (!description) return "";
 
+    if (description === 'Fix') {
+      console.log(description, 'description', '/Quotations/Fix.png');
+      return '/Quotations/Fix.png';
+    }
+
     if (description === 'French Door' || description === 'French Window') {
+      console.log(description, 'description', '/Quotations/French Door-Window.jpg');
       return '/Quotations/French Door-Window.jpg';
     }
+
+    if (description === 'Left Openable Window' || description === 'Left Openable Door') {
+      console.log(description, 'description', '/Quotations/Left Openable Door-Window.jpg');
+      return '/Quotations/Left Openable Door-Window.jpg';
+    }
+
+    if (description === 'Right Openable Window' || description === 'Right Openable Door') {
+      console.log(description, 'description', '/Quotations/Right Openable Door-Window.jpg');
+      return '/Quotations/Right Openable Door-Window.jpg';
+    }
+
+    console.log(description, 'description', `/Quotations/${description}.jpg`);
 
     return description ? `/Quotations/${description}.jpg` : "";
   };
@@ -524,7 +543,9 @@ function getMeshRate(item: QuotationItem) {
   };
 
   const calculateTotalArea = () => {
-    return items.reduce((total, item) => total + item.area, 0);
+    const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
+    const totalArea = items.reduce((total, item) => total + item.area, 0);
+    return totalArea * totalQuantity;
   };
 
   const calculateTotalQuantity = () => {
@@ -626,7 +647,7 @@ function getMeshRate(item: QuotationItem) {
             {/* Quotation Details */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Quotation Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Quotation Number
@@ -651,14 +672,20 @@ function getMeshRate(item: QuotationItem) {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Valid Until
+                    Opportunity Stage
                   </label>
-                  <input
-                    type="date"
-                    value={quotationDetails.validUntil}
-                    onChange={(e) => setQuotationDetails({...quotationDetails, validUntil: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  />
+                  <select
+                    value={quotationDetails.opportunity}
+                    onChange={(e) => setQuotationDetails({...quotationDetails, opportunity: e.target.value})}
+                    defaultValue="Enquiry"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
+                  >
+                    <option value="Enquiry">Enquiry</option>
+                    <option value="Quoted">Quoted</option>
+                    <option value="Under Negotiation">Under Negotiation</option>
+                    <option value="Order Confirmed">Order Confirmed</option>
+                    <option value="Order Lost">Order Lost</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -666,7 +693,7 @@ function getMeshRate(item: QuotationItem) {
             {/* Customer Details */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Customer Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Customer Name *
@@ -677,17 +704,6 @@ function getMeshRate(item: QuotationItem) {
                     onChange={(e) => setCustomerDetails({...customerDetails, name: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                     required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Company Name
-                  </label>
-                  <input
-                    type="text"
-                    value={customerDetails.company}
-                    onChange={(e) => setCustomerDetails({...customerDetails, company: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -714,14 +730,14 @@ function getMeshRate(item: QuotationItem) {
                     required
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div className="md:col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Address
                   </label>
                   <textarea
                     value={customerDetails.address}
                     onChange={(e) => setCustomerDetails({...customerDetails, address: e.target.value})}
-                    rows={3}
+                    rows={1}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                   />
                 </div>
@@ -785,8 +801,8 @@ function getMeshRate(item: QuotationItem) {
                   <div className="text-lg font-bold text-gray-900">{calculateTotalArea().toFixed(2)} sq ft</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-medium text-gray-600">Base Amount</div>
-                  <div className="text-lg font-bold text-gray-900">₹{calculateTotal().toLocaleString('en-IN')}</div>
+                  <div className="text-sm font-medium text-gray-600">Rate per Sqft.</div>
+                  <div className="text-lg font-bold text-gray-900">₹{(calculateTotalWithProfit()/calculateTotalArea()).toFixed(2)}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-medium text-gray-600 mb-1">Profit %</div>
@@ -974,7 +990,7 @@ function getMeshRate(item: QuotationItem) {
                                     <option value="Left Openable">Left Openable</option>
                                     <option value="Right Openable">Right Openable</option>
                                     <option value="Left Openable + Fixed">Left Openable + Fixed</option>
-                                    <option value="Fixed + Right Openable">Fixed + Right Openable</option>
+                                    <option value="Right Openable + Fixed">Fixed + Right Openable</option>
                                     <option value="Left Openable + Fixed + right Openable">Left Openable + Fixed + right Openable</option>
                                 </>
                               )
@@ -1117,7 +1133,7 @@ function getMeshRate(item: QuotationItem) {
                               )
                             }
                             {
-                              item.systemType === 'Casement' && (
+                              (item.systemType === 'Casement' || item.systemType === 'Slide N Fold') && (
                                 <>
                                   <option value="Mortise Handle with lock">Mortise Handle with lock</option>
                                   <option value="L handle">L handle</option>

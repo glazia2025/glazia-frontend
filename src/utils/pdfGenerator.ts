@@ -218,14 +218,15 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
     }
 
     .items-table th {
-      background-color: #124657;
-      color: white;
+      background-color: #124657 !important;
+      color: #ffffff !important;
       padding: 6px 3px;
       text-align: center;
       font-weight: bold;
       border: 1px solid #ddd;
-      font-size: 7px;
+      font-size: 8px; /* reduced for PDF fit */
     }
+
 
     .items-table td {
       padding: 4px 3px;
@@ -234,6 +235,27 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
       vertical-align: middle;
       font-size: 7px;
     }
+
+    .items-table th, .items-table td {
+        white-space: nowrap;
+      }
+
+      .items-table th:nth-child(1) { width: 15px; }
+      .items-table th:nth-child(2) { width: 60px; }
+      .items-table th:nth-child(3) { width: 70px; }
+      .items-table th:nth-child(4) { width: 45px; }
+      .items-table th:nth-child(5) { width: 45px; }
+      .items-table th:nth-child(6) { width: 70px; }
+      .items-table th:nth-child(7) { width: 50px; }
+      .items-table th:nth-child(8) { width: 110px; }
+      .items-table th:nth-child(9) { width: 60px; }
+      .items-table th:nth-child(10) { width: 60px; }
+      .items-table th:nth-child(11), .items-table th:nth-child(12) { width: 60px; }
+      .items-table th:nth-child(13), .items-table th:nth-child(14) { width: 60px; }
+      .items-table th:nth-child(15) { width: 60px; }
+      .items-table th:nth-child(16) { width: 40px; }
+      .items-table th:nth-child(17) { width: 50px; }
+      .items-table th:nth-child(18) { width: 60px; }
 
     .items-table tr:nth-child(even) {
       background-color: #f9f9f9;
@@ -244,17 +266,18 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
     .text-center { text-align: center !important; }
 
     .image-cell {
-      width: 60px;
-      height: 40px;
-      padding: 2px;
+      width: 50px !important;
+      height: 35px !important;
+      padding: 2px !important;
+      text-align: center;
     }
 
     .image-cell img {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      border-radius: 2px;
     }
+
 
     .no-image {
       font-size: 5px;
@@ -353,32 +376,52 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           </div>
         </div>
 
-        <!-- Items Table -->
         <table class="items-table">
           <thead>
-            <tr>
-              <th>S.No</th>
-              <th>Ref Code</th>
-              <th>Location</th>
-              <th>WXH</th>
-              <th>Area</th>
-              <th>System</th>
-              <th>Series</th>
-              <th>Description</th>
-              <th>Color Finish</th>
-              <th>Glass Spec</th>
-              <th>Handle Type</th>
-              <th>Handle Color</th>
-              <th>Mesh Present</th>
-              <th>Mesh Type</th>
-              <th>Rate</th>
-              <th>Qty</th>
-              <th>Image</th>
-              <th>Amount</th>
-              <th>Remarks</th>
+            <tr style="background-color:#124657; color:#ffffff;">
+              <th style="width: 15px;" rowspan="2">S.No</th>
+              <th rowspan="2">Ref Code</th>
+              <th rowspan="2">Location</th>
+              <th rowspan="2">Width</th>
+              <th rowspan="2">Height</th>
+              <th rowspan="2">System Type</th>
+              <th rowspan="2">Series</th>
+              <th rowspan="2">Description</th>
+              <th rowspan="2">Color Finish</th>
+              <th rowspan="2">Glass Spec</th>
+              <th colspan="2">Handle</th>
+              <th colspan="2">Mesh</th>
+              <th rowspan="2">Rate</th>
+              <th rowspan="2">Qty</th>
+              <th rowspan="2">Ref Image</th>
+              <th rowspan="2">Remarks</th>
             </tr>
+
+            
           </thead>
+
+
           <tbody>
+            <tr>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th> </th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th> </th>
+              <th>Type</th>
+              <th>Color</th>
+              <th>Present</th>
+              <th>Type</th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+            </tr>
             ${adjustedItems.map((item, index) => `
               <tr>
                 <td>${index + 1}</td>
@@ -401,7 +444,6 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
                   ${item.refImage ? `<img src="${item.refImage}" style="width: 40px" alt="${item.description}" />` : '<div class="no-image">No Image</div>'}
                 </td>
                 <td class="text-right">₹${item.amount.toFixed(2)}</td>
-                <td class="text-left">${item.remarks || '-'}</td>
               </tr>
             `).join('')}
           </tbody>
