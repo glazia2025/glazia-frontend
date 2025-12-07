@@ -1,542 +1,456 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { ShoppingCart, Plus, Minus } from 'lucide-react';
-import { useCartState, ProfileProduct } from '@/contexts/AppContext';
-import { useProfilesData, useHardwareData } from '@/hooks';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, ShoppingCart, X, Plus, Minus, Eye } from 'lucide-react';
+import { useCartState } from '@/contexts/AppContext';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import ImageModal from '@/components/ImageModal';
+import { ProfileApiService } from '@/services/profileApi';
 
-export default function CategoryPage() {
-  const { addToCart, getCartItem, cart, updateCartQuantity } = useCartState();
+// Interfaces for the new API structure
+interface Product {
+  _id: string;
+  uniqueKey: string;
+  sapCode: string;
+  part: string;
+  description: string;
+  degree: string;
+  per: string;
+  kgm: number;
+  length: number;
+  image?: string;
+}
 
-  const pathname = usePathname();
-  const { loadProfileOptions } = useProfilesData();
-  const { loadHardwareOptions } = useHardwareData();
+interface Size {
+  _id: string;
+  categoryId: string;
+  label: string;
+  rate: number;
+  enabled: boolean;
+}
 
-  // Determine if this is profiles or hardware page
-  const isHardwarePage = pathname.includes('/hardware');
-  const pageType = isHardwarePage ? 'hardware' : 'profiles';
+interface SizeData {
+  size: Size;
+  products: Product[];
+}
 
-  // State for API data structure
-  const [apiData, setApiData] = useState<any>(null);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>('');
-  const [activeSubCategory, setActiveSubCategory] = useState<string>('');
+interface Category {
+  _id: string;
+  name: string;
+  description: string;
+}
+
+interface CategoryFullData {
+  category: Category;
+  sizes: SizeData[];
+}
+
+export default function AluminiumProfilesPage() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [categoryData, setCategoryData] = useState<CategoryFullData | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [quantities, setQuantities] = useState<Record<string, any>>({});
+  const [loadingCategoryData, setLoadingCategoryData] = useState(false);
 
-  // State for image modal
-  const [imageModal, setImageModal] = useState({
-    isOpen: false,
-    imageSrc: '',
-    imageAlt: '',
-    productName: ''
-  });
+  const { addToCart } = useCartState();
+  const profileApi = useMemo(() => new ProfileApiService(), []);
 
-  // Get current products from API data
-  const currentProducts = apiData?.[activeCategory]?.products?.[activeSubCategory] || [];
+  // Load categories on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setLoading(true);
+        console.log('Loading categories...');
 
-  // Client-side filtering based on search query
-  const filteredProducts = searchQuery.trim()
-    ? currentProducts.filter((product: ProfileProduct) => {
-        const query = searchQuery.toLowerCase();
-        const sapCode = (product.sapCode || '').toLowerCase();
-        const description = (product.description || '').toLowerCase();
-        const kgm = (product.kgm || '').toString().toLowerCase();
+        // Test direct fetch first
+        try {
+          const directResponse = await fetch('http://localhost:5000/api/profile/categories');
+          console.log('Direct fetch response status:', directResponse.status);
+          const directData = await directResponse.json();
+          console.log('Direct fetch data:', directData);
+        } catch (directError) {
+          console.error('Direct fetch error:', directError);
+        }
 
-        return (
-          sapCode.includes(query) ||
-          description.includes(query) ||
-          kgm.includes(query)
-        );
-      })
-    : currentProducts;
+        const response = await profileApi.getProfileCategories();
+        console.log('Categories response:', response);
 
-  // Products to display
-  const productsToDisplay = filteredProducts;
-
-  // Debug logging for products display
-  console.log('🎯 Current state:', {
-    activeCategory,
-    activeSubCategory,
-    searchQuery,
-    categories,
-    apiData,
-    productsToDisplay: productsToDisplay,
-    productsLength: productsToDisplay?.length
-  });
-
-  // Fetch API data and extract categories dynamically
-  const fetchProfileData = async () => {
-    console.log('🔄 Starting to fetch API data...');
-    setLoading(true);
-    try {
-      console.log(`📡 Calling ${isHardwarePage ? 'loadHardwareOptions' : 'loadProfileOptions'}...`);
-      const response = isHardwarePage
-        ? await loadHardwareOptions()
-        : await loadProfileOptions();
-      console.log('✅ API response received:', response);
-      console.log('🔍 API response structure:', JSON.stringify(response, null, 2));
-
-      // Store the raw API data
-      setApiData(response);
-
-      // Extract categories from response.categories
-      let extractedCategories: string[] = [];
-      const responseData = response as any;
-
-      if (responseData && responseData.categories && typeof responseData.categories === 'object') {
-        extractedCategories = Object.keys(responseData.categories);
-        setApiData(responseData.categories);
-        console.log('📊 Found categories:', extractedCategories);
-      } else {
-        console.log('⚠️ No categories found in response structure');
+        if (response.success && response.data && Array.isArray(response.data)) {
+          const categoriesData = response.data.map(cat => ({
+            _id: cat._id,
+            name: cat.name,
+            description: cat.description || ''
+          }));
+          setCategories(categoriesData);
+          console.log('Categories loaded:', categoriesData);
+          // Auto-select first category
+          if (categoriesData.length > 0) {
+            setSelectedCategory(categoriesData[0]);
+          }
+        } else {
+          console.error('Invalid response format:', response);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        if (error instanceof Error) {
+          console.error('Error details:', error.message, error.stack);
+        }
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setCategories(extractedCategories);
-      console.log('🏗️ Extracted categories:', extractedCategories);
+    loadCategories();
+  }, [profileApi]);
 
-      // Set first category and subcategory as active
-      if (extractedCategories.length > 0) {
-        const firstCategory = extractedCategories[0];
-        setActiveCategory(firstCategory);
+  // Load category data when a category is selected
+  useEffect(() => {
+    const loadCategoryData = async () => {
+      if (!selectedCategory) return;
 
-        // Try to find options in the first category
-        const categoryData = responseData.categories?.[firstCategory];
-        if (categoryData && categoryData.options && Array.isArray(categoryData.options)) {
-          const options = categoryData.options;
-          if (options.length > 0) {
-            setActiveSubCategory(options[0]);
-            console.log('🎯 Set active category:', firstCategory, 'option:', options[0]);
+      try {
+        setLoadingCategoryData(true);
+        console.log('Loading category data for:', selectedCategory._id);
+        const response = await profileApi.getCategoryFullData(selectedCategory._id);
+        console.log('Category data response:', response);
+
+        if (response.success && response.data) {
+          setCategoryData(response.data);
+          console.log('Category data loaded:', response.data);
+          // Auto-select first size
+          if (response.data.sizes && response.data.sizes.length > 0) {
+            setSelectedSize(response.data.sizes[0].size.label);
           }
         }
+      } catch (error) {
+        console.error('Error loading category data:', error);
+      } finally {
+        setLoadingCategoryData(false);
       }
-    } catch (error) {
-      console.error('❌ Failed to fetch API data:', error);
-    } finally {
-      setLoading(false);
-      console.log('🏁 Finished fetching API data');
-    }
+    };
+
+    loadCategoryData();
+  }, [selectedCategory, profileApi]);
+
+  // Get current products based on selected size
+  const getCurrentProducts = (): Product[] => {
+    if (!categoryData || !selectedSize) return [];
+
+    const sizeData = categoryData.sizes.find(s => s.size.label === selectedSize && s.size.enabled);
+    return sizeData ? sizeData.products : [];
   };
 
-  useEffect(() => {
-    fetchProfileData();
-  }, []);
+  // Filter products based on search query
+  const getFilteredProducts = (): Product[] => {
+    const products = getCurrentProducts();
 
-  // Handle search clear
+    if (!searchQuery.trim()) return products;
+
+    const query = searchQuery.toLowerCase();
+    return products.filter(product =>
+      product.sapCode.toLowerCase().includes(query) ||
+      product.description.toLowerCase().includes(query) ||
+      product.part.toLowerCase().includes(query)
+    );
+  };
+
+  // Helper functions
+  const handleImageClick = (imageSrc: string, description: string) => {
+    setSelectedImage(imageSrc);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedImage(null);
+  };
+
+  const handleQuantityChange = (productId: string, quantity: number) => {
+    setQuantities(prev => ({
+      ...prev,
+      [productId]: quantity
+    }));
+  };
+
+  const handleAddToCart = (product: Product) => {
+    const quantity = quantities[product._id] || 1;
+    const rate = categoryData?.sizes.find(s => s.size.label === selectedSize)?.size.rate || 0;
+
+    const cartItem = {
+      id: `${product.sapCode}-${selectedCategory?.name}-${selectedSize}`,
+      name: product.description,
+      brand: 'Glazia',
+      price: rate.toString(),
+      originalPrice: rate,
+      image: product.image || '/api/placeholder/300/300',
+      inStock: true,
+      category: `${selectedCategory?.name} - ${selectedSize}`,
+      subCategory: selectedCategory?.name || '',
+      kgm: product.kgm,
+      length: product.length.toString(),
+      per: product.per,
+    };
+
+    for (let i = 0; i < quantity; i++) {
+      addToCart(cartItem);
+    }
+
+    // Reset quantity after adding to cart
+    setQuantities(prev => ({
+      ...prev,
+      [product._id]: 0
+    }));
+  };
+
   const handleClearSearch = () => {
     setSearchQuery('');
   };
 
-  // Get cart quantity for a product
-  const getCartQuantityForProduct = (product: ProfileProduct): number => {
-    const cartItemId = `${product.sapCode}-${activeCategory}-${activeSubCategory}`;
-    const cartItem = getCartItem(cartItemId);
-    return cartItem ? cartItem.quantity : 0;
-  };
+  const productsToDisplay = getFilteredProducts();
 
-  // Handle quantity change (similar to your handleQuantityChange)
-  const handleQuantityChange = (category: string, subCategory: string, id: number, value: string) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [`${category}-${subCategory}-${id}`]: {
-        category,
-        subCategory,
-        id,
-        quantity: parseInt(value, 10) || 0,
-      },
-    }));
-  };
-
-  // Handle product selection (similar to your onConfirmRow)
-  const handleProductSelect = (product: ProfileProduct) => {
-    const key = `${activeCategory}-${activeSubCategory}-${product.id}`;
-    const localQuantity = quantities[key]?.quantity || 0;
-    const cartQuantity = getCartQuantityForProduct(product);
-
-    if (localQuantity !== 0) {
-      if (localQuantity > 0) {
-        // Adding items to cart
-        const cartItem = {
-          id: `${product.sapCode}-${activeCategory}-${activeSubCategory}`,
-          name: product.description,
-          brand: 'Glazia',
-          price: apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0,
-          originalPrice: apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0,
-          image: product.image || '/api/placeholder/300/300',
-          inStock: product.isEnabled,
-          category: `${activeCategory} - ${activeSubCategory}`,
-          subCategory: activeCategory, // Pass the main profile category (e.g., "Casement", "Sliding")
-          kgm: product.kgm,
-          length: product.length,
-          per: product.per,
-        };
-
-        // Add to cart with the specified quantity
-        for (let i = 0; i < localQuantity; i++) {
-          addToCart(cartItem);
-        }
-      } else {
-        // Removing items from cart (localQuantity is negative)
-        const removeQuantity = Math.abs(localQuantity);
-        const newCartQuantity = Math.max(0, cartQuantity - removeQuantity);
-        updateCartQuantity(`${product.sapCode}-${activeCategory}-${activeSubCategory}`, newCartQuantity);
-      }
-
-      // Reset local quantity after updating cart
-      setQuantities((prev) => ({
-        ...prev,
-        [key]: { ...prev[key], quantity: 0 }
-      }));
-    } else {
-      alert("Please adjust the quantity before updating cart.");
-    }
-  };
-
-  // Handle quantity increment/decrement
-  const handleQuantityIncrement = (product: ProfileProduct) => {
-    const current = quantities[`${activeCategory}-${activeSubCategory}-${product.id}`]?.quantity || 0;
-    handleQuantityChange(activeCategory, activeSubCategory, product.id, (current + 1).toString());
-  };
-
-  const handleQuantityDecrement = (product: ProfileProduct) => {
-    const current = quantities[`${activeCategory}-${activeSubCategory}-${product.id}`]?.quantity || 0;
-    const cartQuantity = getCartQuantityForProduct(product);
-
-    // Allow going negative to represent removing from cart
-    // But don't go below negative cart quantity (can't remove more than what's in cart)
-    if (current > -cartQuantity) {
-      handleQuantityChange(activeCategory, activeSubCategory, product.id, (current - 1).toString());
-    }
-  };
-
-  // Clear all quantities (used in JSX)
-  const handleClear = () => {
-    setQuantities({});
-  };
-
-  // Handle image click to open modal
-  const handleImageClick = (imageSrc: string, productName: string) => {
-    setImageModal({
-      isOpen: true,
-      imageSrc,
-      imageAlt: productName,
-      productName
-    });
-  };
-
-  // Close image modal
-  const closeImageModal = () => {
-    setImageModal({
-      isOpen: false,
-      imageSrc: '',
-      imageAlt: '',
-      productName: ''
-    });
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-[120px]" style={{ backgroundColor: '#D2D7DA' }}>
+        <Header />
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-8">
+            <div className="text-lg">Loading categories...</div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div className="min-h-screen pt-[120px]" style={{ backgroundColor: '#D2D7DA' }}>
       <Header />
-      <div className="min-h-screen pt-[120px]" style={{ backgroundColor: '#D2D7DA' }}>
-        <Navigation />
-        {/* Breadcrumb */}
-        <div className="bg-white border-b">
-          <div className="container mx-auto px-4 py-4">
-            <nav className="text-sm text-gray-600">
-              <Link
-                href="/"
-                className="transition-colors hover-primary"
-              >
-                Home
-              </Link>
-              <span className="mx-2">/</span>
-              <Link
-                href="/categories"
-                className="transition-colors hover-primary"
-              >
-                Categories
-              </Link>
-              <span className="mx-2">/</span>
-              <span className="text-gray-900">{isHardwarePage ? 'Hardware' : 'Aluminium Profiles'}</span>
-            </nav>
-          </div>
-        </div>
+      <Navigation />
 
-        {/* Header */}
-        <div className="bg-white border-b">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  {isHardwarePage ? 'Hardware' : 'Aluminium Profiles'}
-                </h1>
-                <p className="text-gray-600">
-                  {isHardwarePage
-                    ? 'Complete hardware solutions for windows and doors'
-                    : 'High Quality Aluminium profile systems'
-                  }
-                </p>
-              </div>
-
-
-            </div>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 py-8">
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="text-lg">Loading profile data...</div>
-            </div>
-          ) : (
-            <>
-              {/* Dynamic Categories */}
-              {categories.length > 0 && (
-                <div className="mb-6">
-                  <div className='bg-white rounded-lg shadow-sm border p-6'>
-                    <h2 className="text-xl font-semibold mb-4">Aluminium Profiles Categories</h2>
-                  {/* Categories */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {categories.map((category) => (
-                      category === 'Railings' ? null :
-                      <button
-                        key={category}
-                        className={`px-4 py-2 rounded-lg border transition-colors ${
-                          activeCategory === category
-                            ? 'text-white'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                        }`}
-                        style={activeCategory === category ? {
-                          backgroundColor: '#124657',
-                          borderColor: '#124657'
-                        } : {}}
-                        onClick={() => {
-                          setActiveCategory(category);
-                          // Set first option as active when category changes
-                          const categoryData = apiData?.[category];
-                          if (categoryData && categoryData.options && Array.isArray(categoryData.options)) {
-                            const options = categoryData.options;
-                            if (options.length > 0) {
-                              setActiveSubCategory(options[0]);
-                            }
-                          }
-                        }}
-                      >
-                        {category}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Options */}
-                  {activeCategory && apiData?.[activeCategory]?.options && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {apiData[activeCategory].options.map((option: string) => (
-                        <button
-                          key={option}
-                          className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
-                            activeSubCategory === option
-                              ? 'text-white'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                          }`}
-                          style={activeSubCategory === option ? {
-                            backgroundColor: '#124657',
-                            borderColor: '#124657'
-                          } : {}}
-                          onClick={() => setActiveSubCategory(option)}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  </div>
-                </div>
-              )}
-
-              <div className='bg-white rounded-lg shadow-sm border p-6'>
-
-
-                  {/* Search Bar */}
-                  <div className="mb-6">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Search by SAP Code, Description, KGM..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1 px-4 py-2 border border-gray-700 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      {searchQuery && (
-                        <button
-                          onClick={handleClearSearch}
-                          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-                        >
-                          CLEAR
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <p className="text-gray-600">
-                      Showing {productsToDisplay?.length || 0} {isHardwarePage ? 'hardware' : 'profile'} products
-                      {activeCategory && activeSubCategory && ` for ${activeCategory} - ${activeSubCategory}`}
-                      {searchQuery && ` - Filtered from ${currentProducts.length} total`}
-                    </p>
-                  </div>
-
-                  {productsToDisplay?.length === 0 && searchQuery ? (
-                    <div className="text-center py-8">
-                      <div className="text-gray-600">
-                        No products found matching "{searchQuery}"
-                      </div>
-                      <button
-                        onClick={handleClearSearch}
-                        className="mt-4 px-4 py-2 text-white rounded-lg transition-colors hover-primary-bg-dark"
-                        style={{ backgroundColor: '#124657' }}
-                      >
-                        Clear Search
-                      </button>
-                    </div>
-                  ) : null}
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {productsToDisplay?.map((product: ProfileProduct) => {
-                      const key = `${activeCategory}-${activeSubCategory}-${product.id}`;
-                      const localQuantity = quantities[key]?.quantity || 0;
-                      const cartQuantity = getCartQuantityForProduct(product);
-                      const quantity = cartQuantity + localQuantity; // Cart quantity + local adjustments
-                      const rate = apiData?.[activeCategory]?.rate?.[activeSubCategory] || 0;
-
-                      return (
-                        <div key={product.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                          {/* Technical Drawing Section */}
-                          <div className="bg-gray-50 p-4 border-b">
-                            <div className="text-center mb-2">
-                            </div>
-                            <div className="flex justify-center">
-                              {product.image ? (
-                                <img
-                                  src={product.image}
-                                  alt={product.description}
-                                  className="h-24 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity"
-                                  onClick={() => handleImageClick(product.image || '', product.description)}
-                                  title="Click to view larger image"
-                                />
-                              ) : (
-                                <div className="h-24 w-32 bg-white border border-gray-300 rounded flex items-center justify-center">
-                                  <div className="text-xs text-gray-400 text-center">Technical Drawing</div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Specifications Table */}
-                          <div className="p-3">
-                            <div className="grid grid-cols-2 gap-1 text-xs mb-3">
-                              <div className="bg-gray-100 p-1 text-center font-medium">Kg/m</div>
-                              <div className="bg-gray-100 p-1 text-center font-medium">Length(mm)</div>
-                              <div className="bg-white p-1 text-center border">{product.kgm || '40.0'}</div>
-                              <div className="bg-white p-1 text-center border">{product.length || '1.673'}</div>
-                            </div>
-
-                            <div className="mb-3">
-                              <h3 className="font-medium text-gray-900 text-sm mb-1">{product.description}</h3>
-                              <p className="text-xs text-gray-600">SAP Code: {product.sapCode}</p>
-                              {cartQuantity > 0 && (
-                                <p className="text-xs font-medium" style={{ color: '#124657' }}>
-                                  ✓ {cartQuantity} in cart
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="mb-3">
-                              <div className="text-center">
-                                <div className="text-lg font-bold text-gray-900">Rate: ₹{rate}/Kg</div>
-                              </div>
-                            </div>
-
-                            <div className="space-y-3">
-                              {/* Quantity Controls */}
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                  <button
-                                    onClick={() => handleQuantityDecrement(product)}
-                                    className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
-                                  >
-                                    <Minus className="w-4 h-4" />
-                                  </button>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={quantity || ""}
-                                    onChange={(e) => handleQuantityChange(activeCategory, activeSubCategory, product.id, e.target.value)}
-                                    className="w-16 text-center border border-gray-300 rounded px-2 py-1"
-                                  />
-                                  <button
-                                    onClick={() => handleQuantityIncrement(product)}
-                                    className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
-                                  >
-                                    <Plus className="w-4 h-4" />
-                                  </button>
-                                </div>
-
-                                {quantity > 0 && (
-                                  <span className="text-sm text-gray-600">
-                                    Total: ₹{(quantity * rate).toLocaleString()}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Add to Cart Button */}
-                              <button
-                                onClick={() => handleProductSelect(product)}
-                                disabled={!product.isEnabled || localQuantity === 0}
-                                className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-colors ${
-                                  product.isEnabled && localQuantity !== 0
-                                    ? 'text-white hover-primary-bg-dark'
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                }`}
-                                style={product.isEnabled && localQuantity !== 0 ? { backgroundColor: '#124657' } : {}}
-                              >
-                                <ShoppingCart className="w-4 h-4" />
-                                <span className="font-medium">
-                                  {localQuantity === 0
-                                    ? 'Adjust Quantity'
-                                    : localQuantity > 0
-                                    ? 'Add to Cart'
-                                    : 'Remove from Cart'
-                                  }
-                                </span>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-              </div>
-            </>
-          )}
+      {/* Breadcrumb */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-4">
+          <nav className="text-sm text-gray-600">
+            <a className="transition-colors hover-primary" href="/">Home</a>
+            <span className="mx-2">/</span>
+            <a className="transition-colors hover-primary" href="/categories">Categories</a>
+            <span className="mx-2">/</span>
+            <span className="text-gray-900">Aluminium Profiles</span>
+          </nav>
         </div>
       </div>
+
+      {/* Page Header */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Aluminium Profiles</h1>
+              <p className="text-gray-600">High Quality Aluminium profile systems</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Category Selection */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Select Category</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {categories.map((category) => category.name === 'Railings' ? null : (
+              <button
+                key={category._id}
+                onClick={() => setSelectedCategory(category)}
+                className={`p-4 rounded-lg border-2 transition-colors ${
+                  selectedCategory?._id === category._id
+                    ? 'border-[#124657] bg-[#124657] text-white'
+                    : 'border-gray-200 hover:border-[#124657] hover:bg-gray-50'
+                }`}
+              >
+                <div className="font-medium">{category.name}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Size Selection */}
+        {selectedCategory && categoryData && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4">Select Size</h2>
+            {loadingCategoryData ? (
+              <div className="text-center py-4">Loading sizes...</div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {categoryData.sizes.map((sizeData) => sizeData.size.enabled && (
+                  <button
+                    key={sizeData.size._id}
+                    onClick={() => setSelectedSize(sizeData.size.label)}
+                    className={`p-3 rounded-lg border-2 transition-colors ${
+                      selectedSize === sizeData.size.label
+                        ? 'border-[#124657] bg-[#124657] text-white'
+                        : 'border-gray-200 hover:border-[#124657] hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="font-medium">{sizeData.size.label}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Search */}
+        {selectedSize && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="flex items-center space-x-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                />
+              </div>
+              {searchQuery && (
+                <button
+                  onClick={handleClearSearch}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Products */}
+        {selectedSize && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold mb-4">
+              Products - {selectedCategory?.name} ({selectedSize})
+            </h2>
+
+            {productsToDisplay.length === 0 && searchQuery ? (
+              <div className="text-center py-8">
+                <div className="text-gray-600">
+                  No products found matching {searchQuery}
+                </div>
+                <button
+                  onClick={handleClearSearch}
+                  className="mt-2 text-[#124657] hover:underline"
+                >
+                  Clear search
+                </button>
+              </div>
+            ) : productsToDisplay.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-600">No products available for this size</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {productsToDisplay.map((product) => (
+                  <div key={product._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+
+                    <div className="bg-gray-50 p-4 border-b">
+                      <div className="text-center mb-2">
+                      </div>
+                      <div className="flex justify-center">
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.description}
+                            className="h-24 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => handleImageClick(product.image || '', product.description)}
+                            title="Click to view larger image"
+                          />
+                        ) : (
+                          <div className="h-24 w-32 bg-white border border-gray-300 rounded flex items-center justify-center">
+                            <div className="text-xs text-gray-400 text-center">Technical Drawing</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className='p-3'>
+                      <div className="grid grid-cols-2 gap-1 text-xs mb-3">
+                        <div className="bg-gray-100 p-1 text-center font-medium">Kg/m</div>
+                        <div className="bg-gray-100 p-1 text-center font-medium">Length(mm)</div>
+                        <div className="bg-white p-1 text-center border">{product.kgm || '40.0'}</div>
+                        <div className="bg-white p-1 text-center border">{product.length || '1.673'}</div>
+                      </div>
+
+                      <div className=" mb-3">
+                        <h3 className="font-medium text-gray-900 text-sm mb-1">{product.description}</h3>
+                        <p className="text-xs text-gray-600">SAP Code: {product.sapCode}</p>
+                      </div>
+
+                      <div className="">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleQuantityChange(product._id, Math.max(0, (quantities[product._id] || 0) - 1))}
+                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="w-8 text-center">{quantities[product._id] || 0}</span>
+                          <button
+                            onClick={() => handleQuantityChange(product._id, (quantities[product._id] || 0) + 1)}
+                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          disabled={!quantities[product._id] || quantities[product._id] === 0}
+                          className="px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-[#0f3a4a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                        >
+                          <ShoppingCart className="w-4 h-4" />
+                          <span>Add to Cart</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    </div>
+                    
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <Footer />
 
       {/* Image Modal */}
-      <ImageModal
-        isOpen={imageModal.isOpen}
-        onClose={closeImageModal}
-        imageSrc={imageModal.imageSrc}
-        imageAlt={imageModal.imageAlt}
-        productName={imageModal.productName}
-      />
-    </>
+      {selectedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleCloseModal}>
+          <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Product Image</h3>
+              <button
+                onClick={handleCloseModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <img
+              src={selectedImage}
+              alt="Product"
+              className="max-w-full h-auto"
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

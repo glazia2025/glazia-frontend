@@ -181,14 +181,66 @@ export const useProfileApi = () => {
  * Combined hook for easy access to all profile operations
  */
 export const useProfilesData = () => {
-  // Direct API calls using the imported profileApi instance
+  // New method to load profile data using the new API structure
   const loadProfileOptions = useCallback(async () => {
     try {
-      console.log('🚀 Making API call to get profile options...');
+      console.log('🚀 Making API call to get profile categories...');
       console.log('🔑 Auth token:', localStorage.getItem('authToken') ? 'Present' : 'Missing');
-      const response = await profileApi.getProfileOptions();
-      console.log('📦 API response:', response);
-      return response;
+
+      // Step 1: Get categories list
+      const categoriesResponse = await profileApi.getProfileCategories();
+      console.log('📦 Categories response:', categoriesResponse);
+      console.log('📦 Categories response type:', typeof categoriesResponse);
+      console.log('📦 Categories response data:', categoriesResponse?.data);
+
+      if (!categoriesResponse || !categoriesResponse.data || !Array.isArray(categoriesResponse.data)) {
+        console.error('❌ Invalid categories response format:', categoriesResponse);
+        throw new Error('Invalid categories response format');
+      }
+
+      const categories = categoriesResponse.data;
+      console.log('📋 Found categories:', categories);
+
+      // Step 2: Get full data for each category
+      const categoriesData: Record<string, any> = {};
+
+      for (const category of categories) {
+        try {
+          console.log(`🔄 Loading full data for category: ${category.name} (ID: ${category._id})`);
+          const fullDataResponse = await profileApi.getCategoryFullData(category._id);
+          console.log(`📦 Full data for ${category.name}:`, fullDataResponse);
+          console.log(`📊 Full data response type:`, typeof fullDataResponse);
+          console.log(`📊 Full data response.data:`, fullDataResponse?.data);
+
+          if (fullDataResponse && fullDataResponse.data && fullDataResponse.data.sizes) {
+            const responseData = fullDataResponse.data;
+            // Transform the new API structure to match UI expectations
+            const transformedData: any = {
+              options: responseData.sizes.map((sizeData: any) => sizeData.size.label),
+              products: {} as Record<string, any[]>
+            };
+
+            // Group products by size label
+            responseData.sizes.forEach((sizeData: any) => {
+              const sizeLabel = sizeData.size.label;
+              transformedData.products[sizeLabel] = sizeData.products || [];
+            });
+
+            categoriesData[category.name] = transformedData;
+            console.log(`✅ Transformed data for ${category.name}:`, transformedData);
+          }
+        } catch (categoryError) {
+          console.error(`❌ Error loading data for category ${category.name}:`, categoryError);
+          // Continue with other categories even if one fails
+        }
+      }
+
+      console.log('🏗️ Final categories data structure:', categoriesData);
+
+      return {
+        categories: categoriesData
+      };
+
     } catch (error) {
       console.error('💥 Error loading profile options:', error);
       const errorObj = error as { message?: string; status?: number; response?: unknown };

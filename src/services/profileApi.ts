@@ -23,10 +23,52 @@ export class ProfileApiService {
   }
 
   /**
-   * Get all available profile categories
+   * Get all available profile categories (new API)
    */
-  async getProfileCategories(): Promise<ApiResponse<string[]>> {
-    return apiClient.get<string[]>(API_ENDPOINTS.PROFILES.CATEGORIES);
+  async getProfileCategories(): Promise<ApiResponse<Array<{ _id: string; name: string; [key: string]: any }>>> {
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}${API_ENDPOINTS.PROFILES.CATEGORIES}`;
+      const response = await fetch(url);
+      const rawData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Wrap raw response in ApiResponse format
+      return {
+        success: true,
+        data: rawData
+      };
+    } catch (error) {
+      console.error('Error fetching profile categories:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get full category data by ID (new API)
+   */
+  async getCategoryFullData(categoryId: string): Promise<ApiResponse<any>> {
+    try {
+      const endpoint = API_ENDPOINTS.PROFILES.CATEGORY_FULL.replace(':id', categoryId);
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}${endpoint}`;
+      const response = await fetch(url);
+      const rawData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Wrap raw response in ApiResponse format
+      return {
+        success: true,
+        data: rawData
+      };
+    } catch (error) {
+      console.error('Error fetching category full data:', error);
+      throw error;
+    }
   }
 
   /**

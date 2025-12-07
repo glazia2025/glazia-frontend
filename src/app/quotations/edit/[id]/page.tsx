@@ -103,12 +103,6 @@ const baseRateTable = {
   }
 };
 
-const AREA_SLABS = [
-  { max: 20,   index: 0 },
-  { max: 40,   index: 1 },
-  { max: Infinity, index: 2 }
-];
-
 const handleCountTable: Record<string, Record<string, Record<string, number>>> = {
   Casement: {
     "40mm": {
@@ -613,7 +607,9 @@ export default function EditQuotationPage() {
       ...quotationDetails,
       customerDetails,
       items,
-      total: calculateTotal(), // Use base total for PDF (without profit)
+      total: calculateTotalWithProfit(), // Use total with profit for PDF
+      baseTotal: calculateTotal(), // Include base total
+      profitPercentage, // Include profit percentage
       createdAt: new Date().toISOString(),
     };
 

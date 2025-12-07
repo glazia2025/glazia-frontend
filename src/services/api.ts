@@ -1,13 +1,14 @@
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.glazia.in';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || 'v1';
 
 // API Endpoints
 export const API_ENDPOINTS = {
   // Profile endpoints (Aluminium Profiles)
   PROFILES: {
-    OPTIONS: '/api/user/getProducts',
-    CATEGORIES: '/api/profiles/categories',
+    OPTIONS: '/api/user/getProducts', // Keep for backward compatibility
+    CATEGORIES: '/api/profile/categories', // New endpoint for categories list
+    CATEGORY_FULL: '/api/profile/category/:id/full', // New endpoint for full category data
     CATEGORY_PRODUCTS: '/api/user/getProducts',
     CATEGORY_RATES: '/profiles/categories/:category/rates',
     PRODUCT_DETAIL: '/profiles/products/:id',
