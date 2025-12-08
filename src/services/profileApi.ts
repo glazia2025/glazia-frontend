@@ -27,7 +27,7 @@ export class ProfileApiService {
    */
   async getProfileCategories(): Promise<ApiResponse<Array<{ _id: string; name: string; [key: string]: any }>>> {
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}${API_ENDPOINTS.PROFILES.CATEGORIES}`;
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.glazia.in'}${API_ENDPOINTS.PROFILES.CATEGORIES}`;
       const response = await fetch(url);
       const rawData = await response.json();
 
@@ -52,7 +52,7 @@ export class ProfileApiService {
   async getCategoryFullData(categoryId: string): Promise<ApiResponse<any>> {
     try {
       const endpoint = API_ENDPOINTS.PROFILES.CATEGORY_FULL.replace(':id', categoryId);
-      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}${endpoint}`;
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.glazia.in'}${endpoint}`;
       const response = await fetch(url);
       const rawData = await response.json();
 

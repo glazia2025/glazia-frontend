@@ -190,6 +190,7 @@ export const useAuthApi = () => {
       {
         onSuccess: (response) => {
           if (response.success && response.user) {
+            console.log("This was called heheheheheheeee");
             setUser(response.user);
           }
         }

@@ -57,7 +57,7 @@ export const API_ENDPOINTS = {
   
   // User endpoints
   USER: {
-    PROFILE: '/user/profile',
+    PROFILE: '/api/user/getUser',
     ORDERS: '/api/user/getOrders',
     ADDRESSES: '/user/addresses',
   },

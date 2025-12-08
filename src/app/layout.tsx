@@ -5,6 +5,7 @@ import { AppProvider } from "@/contexts/AppContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import CartSidebar from "@/components/CartSidebar";
 import DataInitializer from "@/components/DataInitializer";
+import UserDataRefresher from "@/components/UserDataRefresher";
 import AnalyticsWrapper from "@/components/AnalyticsWrapper";
 
 const geistSans = Geist({
@@ -53,6 +54,7 @@ export default function RootLayout({
         <AppProvider>
           <AdminProvider>
             <DataInitializer />
+            <UserDataRefresher />
             <AnalyticsWrapper>
                 {children}
             </AnalyticsWrapper>

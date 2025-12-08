@@ -69,7 +69,7 @@ export default function AluminiumProfilesPage() {
 
         // Test direct fetch first
         try {
-          const directResponse = await fetch('http://localhost:5000/api/profile/categories');
+          const directResponse = await fetch('https://api.glazia.in/api/profile/categories');
           console.log('Direct fetch response status:', directResponse.status);
           const directData = await directResponse.json();
           console.log('Direct fetch data:', directData);
@@ -280,9 +280,9 @@ export default function AluminiumProfilesPage() {
         {/* Size Selection */}
         {selectedCategory && categoryData && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Select Size</h2>
+            <h2 className="text-xl font-semibold mb-4">Select Sub Category</h2>
             {loadingCategoryData ? (
-              <div className="text-center py-4">Loading sizes...</div>
+              <div className="text-center py-4">Loading sub category...</div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {categoryData.sizes.map((sizeData) => sizeData.size.enabled && (

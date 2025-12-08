@@ -208,12 +208,11 @@ const CartSidebar: React.FC = () => {
 
       if (item.category?.toLowerCase().includes('hardware')) {
         // Hardware: adjusted rate × quantity
-        finalAmount = item.quantity * adjustedRate;
+        finalAmount = item.quantity * (item.price + adjustedRate);
       } else {
         // Profiles: use the same calculation as cart total
         const basePrice = (nalcoPrice / 1000) + 75;
-        const dynamicAdjustment = adjustedRate - parseFloat(item.price);
-        const adjustedPrice = basePrice + dynamicAdjustment;
+        const adjustedPrice = basePrice + adjustedRate;
         finalAmount = adjustedPrice * item.quantity * (parseFloat(item.length) / 1000) * item.kgm;
       }
 
@@ -223,7 +222,7 @@ const CartSidebar: React.FC = () => {
         powderCoating: {},
         sapCode: item.id || `SAP${String(index + 1).padStart(3, '0')}`,
         quantity: item.quantity,
-        rate: adjustedRate,
+        rate: item.category?.toLowerCase().includes('hardware') ? item.price + adjustedRate : (nalcoPrice / 1000) + 75 + adjustedRate,
         per: 'Piece',
         amount: finalAmount
       };
@@ -655,10 +654,11 @@ const CartSidebar: React.FC = () => {
                       <p className="text-xs text-gray-500">{item.brand}</p>
                       <div className="flex items-center space-x-2 mt-1">
                         <span className="text-sm font-semibold text-gray-900">
-                          ₹{getAdjustedItemPrice(item).toFixed(2)}
-                          {getAdjustedItemPrice(item) !== parseFloat(item.price) && (
-                            <span className="text-xs text-gray-500 line-through ml-1">₹{item.price}</span>
-                          )}
+                          {
+                            item.category?.toLowerCase().includes("hardware") ? (
+                              `₹${(parseFloat(item.price) + getAdjustedItemPrice(item)).toFixed(2)}`
+                            ) : (`₹${((nalcoPrice / 1000) + 75 + getAdjustedItemPrice(item)).toFixed(2)}`)
+                          }
                         </span>
                       </div>
                       
@@ -692,12 +692,12 @@ const CartSidebar: React.FC = () => {
                         ₹{(() => {
                           if (item.category?.toLowerCase().includes('hardware')) {
                             // Hardware: (base price + dynamic adjustment) × quantity
-                            const adjustedPrice = getAdjustedItemPrice(item);
+                            const adjustedPrice = parseFloat(item.price) + getAdjustedItemPrice(item);
                             return (adjustedPrice * item.quantity).toLocaleString();
                           } else {
                             // Profiles: ((nalcoPrice/1000 + 75) + dynamic adjustment) × quantity × (length/1000) × kgm
                             const basePrice = (nalcoPrice / 1000) + 75;
-                            const dynamicAdjustment = getAdjustedItemPrice(item) - parseFloat(item.price);
+                            const dynamicAdjustment = getAdjustedItemPrice(item);
                             const adjustedPrice = basePrice + dynamicAdjustment;
                             const total = adjustedPrice * item.quantity * (parseFloat(item.length) / 1000) * item.kgm;
                             return total.toLocaleString();

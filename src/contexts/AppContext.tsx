@@ -231,7 +231,7 @@ const getDynamicPricingAdjustment = (item: CartItem): number => {
 
     if (!userData) {
       console.log('❌ No user data in localStorage, returning 0');
-      return 120;
+      return 30;
     }
 
     const user = JSON.parse(userData);
@@ -240,11 +240,11 @@ const getDynamicPricingAdjustment = (item: CartItem): number => {
 
     if (!dynamicPricing) {
       console.log('❌ No dynamic pricing in user data, returning 0');
-      return 120;
+      return 30;
     }
 
     // Default adjustment value when specific pricing is not found
-    const DEFAULT_ADJUSTMENT = 120;
+    const DEFAULT_ADJUSTMENT = 30;
 
     // Check if it's a hardware item
     if (item.category?.toLowerCase().includes("hardware")) {
@@ -299,7 +299,7 @@ const calculateCartTotal = (items: CartItem[]): number => {
       // Hardware category → (price + dynamic adjustment) × quantity
       const basePrice = parseFloat(item.price) || 0; // Handle string prices properly
       const adjustedPrice = basePrice + dynamicAdjustment;
-      total = total + adjustedPrice * item.quantity;
+      total = total + (adjustedPrice * item.quantity);
 
       if (dynamicAdjustment > 0) {
         console.log(`💰 Hardware item "${item.name}": Base price ${basePrice} + Dynamic ${dynamicAdjustment} = ${adjustedPrice} × ${item.quantity}`);
@@ -335,20 +335,7 @@ const getAdjustedItemPrice = (item: CartItem): number => {
   const dynamicAdjustment = getDynamicPricingAdjustment(item);
   console.log('💲 Dynamic adjustment received:', dynamicAdjustment);
 
-  if (item.category?.toLowerCase().includes("hardware")) {
-    // Hardware category → base price + dynamic adjustment
-    const basePrice = parseFloat(item.price) || 0;
-    const adjustedPrice = basePrice + dynamicAdjustment;
-    console.log('💲 Hardware adjusted price:', basePrice, '+', dynamicAdjustment, '=', adjustedPrice);
-    return adjustedPrice;
-  } else {
-    // Profile items → base price + dynamic adjustment (but this is more complex for profiles)
-    // For display purposes, we'll show the base price + adjustment
-    const basePrice = parseFloat(item.price) || 0;
-    const adjustedPrice = basePrice + dynamicAdjustment;
-    console.log('💲 Profile adjusted price:', basePrice, '+', dynamicAdjustment, '=', adjustedPrice);
-    return adjustedPrice;
-  }
+  return dynamicAdjustment;
 };
 
 // ============================================================================
