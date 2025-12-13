@@ -69,7 +69,7 @@ export default function AluminiumProfilesPage() {
 
         // Test direct fetch first
         try {
-          const directResponse = await fetch('https://api.glazia.in/api/profile/categories');
+          const directResponse = await fetch('https://api.glazia.inapi/profile/categories');
           console.log('Direct fetch response status:', directResponse.status);
           const directData = await directResponse.json();
           console.log('Direct fetch data:', directData);

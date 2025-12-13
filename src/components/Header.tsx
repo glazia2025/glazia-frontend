@@ -8,10 +8,12 @@ import { ShoppingCart, User, Phone, LogOut, ChevronDown, LayoutDashboard, Dock }
 import { useCartState, useAuth } from "@/contexts/AppContext";
 import NalcoPriceDisplay from "./NalcoPriceDisplay";
 import NalcoGraphModal from "./NalcoGraphModal";
+import LoginModal from "./LoginModal";
 
 export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNalcoModalOpen, setIsNalcoModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { cart, toggleCart } = useCartState();
   const { isAuthenticated, clearUser } = useAuth();
   const router = useRouter();
@@ -113,11 +115,13 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="hidden md:flex items-center space-x-1 text-gray-700 hover:text-[#124657}">
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="hidden md:flex items-center space-x-1 text-gray-700 hover:text-[#124657] cursor-pointer"
+                >
                   <User className="w-5 h-5" />
                   <span>Login</span>
-                </Link>
-
+                </button>
               </>
             )}
 
@@ -153,6 +157,12 @@ export default function Header() {
       <NalcoGraphModal
         isOpen={isNalcoModalOpen}
         onClose={() => setIsNalcoModalOpen(false)}
+      />
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
       />
     </header>
   );

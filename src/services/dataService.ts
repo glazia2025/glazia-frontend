@@ -351,7 +351,7 @@ export class DataService {
     }
 
     try {
-      const response = await fetch('https://api.glazia.in/api/user/getOrders?limit=10&page=1&sortOrder=desc&sortKey=createdAt', {
+      const response = await fetch('https://api.glazia.inapi/user/getOrders?limit=10&page=1&sortOrder=desc&sortKey=createdAt', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

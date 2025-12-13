@@ -179,7 +179,7 @@ export default function OrderDetailsPage() {
       }, 200);
 
       const token = localStorage.getItem('authToken');
-      const response = await fetch('https://api.glazia.in/api/user/upload-payment-proof', {
+      const response = await fetch('https://api.glazia.inapi/user/upload-payment-proof', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

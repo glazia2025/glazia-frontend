@@ -78,7 +78,7 @@ export interface AdminSubCategory {
 }
 
 class AdminApiService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.glazia.in';
+  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
   private getAuthHeaders() {
     const token = localStorage.getItem('adminToken');

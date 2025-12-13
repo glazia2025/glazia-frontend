@@ -1,18 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, MapPin, Building, FileText, Download } from 'lucide-react';
+import { User, Mail, MapPin, Building, FileText, Download, Briefcase, X, Image as ImageIcon } from 'lucide-react';
 import axios from 'axios';
 import PartnerAgreement from '@/components/PartnerAgreement/PartnerAgreement';
 import { supabase } from '@/utils/supabase';
 
 interface UserRegistrationFormProps {
   phoneNumber: string;
+  onSuccess?: () => void;
+  isModal?: boolean;
 }
 
-const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber }) => {
+const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber, onSuccess }) => {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<'details' | 'agreement'>('details');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,6 +32,49 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
   const [isAgreed, setIsAgreed] = useState(false);
   const [blob, setBlob] = useState<Blob | null>(null);
 
+  // New fields
+  const [authorisedPerson, setAuthorisedPerson] = useState('');
+  const [designation, setDesignation] = useState('');
+  const [businessLogo, setBusinessLogo] = useState<string>('');
+  const [logoFileName, setLogoFileName] = useState<string>('');
+
+  // Handle logo file upload
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please upload a valid image file');
+        return;
+      }
+
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Logo file size should be less than 2MB');
+        return;
+      }
+
+      setLogoFileName(file.name);
+
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setBusinessLogo(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove logo
+  const removeLogo = () => {
+    setBusinessLogo('');
+    setLogoFileName('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,7 +82,7 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
     setError('');
 
     // Validate required fields
-    if (!userName || !email || !gstNumber || !pincode || !city || !state || !completeAddress) {
+    if (!userName || !email || !gstNumber || !pincode || !city || !state || !completeAddress || !authorisedPerson || !designation) {
       setError('All fields are required.');
       return;
     }
@@ -111,19 +157,29 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
           address: completeAddress,
           phoneNumber: phoneNumber || '',
           pincode,
-          paUrl
+          paUrl,
+          authorisedPerson,
+          designation,
+          businessLogo
         };
 
-        const response = await axios.post('https://api.glazia.in/api/user/register', registrationData);
+        const response = await axios.post('https://api.glazia.inapi/user/register', registrationData);
 
         if (response.data.token) {
           localStorage.setItem('authToken', response.data.token);
           setMessage('User details saved successfully!');
 
-          // Redirect to dashboard
-          setTimeout(() => {
-            router.push('/account/dashboard');
-          }, 2000);
+          // Handle success callback for modal or redirect
+          if (onSuccess) {
+            setTimeout(() => {
+              onSuccess();
+            }, 1500);
+          } else {
+            // Redirect to dashboard
+            setTimeout(() => {
+              router.push('/account/dashboard');
+            }, 2000);
+          }
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to save details. Please try again.';
@@ -287,6 +343,100 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
             </div>
           </div>
 
+          {/* Authorised Person and Designation */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="authorisedPerson" className="block text-sm font-medium text-gray-700 mb-2">
+                Authorised Person *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Briefcase className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="authorisedPerson"
+                  name="authorisedPerson"
+                  type="text"
+                  required
+                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Enter authorised person name"
+                  value={authorisedPerson}
+                  onChange={(e) => setAuthorisedPerson(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="designation" className="block text-sm font-medium text-gray-700 mb-2">
+                Designation *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="designation"
+                  name="designation"
+                  type="text"
+                  required
+                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Enter designation"
+                  value={designation}
+                  onChange={(e) => setDesignation(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Business Logo Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Business Logo (Optional)
+            </label>
+            <div className="relative">
+              {businessLogo ? (
+                <div className="flex items-center gap-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-white border border-gray-200 flex items-center justify-center">
+                    <img
+                      src={businessLogo}
+                      alt="Business Logo"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 truncate">{logoFileName}</p>
+                    <p className="text-xs text-gray-500">Logo uploaded successfully</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeLogo}
+                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="p-3 bg-gray-100 rounded-full mb-3">
+                    <ImageIcon className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">Click to upload logo</p>
+                  <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</p>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
+            </div>
+          </div>
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
               {error}
@@ -314,13 +464,23 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
           <div className="bg-gray-50 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Information Summary</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div><strong>Name:</strong> {userName}</div>
+              <div><strong>Business Name:</strong> {userName}</div>
               <div><strong>Email:</strong> {email}</div>
               <div><strong>Phone:</strong> +91 {phoneNumber}</div>
               <div><strong>GST:</strong> {gstNumber}</div>
+              <div><strong>Authorised Person:</strong> {authorisedPerson}</div>
+              <div><strong>Designation:</strong> {designation}</div>
               <div><strong>City:</strong> {city}</div>
               <div><strong>State:</strong> {state}</div>
               <div className="md:col-span-2"><strong>Address:</strong> {completeAddress}</div>
+              {businessLogo && (
+                <div className="md:col-span-2 flex items-center gap-3">
+                  <strong>Business Logo:</strong>
+                  <div className="w-12 h-12 rounded border border-gray-200 overflow-hidden bg-white flex items-center justify-center">
+                    <img src={businessLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

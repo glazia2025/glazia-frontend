@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { X, Plus, Minus, ShoppingBag, Trash2, Zap, LogIn, FileText } from 'lucide-react';
+import { X, Plus, Minus, ShoppingBag, Trash2, LogIn, FileText } from 'lucide-react';
 import { useCartState, useAuth } from '@/contexts/AppContext';
 import OrderPlacement from './OrderPlacement';
 import ImageModal from '@/components/ImageModal';
+import LoginModal from './LoginModal';
 
 // Number to words conversion function for Indian currency
 const numberToWordsIndian = (num: number): string => {
@@ -62,9 +62,8 @@ const numberToWordsIndian = (num: number): string => {
 const CartSidebar: React.FC = () => {
   const { cart, removeFromCart, updateCartQuantity, closeCart, getAdjustedItemPrice } = useCartState();
   const { isAuthenticated, user } = useAuth();
-  const router = useRouter();
   const [showOrderPlacement, setShowOrderPlacement] = useState(false);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [nalcoPrice, setNalcoPrice] = useState<number>(0);
 
   // State for image modal
@@ -197,7 +196,7 @@ const CartSidebar: React.FC = () => {
   // Generate Performa Invoice
   const generatePerformaInvoice = async () => {
     if (!isAuthenticated || !user) {
-      setShowLoginPrompt(true);
+      setShowLoginModal(true);
       return;
     }
 
@@ -548,17 +547,10 @@ const CartSidebar: React.FC = () => {
 
   const handleQuickOrder = () => {
     if (!isAuthenticated) {
-      closeCart();
-      router.push('/auth/login');
+      setShowLoginModal(true);
       return;
     }
     setShowOrderPlacement(true);
-  };
-
-
-  const handleLoginRedirect = () => {
-    closeCart();
-    router.push('/auth/login');
   };
 
   const handleOrderSuccess = () => {
@@ -780,47 +772,11 @@ const CartSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Login Prompt Modal */}
-      {showLoginPrompt && (
-        <>
-          {/* Modal Overlay */}
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-[10002]" onClick={() => setShowLoginPrompt(false)} />
-
-          {/* Modal Content */}
-          <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <div className="text-center">
-                <div
-                  className="mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4"
-                  style={{ backgroundColor: '#E6F0FF' }}
-                >
-                  <LogIn className="h-6 w-6" style={{ color: '#124657' }} />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Login Required</h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  Please login to your account to continue with checkout and place your order.
-                </p>
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => setShowLoginPrompt(false)}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium py-2 px-4 rounded-lg transition-colors"
-                  >
-                    Continue Shopping
-                  </button>
-                  <button
-                    onClick={handleLoginRedirect}
-                    className="flex-1 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
-                    style={{ backgroundColor: '#124657' }}
-                  >
-                    <LogIn className="w-4 h-4" />
-                    <span>Login</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
 
       {/* Order Placement Modal */}
       {showOrderPlacement && (
