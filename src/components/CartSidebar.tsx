@@ -200,319 +200,309 @@ const CartSidebar: React.FC = () => {
       return;
     }
 
-    // Prepare cart items for invoice
+    const formatCurrency = (value: number) =>
+      `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    const today = new Date();
+    const invoiceDateParts = today.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).split(' ');
+    const invoiceDate = `${invoiceDateParts[0]} ${invoiceDateParts[1]}, ${invoiceDateParts[2]}`;
+    const referenceNumber = '0023';
+    const invoiceNumber = `GW/${today.getFullYear().toString().slice(-2)}/${String(today.getMonth() + 1).padStart(2, '0')}/PI${referenceNumber}`;
+    const dispatchMode = 'By Road';
+    const destination = [user.city, user.state].filter(Boolean).join(', ') || 'Destination';
+
+    // Prepare cart items for invoice with pricing aligned to cart logic
     const selectedProducts = cart.items.map((item, index) => {
       const adjustedRate = getAdjustedItemPrice(item);
-      let finalAmount;
+      const isHardware = item.category?.toLowerCase().includes('hardware');
+      const baseProfilePrice = (nalcoPrice / 1000) + 75 + adjustedRate;
+      const basePrice = Number(item.price) || 0;
+      const quantity = Number(item.quantity) || 0;
+      const lengthInMeters = (parseFloat(String(item.length)) || 0) / 1000;
+      const kgm = Number(item.kgm) || 0;
 
-      if (item.category?.toLowerCase().includes('hardware')) {
-        // Hardware: adjusted rate × quantity
-        finalAmount = item.quantity * (item.price + adjustedRate);
-      } else {
-        // Profiles: use the same calculation as cart total
-        const basePrice = (nalcoPrice / 1000) + 75;
-        const adjustedPrice = basePrice + adjustedRate;
-        finalAmount = adjustedPrice * item.quantity * (parseFloat(item.length) / 1000) * item.kgm;
-      }
+      const rate = isHardware ? basePrice + adjustedRate : baseProfilePrice;
+      const amount = isHardware
+        ? rate * quantity
+        : rate * quantity * lengthInMeters * kgm;
 
       return {
-        description: item.name,
-        option: item.category || '',
-        powderCoating: {},
+        description: item.name || 'Item',
+        series: item.category || 'Series',
         sapCode: item.id || `SAP${String(index + 1).padStart(3, '0')}`,
         quantity: item.quantity,
-        rate: item.category?.toLowerCase().includes('hardware') ? item.price + adjustedRate : (nalcoPrice / 1000) + 75 + adjustedRate,
+        rate,
         per: 'Piece',
-        amount: finalAmount
+        amount
       };
     });
 
-    const subtotal = selectedProducts.reduce((sum, item) => sum + item.amount, 0);
-    const gst = subtotal * 0.18;
-    const net = subtotal + gst;
-
-    let totalQuantity = 0;
-    selectedProducts.forEach((p) => {
-      totalQuantity += parseInt(String(p.quantity), 10);
-    });
+    const subtotal = selectedProducts.reduce((sum, item) => sum + (item.amount || 0), 0);
+    const gstHalf = subtotal * 0.09;
+    const gstTotal = gstHalf * 2;
+    const net = subtotal + gstTotal;
+    const roundedNet = Math.round(net);
+    const totalQuantity = selectedProducts.reduce((sum, p) => sum + Number(p.quantity || 0), 0);
 
     const rows = selectedProducts.map((p, i) => `
-      <tr>
-        <td style="border: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${i + 1}</td>
-        <td style="border: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word; line-height: 1.2;">
-          ${p.description}
-        </td>
-        <td style="border: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word; line-height: 1.2;">
-          ${p.option ? `(${p.option})` : ""}
-          ${p.powderCoating && Object.keys(p.powderCoating).length ? ` - ${JSON.stringify(p.powderCoating)}` : ""}
-        </td>
-        <td style="border: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${p.sapCode}</td>
-        <td style="border: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${p.quantity}</td>
-        <td style="border: 1px solid #000; padding: 4px; text-align: right; vertical-align: top;">₹${Number(p.rate).toFixed(2)}</td>
-        <td style="border: 1px solid #000; padding: 4px; text-align: center; vertical-align: top;">${p.per || "Piece"}</td>
-        <td style="border: 1px solid #000; padding: 4px; text-align: right; vertical-align: top;">₹${Number(p.amount).toFixed(2)}</td>
-      </tr>
-    `).join("");
+        <tr>
+          <td style="text-align:center;">${i + 1}</td>
+          <td>${p.description}</td>
+          <td>${p.series}</td>
+          <td>${p.sapCode}</td>
+          <td style="text-align:center;">${p.quantity}</td>
+          <td style="text-align:right;">${formatCurrency(p.rate)}</td>
+          <td style="text-align:center;">${p.per || 'Piece'}</td>
+          <td style="text-align:right;">${formatCurrency(p.amount)}</td>
+        </tr>
+    `).join('');
 
     const invoiceHTML = `
-      <div style="margin: 0; padding: 8px; font-family: Arial, sans-serif; font-size: 10px; line-height: 1.2; width: 100%; box-sizing: border-box;">
-        <!-- Company Header -->
-        <table style="width: 100%; border-collapse: collapse; border: 1px solid #000;">
-          <tr>
-            <td style="text-align: center; border-bottom: 1px solid #000; font-size: 16px; padding: 8px; font-weight: bold;">
-              Glazia Windoors Pvt Ltd.
-            </td>
-          </tr>
-          <tr>
-            <td style="border-bottom: 1px solid #000; font-size: 10px; padding: 6px;">
-              <table style="width: 100%; border-collapse: collapse;">
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>
+            * { box-sizing: border-box; }
+            body { margin: 0; font-family: Arial, sans-serif; color: #1a1a1a; }
+            .container { width: 100%; max-width: 780px; margin: 0 auto; padding: 28px 30px 36px; background: #fff; }
+            .top-row { display: flex; justify-content: space-between; align-items: flex-start; }
+            .logo { font-size: 36px; font-weight: 700; letter-spacing: 2px; }
+            .title { color: #d92525; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; margin-top: 6px; }
+            .muted { color: #404040; line-height: 1.5; font-size: 12px; }
+            .label { font-weight: 700; font-size: 12px; color: #111; }
+            .divider { border-bottom: 1px solid #b8b8b8; margin: 14px 0 18px; }
+            table { width: 100%; border-collapse: collapse; }
+            .info-table th { text-align: left; font-size: 12px; font-weight: 700; padding: 4px 8px; }
+            .info-table td { font-size: 12px; padding: 4px 8px 10px; color: #404040; }
+            .info-table { margin-bottom: 6px; }
+            .address-table td { width: 50%; vertical-align: top; padding: 4px 8px 10px; }
+            .products thead th {
+              font-size: 12px;
+              font-weight: 700;
+              padding: 10px 8px;
+              text-align: left;
+              border-bottom: 1px solid #111;
+            }
+            .products thead th:nth-child(1),
+            .products tbody td:nth-child(1),
+            .products thead th:nth-child(5),
+            .products tbody td:nth-child(5),
+            .products thead th:nth-child(7),
+            .products tbody td:nth-child(7) { text-align: center; }
+            .products thead th:nth-child(6),
+            .products tbody td:nth-child(6),
+            .products thead th:nth-child(8),
+            .products tbody td:nth-child(8) { text-align: right; }
+            .products tbody td {
+              font-size: 12px;
+              padding: 10px 8px;
+              border-bottom: 1px solid #d8d8d8;
+              vertical-align: top;
+            }
+            .products tbody tr:last-child td { border-bottom: 1px solid #111; }
+            .products tbody td:last-child { white-space: nowrap; }
+            .totals-table td { font-size: 12px; padding: 6px 0; }
+            .totals-table td:last-child { text-align: right; font-weight: 700; }
+            .totals-table tr:last-child td { border-top: 1px solid #b8b8b8; padding-top: 10px; }
+            .section-title { font-weight: 700; font-size: 12px; margin-bottom: 6px; }
+            .payment-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; }
+            .signature-row { display: flex; justify-content: space-between; margin-top: 18px; }
+            .payment-info { margin-top: 18px; }
+            .qr-img { width: 105px; height: 105px; border: 1px solid #cfcfcf; border-radius: 6px; object-fit: contain; background: #f7f7f7; padding: 6px; }
+            .terms { font-size: 12px; line-height: 1.6; color: #2a2a2a; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="top-row">
+              <div class="logo">GLAZIA</div>
+              <div class="title">PERFORMA INVOICE</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <table class="info-table">
+              <tr>
+                <td>
+                  <div class="label">Glazia Windoors Pvt. Ltd.</div>
+                  <div class="muted">Khata No. 361, Rect. No. 21 4/70,<br/>
+                  Kherki Dhaula Village Road,<br/>
+                  Gurgaon, Haryana - 122001<br/>India</div>
+                </td>
+                <td style="text-align: right;">
+                  <div class="label">Contact</div>
+                  <div class="muted">www.glazia.in<br/>+91-9958035708<br/>sales@glazia.com</div>
+                </td>
+              </tr>
+            </table>
+
+            <div class="divider"></div>
+
+            <table class="info-table">
+              <tr>
+                <th>Invoice #</th>
+                <th>Invoice Date</th>
+                <th>Reference #</th>
+                <th>Dispatch Mode</th>
+                <th>Destination</th>
+              </tr>
+              <tr>
+                <td>${invoiceNumber}</td>
+                <td>${invoiceDate}</td>
+                <td>${referenceNumber}</td>
+                <td>${dispatchMode}</td>
+                <td>${destination}</td>
+              </tr>
+            </table>
+
+            <div class="divider"></div>
+
+            <table class="address-table">
+              <tr>
+                <td>
+                  <div class="label">Invoice To:</div>
+                  <div class="muted">${user.name || 'Glazia Windoors Pvt. Ltd.'},<br/>
+                  ${user.completeAddress || 'Gurgaon, Haryana - 122001'}<br/>
+                  ${[user.city, user.state].filter(Boolean).join(', ')}${user.pincode ? ' - ' + user.pincode : ''}</div>
+                </td>
+                <td>
+                  <div class="label">Shipped To:</div>
+                  <div class="muted">${user.name || 'Glazia Windoors Pvt. Ltd.'},<br/>
+                  ${user.completeAddress || 'Gurgaon, Haryana - 122001'}<br/>
+                  ${[user.city, user.state].filter(Boolean).join(', ')}${user.pincode ? ' - ' + user.pincode : ''}</div>
+                </td>
+              </tr>
+            </table>
+
+            <div class="divider"></div>
+
+            <table class="products">
+              <thead>
                 <tr>
-                  <td style="width: 70%; vertical-align: top;">
-                    Khevat/ Khata No. 361, Rect. No. 21 4/70-18 Kherki Dhaula Village Road, Gurgaon, Harana, 122001
+                  <th style="width: 5%;">#</th>
+                  <th style="width: 24%;">Description</th>
+                  <th style="width: 15%;">Series</th>
+                  <th style="width: 15%;">SAP Code</th>
+                  <th style="width: 8%;">Qty.</th>
+                  <th style="width: 12%;">Rate(₹)</th>
+                  <th style="width: 8%;">Per</th>
+                  <th style="width: 13%;">Amt. (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+                <tr>
+                  <td></td>
+                  <td></td>
+                  <td style="font-weight: 700; text-align: center;">Total</td>
+                  <td></td>
+                  <td style="text-align: center; font-weight: 700;">${totalQuantity}</td>
+                  <td></td>
+                  <td></td>
+                  <td style="text-align: right; font-weight: 700;">${formatCurrency(subtotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="divider"></div>
+
+            <div class="payment-grid">
+              <div>
+                <div class="label">Payment Method</div>
+                <div class="muted">${user.paymentMethod || 'Cash'}</div>
+
+                <div style="margin-top: 10px;">
+                  <div class="label">Rounded Off Amount</div>
+                  <div class="muted">${formatCurrency(roundedNet)}</div>
+                </div>
+
+                <div style="margin-top: 12px;">
+                  <div class="label">In Words</div>
+                  <div class="muted">${numberToWordsIndian(Math.round(net))}</div>
+                </div>
+              </div>
+              <div>
+                <table class="totals-table">
+                  <tr>
+                    <td class="label">Sub Total</td>
+                    <td>${formatCurrency(subtotal)}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">SGST@9%</td>
+                    <td>${formatCurrency(gstHalf)}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">CGST@9%</td>
+                    <td>${formatCurrency(gstHalf)}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Total</td>
+                    <td>${formatCurrency(net)}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+
+            <div class="signature-row">
+              <div>
+                <div class="label">Accepted By</div>
+                <div class="muted">Glazia Windoors Pvt. Ltd.</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="label">Signature</div>
+                <div class="muted">Glazia Windoors Pvt. Ltd.</div>
+              </div>
+            </div>
+
+            <div class="payment-info">
+              <div class="label">Payment Info</div>
+              <div class="divider" style="margin: 10px 0 12px;"></div>
+              <table class="info-table" style="margin-bottom: 0;">
+                <tr>
+                  <td style="width: 60%; vertical-align: top;">
+                    <div class="muted"><span class="label">Account No: </span>Glazia Windoors Pvt. Ltd.</div>
+                    <div class="muted"><span class="label">Account Name: </span>Account Name:</div>
+                    <div class="muted"><span class="label">IFSC Code: </span>IFSC Code:</div>
+                    <div class="muted"><span class="label">Bank: </span>HDFC Bank</div>
                   </td>
-                  <td style="width: 30%; text-align: right; vertical-align: top;">
-                    Phone: 9958053708<br/>Email: sales@glazia.com
+                  <td style="text-align: right; vertical-align: top;">
+                    <div style="display: inline-flex; gap: 12px; align-items: flex-start;">
+                      <img src="/glazia_qr.png" alt="Glazia UPI QR" class="qr-img" />
+                      <div>
+                        <div class="muted"><span class="label">Name: </span>${user.name || 'Glazia Windoors Pvt. Ltd.'}</div>
+                        <div class="muted"><span class="label">UPI: </span>glazia@okhdfcbank</div>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
-        </table>
+            </div>
 
-        <!-- Customer Information Table -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-          <tr>
-            <td style="width: 40%; border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
-              Consignee (Ship To)
-            </td>
-            <td style="width: 30%; border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
-              Invoice No.
-            </td>
-            <td style="width: 30%; border-bottom: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
-              Date
-            </td>
-          </tr>
-          <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word;">
-              ${user.name || 'N/A'}
-            </td>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              GW/25/26/PI/0023
-            </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              ${new Date().toLocaleDateString()}
-            </td>
-          </tr>
-          <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word;">
-              ${user.completeAddress || 'N/A'}
-            </td>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              Delivery Note No.
-            </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              Delivery Note Date
-            </td>
-          </tr>
-          <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              ${user.city || 'N/A'}, ${user.state || 'N/A'}-${user.pincode || 'N/A'}
-            </td>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              ................................
-            </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              ................................
-            </td>
-          </tr>
-          <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              GST: ${user.gstNumber || 'N/A'}
-            </td>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              Reference No. : 0023
-            </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              Mode of Payment
-            </td>
-          </tr>
-          <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
-              Buyer (Bill To)
-            </td>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              ................................
-            </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              ................................
-            </td>
-          </tr>
-          <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word;">
-              ${user.name || 'N/A'}
-            </td>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              Dispatch Mode
-            </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              Destination
-            </td>
-          </tr>
-          <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top; word-wrap: break-word;">
-              ${user.completeAddress || 'N/A'}
-            </td>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              By Road
-            </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              ${user.city || 'N/A'}, ${user.state || 'N/A'}
-            </td>
-          </tr>
-          <tr>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              ${user.city || 'N/A'}, ${user.state || 'N/A'}-${user.pincode || 'N/A'}
-            </td>
-            <td style="border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              ................................
-            </td>
-            <td style="border-bottom: 1px solid #000; padding: 4px; vertical-align: top;">
-              ................................
-            </td>
-          </tr>
-        </table>
-        <!-- Products Table -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 2px;">
-          <thead>
-            <tr>
-              <td style="width: 6%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">S.No</td>
-              <td style="width: 28%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Description</td>
-              <td style="width: 16%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Series</td>
-              <td style="width: 12%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">SAP Code</td>
-              <td style="width: 8%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Qty</td>
-              <td style="width: 12%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Rate</td>
-              <td style="width: 8%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Per</td>
-              <td style="width: 10%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f5f5f5;">Amount</td>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-            <!-- Empty row for spacing -->
-            <tr>
-              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px; height: 15px;">&nbsp;</td>
-            </tr>
-            <!-- Total row -->
-            <tr>
-              <td style="border: 1px solid #000; padding: 4px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">Total</td>
-              <td style="border: 1px solid #000; padding: 4px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">${totalQuantity}</td>
-              <td style="border: 1px solid #000; padding: 4px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px;">&nbsp;</td>
-              <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">₹${subtotal.toFixed(2)}</td>
-            </tr>
-          </tbody>
-        </table>
-        <!-- Tax and Total Calculation Table -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 2px;">
-          <tr>
-            <td style="width: 88%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">
-              SGST@9%
-            </td>
-            <td style="width: 12%; border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">
-              ₹${(gst / 2).toFixed(2)}
-            </td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">
-              CGST@9%
-            </td>
-            <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">
-              ₹${(gst / 2).toFixed(2)}
-            </td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f0f0f0;">
-              Total
-            </td>
-            <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold; background-color: #f0f0f0;">
-              ₹${net.toFixed(2)}
-            </td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">
-              Rounded Off
-            </td>
-            <td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">
-              ₹${Math.round(net)}
-            </td>
-          </tr>
-        </table>
-        <!-- Amount in Words and Details Table -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 2px;">
-          <tr>
-            <td style="width: 30%; border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; vertical-align: top;">
-              Amount Chargeable in Words
-            </td>
-            <td style="width: 70%; border: 1px solid #000; padding: 4px; word-wrap: break-word; vertical-align: top;">
-              ${numberToWordsIndian(Math.round(net))}
-            </td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
-              Bank Detail:
-            </td>
-            <td style="border: 1px solid #000; padding: 4px; font-weight: bold; vertical-align: top;">
-              Company Detail:
-            </td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 4px; vertical-align: top; line-height: 1.3;">
-              Bank Name: HDFC Bank<br/>
-              A/c No: 50200084871361<br/>
-              RTGS/NEFT/IFSC Code: HDFC0004809
-            </td>
-            <td style="border: 1px solid #000; padding: 4px; vertical-align: top; line-height: 1.3; word-wrap: break-word;">
-              Glazia Windoors Pvt. Ltd.<br/>
-              Kherki Dhaula Village Road, Gurgaon, Harana, 122001<br/>
-              GST: 06AAKCG7530J1ZE
-            </td>
-          </tr>
-        </table>
-        <!-- Terms & Conditions -->
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 2px;">
-          <tr>
-            <td style="border: 1px solid #000; text-align: center; font-size: 12px; padding: 6px; font-weight: bold;">
-              Terms & Conditions
-            </td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; font-size: 9px; padding: 6px; line-height: 1.4; vertical-align: top;">
-              <strong>1. PI Validity Period:</strong><br/>
-              &nbsp;&nbsp;&nbsp;&nbsp;a. 15 days from date of issuance irrespective of selling price<br/>
-              &nbsp;&nbsp;&nbsp;&nbsp;b. PI shall be treated as null & void in all respect in absence of advance payment as per PI terms<br/><br/>
+            <div class="divider" style="margin: 18px 0 12px;"></div>
 
-              <strong>2. Selling Price:</strong> Selling Price is governed by NALCO Billet price on the date of material dispatch.<br/><br/>
-
-              <strong>3. Supply Schedule:</strong> Supply schedule will be discussed & finalized after advance payment.<br/><br/>
-
-              <strong>4. Advance Payment:</strong> Advance payment will be governed as per below schedule<br/>
-              &nbsp;&nbsp;&nbsp;&nbsp;a. 100% advance for PI having value Rs. >0 ~ => 2,00,000<br/>
-              &nbsp;&nbsp;&nbsp;&nbsp;b. 50% advance for PI having value Rs. >0 ~ =< 2,00,000<br/><br/>
-
-              <strong>5. Transportation:</strong> In customer scope, No claim or responsibility in any form related to transportation will be levied.
-            </td>
-          </tr>
-        </table>
-      </div>
+            <div class="label" style="text-align: center; margin-bottom: 10px;">Terms & Conditions</div>
+            <div class="terms">
+              1. PI Validity Period<br/>
+              &nbsp;&nbsp;a. 15 days from date of issuance irrespective of selling price.<br/>
+              &nbsp;&nbsp;b. PI shall be treated as null and void in all respect in absence of advance payment as per PI items.<br/><br/>
+              2. Selling Price<br/>
+              &nbsp;&nbsp;Selling Price is governed by NALCO Billet price on the date of material dispatch.<br/><br/>
+              3. Supply Schedule<br/>
+              &nbsp;&nbsp;Supply Schedule will be discussed and finalized after advance payment.<br/><br/>
+              4. Advance Payment<br/>
+              &nbsp;&nbsp;a. 100% advance for PI having value Rs. >0 ~ => 2,00,000<br/>
+              &nbsp;&nbsp;b. 50% advance for PI having value Rs. >0 ~ =< 2,00,000<br/><br/>
+              5. Transportation<br/>
+              &nbsp;&nbsp;In customer scope, no claim or responsibility in any form related to transportation will be levied.
+            </div>
+          </div>
+        </body>
+      </html>
     `;
 
     const opt = {
