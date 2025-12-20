@@ -2,200 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Plus, Trash2, Download, Save, ArrowLeft } from "lucide-react";
+import { Plus, Download, Save, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
-
-type SystemType = "Casement" | "Sliding" | "Slide N Fold" | "";
-
-const AREA_SLABS = [
-  { max: 20,   index: 0 },
-  { max: 40,   index: 1 },
-  { max: Infinity, index: 2 }
-];
-
-const baseRateTable = {
-  'Casement': {
-    "40mm": {
-      "Fix": [200, 170, 145],
-
-      "Left Openable Window": [300, 255, 217],
-      "Right Openable Window": [300, 255, 217],
-      "Top Hung Window": [300, 255, 217],
-      "Bottom Hung Window": [300, 255, 217],
-
-      "French Window": [330, 281, 238],
-
-      "default": [0, 0, 0]
-    },
-
-    "50mm": {
-      "Fix": [250, 213, 181],
-
-      "Left Openable Window": [375, 319, 271],
-      "Right Openable Window": [375, 319, 271],
-      "Top Hung Window": [375, 319, 271],
-      "Bottom Hung Window": [375, 319, 271],
-
-      "Tilt and Turn Window": [1000, 1000, 1000],
-      "Parallel Window": [1000, 1000, 1000],
-
-      "French Window": [400, 340, 289],
-
-      "Left Openable Door": [450, 450, 450],
-      "Right Openable Door": [450, 450, 450],
-      "French Door": [475, 475, 475],
-
-      "default": [0, 0, 0]
-    },
-
-    "114mm": {
-      "Left Openable": [750, 750, 750],
-      "Right Openable": [750, 750, 750],
-
-      "Left Openable + Fixed": [650, 650, 650],
-      "Fixed + Right Openable": [650, 650, 650],
-      "Left Openable + Fixed + right Openable": [650, 650, 650],
-
-      "default": [0, 0, 0]
-    }
-  },
-
-  'Sliding': {
-    "29mm": {
-      "2 Track 2 Glass Panel": [500, 425, 361],
-      "2 Track 3 Glass Panel": [550, 468, 397],
-      "2 Track 4 Glass Panel": [600, 510, 434],
-
-      "3 Track 2 Glass 1 Mesh Panel": [600, 510, 434],
-      "3 Track 3 Glass Panel": [625, 531, 452],
-      "3 Track 3 Glass 1 Mesh Panel": [650, 553, 470],
-      "3 Track 4 Glass Panel 2 Mesh Panel": [700, 595, 506],
-
-      "default": [0, 0, 0]
-    },
-
-    "44mm": {
-      "2 Track 2 Glass Panel": [625, 531, 452],
-      "2 Track 3 Glass Panel": [688, 584, 497],
-      "2 Track 4 Glass Panel": [750, 638, 542],
-
-      "3 Track 2 Glass 1 Mesh Panel": [750, 638, 542],
-      "3 Track 3 Glass Panel": [781, 664, 564],
-      "3 Track 3 Glass 1 Mesh Panel": [813, 691, 587],
-      "3 Track 4 Glass 2 Mesh Panel": [875, 744, 632],
-      "3 Track 6 Glass Panel": [900, 765, 650],
-
-      "default": [0, 0, 0]
-    }
-  },
-
-  "Slide n Fold": {
-    "Glazia GU": {
-      "2 Panel (1+1)": [1300, 1170, 1053],
-      "3 Panel (1+2)": [1250, 1125, 1013],
-      "4 Panel (1+3)": [1200, 1080, 972],
-      "5 Panel (1+4)": [1150, 1035, 932],
-      "6 Panel (1+5)": [1100, 990, 891],
-
-      "default": [0, 0, 0]
-    }
-  }
-};
-
-const handleCountTable: Record<string, Record<string, Record<string, number>>> = {
-  Casement: {
-    "40mm": {
-      "Fix": 0,
-      "Left Openable Window": 1,
-      "Right Openable Window": 1,
-      "Top Hung Window": 1,
-      "Bottom Hung Window": 1,
-      "French Window": 2,
-    },
-    "50mm": {
-      "Fix": 0,
-      "Left Openable Window": 1,
-      "Right Openable Window": 1,
-      "Top Hung Window": 1,
-      "Bottom Hung Window": 1,
-      "Tilt and Turn Window": 1,
-      "Parallel Window": 2,
-      "French Window": 2,
-      "Left Openable Door": 1,
-      "Right Openable Door": 1,
-      "French Door": 2,
-    },
-    "114mm": {
-      "Left Openable": 2,
-      "Right Openable": 2,
-      "Left Openable + Fixed": 2,
-      "Fixed + Right Openable": 2,
-      "Left Openable + Fixed + right Openable": 4,
-    },
-  },
-
-  Sliding: {
-    "29mm": {
-      "2 Track 2 Glass Panel": 2,
-      "2 Track 3 Glass Panel": 2,
-      "2 Track 4 Glass Panel": 2,
-      "3 Track 2 Glass 1 Mesh Panel": 3,
-      "3 Track 3 Glass Panel": 3,
-      "3 Track 3 Glass 1 Mesh Panel": 3,
-      "3 Track 4 Glass Panel 2 Mesh Panel": 4,
-    },
-    "44mm": {
-      "2 Track 2 Glass Panel": 2,
-      "2 Track 3 Glass Panel": 2,
-      "2 Track 4 Glass Panel": 2,
-      "3 Track 2 Glass 1 Mesh Panel": 3,
-      "3 Track 3 Glass Panel": 3,
-      "3 Track 3 Glass 1 Mesh Panel": 3,
-      "3 Track 4 Glass 2 Mesh Panel": 4,
-      "3 Track 6 Glass Panel": 3,
-    }
-  },
-
-  "Slide n Fold": {
-    "Glazia GU": {
-      "2 Panel (1+1)": 2,
-      "3 Panel (1+2)": 3,
-      "4 Panel (1+3)": 4,
-      "5 Panel (1+4)": 5,
-      "6 Panel (1+5)": 6,
-    }
-  }
-};
-
-
-const handleRateTable: Record<string, Record<string, Record<string, number>>> = {
-  Sliding: {
-    "Metro Handle": { Black: 650, Silver: 650 },
-    "Touch Lock": { Black: 250, Silver: 250 },
-    "D handle": { Black: 600, Silver: 600 },
-    "Pop-up handle": { Black: 350, Silver: 350 }
-  },
-  Casement: {
-    "Mortise Handle with lock": { Black: 1500, Silver: 1500 },
-    "L handle": { Black: 350, Silver: 350 },
-    "Cremone Handle": { Black: 250, Silver: 250 },
-    "Cocksper Handle": { Black: 100, Silver: 100 }
-  }
-};
-
-const meshRateTable: Record<string, Record<string, number>> = {
-  Yes: {
-    "SS Mesh - Black": 25,
-    "SS Mesh - Natural": 22,
-    "Pleated Mesh": 200
-  },
-  No: {
-     "SS Mesh - Black": 0,
-    "SS Mesh - Natural": 0,
-    "Pleated Mesh": 0
-  }
-};
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QuotationItemRow, QuotationItem } from "@/components/QuotationItemRow";
+import axios from "axios";
 
 
 interface CustomerDetails {
@@ -209,27 +21,23 @@ interface CustomerDetails {
   pincode: string;
 }
 
-interface QuotationItem {
-  id: string;
-  refCode: string;
-  location: string;
-  width: number;
-  height: number;
-  area: number;
-  systemType: SystemType;
-  series: string;
-  description: string;
-  colorFinish: string;
-  glassSpec: string;
-  handleType: string;
-  handleColor: string;
-  meshPresent: string;
-  meshType: string;
-  rate: number;
-  quantity: number;
-  amount: number;
-  refImage: string;
-  remarks: string;
+interface BackendQuotation {
+  _id?: string;
+  quotationDetails?: {
+    id?: string;
+    date?: string;
+    opportunity?: string;
+    terms?: string;
+    notes?: string;
+    validUntil?: string;
+  };
+  customerDetails?: CustomerDetails;
+  items?: Array<
+    Omit<QuotationItem, "meshPresent" | "handleCount"> & {
+      meshPresent?: boolean;
+      handleCount?: number;
+    }
+  >;
 }
 
 export default function EditQuotationPage() {
@@ -237,6 +45,7 @@ export default function EditQuotationPage() {
   const params = useParams();
   const quotationId = params.id as string;
 
+  const [queryClient] = useState(() => new QueryClient());
   const [loading, setLoading] = useState(true);
   const [quotationFound, setQuotationFound] = useState(false);
   
@@ -259,35 +68,106 @@ export default function EditQuotationPage() {
     validUntil: "",
     terms: "1. Prices are valid for 30 days from the date of quotation.\n2. Payment terms: 50% advance, 50% on delivery.\n3. Delivery time: 15-20 working days.",
     notes: "",
+    opportunity: "",
   });
 
   const [profitPercentage, setProfitPercentage] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
 
   // Load existing quotation data
   useEffect(() => {
-    const loadQuotation = () => {
+    const loadQuotation = async () => {
       try {
-        const existingQuotations = JSON.parse(localStorage.getItem('quotations') || '[]');
-        const quotation = existingQuotations.find((q: any) => q.id === quotationId);
-        
-        if (quotation) {
-          setQuotationFound(true);
-          setCustomerDetails(quotation.customerDetails);
-          setItems(quotation.items);
-          setQuotationDetails({
-            quotationNumber: quotation.quotationNumber,
-            date: quotation.date,
-            validUntil: quotation.validUntil,
-            terms: quotation.terms,
-            notes: quotation.notes,
-          });
-          // Load profit percentage if it exists
-          setProfitPercentage(quotation.profitPercentage || 0);
-        } else {
+        setLoading(true);
+        setError(null);
+        const token = localStorage.getItem("authToken");
+        const response = await axios.get<BackendQuotation>(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/quotations/${quotationId}`,
+          token
+            ? { headers: { Authorization: `Bearer ${token}` } }
+            : undefined
+        );
+        const data = response.data.quotation;
+        if (!data) {
           setQuotationFound(false);
+          return;
         }
-      } catch (error) {
-        console.error('Error loading quotation:', error);
+        const qbDetails = data.quotationDetails || {};
+        setQuotationDetails({
+          quotationNumber: qbDetails.id || data._id || "",
+          date: qbDetails.date || new Date().toISOString().split("T")[0],
+          validUntil: qbDetails.validUntil || "",
+          terms: qbDetails.terms || quotationDetails.terms,
+          notes: qbDetails.notes || "",
+          opportunity: qbDetails.opportunity || "",
+        });
+        setCustomerDetails({
+          name: data.customerDetails?.name || "",
+          company: data.customerDetails?.company || "",
+          email: data.customerDetails?.email || "",
+          phone: data.customerDetails?.phone || "",
+          address: data.customerDetails?.address || "",
+          city: data.customerDetails?.city || "",
+          state: data.customerDetails?.state || "",
+          pincode: data.customerDetails?.pincode || "",
+        });
+        const mappedItems: QuotationItem[] =
+          data.items?.map((item) => ({
+            id: item.id || crypto.randomUUID(),
+            refCode: item.refCode || "",
+            location: item.location || "",
+            width: item.width || 0,
+            height: item.height || 0,
+            area: item.area || 0,
+            systemType: item.systemType || "",
+            series: item.series || "",
+            description: item.description || "",
+            colorFinish: item.colorFinish || "",
+            glassSpec: item.glassSpec || "",
+            handleType: item.handleType || "",
+            handleColor: item.handleColor || "",
+            handleCount: item.handleCount ?? 0,
+            meshPresent: item.meshPresent ? "Yes" : item.meshPresent === false ? "No" : "",
+            meshType: item.meshType || "",
+            rate: item.rate || 0,
+            quantity: item.quantity || 1,
+            amount: item.amount || 0,
+            refImage: item.refImage || "",
+            remarks: item.remarks || "",
+            baseRate: item.baseRate || 0,
+            areaSlabIndex: item.areaSlabIndex || 0,
+          })) || [
+            {
+              id: "1",
+              refCode: "",
+              location: "",
+              width: 0,
+              height: 0,
+              area: 0,
+              systemType: "",
+              series: "",
+              description: "",
+              colorFinish: "",
+              glassSpec: "",
+              handleType: "",
+              handleColor: "",
+              handleCount: 0,
+              meshPresent: "",
+              meshType: "",
+              rate: 0,
+              quantity: 1,
+              amount: 0,
+              refImage: "",
+              remarks: "",
+              baseRate: 0,
+              areaSlabIndex: 0,
+            },
+          ];
+        setItems(mappedItems);
+        setQuotationFound(true);
+      } catch (err) {
+        console.error("Error loading quotation", err);
+        setError("Failed to load quotation");
         setQuotationFound(false);
       } finally {
         setLoading(false);
@@ -297,228 +177,11 @@ export default function EditQuotationPage() {
     if (quotationId) {
       loadQuotation();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quotationId]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#124657] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading quotation...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!quotationFound) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-gray-400 text-3xl">📄</span>
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Quotation not found</h3>
-          <p className="text-gray-600 mb-6">The quotation you're looking for doesn't exist or has been deleted.</p>
-          <Link
-            href="/quotations"
-            className="inline-flex items-center space-x-2 px-6 py-3 bg-[#124657] text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Quotations</span>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // Rate calculation functions
-  function getColorFinishRate(colorFinish: string): number {
-    if (
-      colorFinish === "Grey-Tex 2200" ||
-      colorFinish === "Grey-Tex 2900" ||
-      colorFinish === "Matt Black - 9005" ||
-      colorFinish === "White - 9003" ||
-      colorFinish === "Anodic Bronze - SW28BN" ||
-      colorFinish === "Champagne - SDA53N"
-    ) {
-      return 60;
-    }
-    else if (
-      colorFinish === "Champagne" ||
-      colorFinish === "Black"
-    ) {
-      return 75;
-    }
-    else if (
-      colorFinish === "Wenge" ||
-      colorFinish === "XYZ" ||
-      colorFinish === "ABC"
-    ) {
-      return 180;
-    }
-    else {
-      return 0;
-    }
-  }
-
-  function getGlassRate(glassSpec: string): number {
-    // Clear Toughened Glass
-    if (
-      glassSpec === "5mm Clear Toughened" ||
-      glassSpec === "6mm Clear Toughened" ||
-      glassSpec === "8mm Clear Toughened" ||
-      glassSpec === "10mm Clear Toughened" ||
-      glassSpec === "12mm Clear Toughened"
-    ) {
-      switch (glassSpec) {
-        case "5mm Clear Toughened": return 65;
-        case "6mm Clear Toughened": return 75;
-        case "8mm Clear Toughened": return 100;
-        case "10mm Clear Toughened": return 125;
-        case "12mm Clear Toughened": return 150;
-      }
-    }
-    // Frosted Toughened Glass
-    else if (glassSpec === "5/6mm Frosted Toughened") {
-      return 80;
-    }
-    // DGU Glass
-    else if (
-      glassSpec === "20mm (5+10+5) DGU Glass" ||
-      glassSpec === "24mm (6+12+6) DGU Glass" ||
-      glassSpec === "32mm (8+12+8) DGU Glass"
-    ) {
-      switch (glassSpec) {
-        case "20mm (5+10+5) DGU Glass": return 200;
-        case "24mm (6+12+6) DGU Glass": return 225;
-        case "32mm (8+12+8) DGU Glass": return 300;
-      }
-    }
-    // Security/Laminated Glass
-    else if (
-      glassSpec === "11.52mm (5+1.52+5) Laminated Glass" ||
-      glassSpec === "13.52mm (6+1.52+6) Laminated Glass" ||
-      glassSpec === "17.52mm (8+1.52+8) Laminated Glass"
-    ) {
-      switch (glassSpec) {
-        case "11.52mm (5+1.52+5) Laminated Glass": return 275;
-        case "13.52mm (6+1.52+6) Laminated Glass": return 300;
-        case "17.52mm (8+1.52+8) Laminated Glass": return 350;
-      }
-    }
-    // DGU Laminated Glass
-    else if (glassSpec === "31.52mm (6+1.52+6+12+6) DGU Laminated Glass") {
-      return 425;
-    }
-    // Clear Float Glass
-    else if (glassSpec === "5/6mm Clear Float Glass") {
-      return 60;
-    }
-    // Default fallback
-    return 0;
-  }
-
-  function getTotalHandleCost(item: QuotationItem) {
-    const count = handleCountTable[item.systemType]?.[item.series]?.[item.description] ?? 0;
-    const rate = handleRateTable[item.systemType]?.[item.handleType]?.[item.handleColor] ?? 0;
-    return (count * rate)/item.area;
-  }
-
-  function getMeshRate(item: QuotationItem) {
-    const rate = meshRateTable[item.meshPresent]?.[item.meshType] ?? 0;
-    return rate;
-  }
-
-  const calculateRate = (item: QuotationItem) => {
-    const system = baseRateTable[item.systemType as keyof typeof baseRateTable];
-    console.log('system', system);
-    if (!system) return 0;
-
-    const series = system[item.series as keyof typeof system];
-    console.log('series', series);
-    if (!series) return 0;
-
-    console.log(item.description, 'description');
-    const descriptionRates = series[item.description];
-    console.log('descriptionRates', descriptionRates);
-    if (!descriptionRates) return 0;
-
-    const slab = AREA_SLABS.find(s => item.area <= s.max);
-    const baseRate = descriptionRates[slab?.index as keyof typeof descriptionRates];
-    const colorRate = getColorFinishRate(item.colorFinish);
-    const glassRate = getGlassRate(item.glassSpec);
-    const handleRate = getTotalHandleCost(item);
-    const meshRate = getMeshRate(item);
-
-    console.log(baseRate, colorRate, glassRate, handleRate, meshRate, 'rates');
-
-    const rate = baseRate + colorRate + glassRate + handleRate + meshRate;
-    return rate || 0;
-  }
-
-  // Function to get image path based on description
-  const getImagePath = (description: string): string => {
-
-    if (!description) return "";
-
-    if (description === 'Fix') {
-      console.log(description, 'description', '/Quotations/Fix.png');
-      return '/Quotations/Fix.png';
-    }
-
-    if (description === 'French Door' || description === 'French Window') {
-      console.log(description, 'description', '/Quotations/French Door-Window.jpg');
-      return '/Quotations/French Door-Window.jpg';
-    }
-
-    if (description === 'Left Openable Window' || description === 'Left Openable Door') {
-      console.log(description, 'description', '/Quotations/Left Openable Door-Window.jpg');
-      return '/Quotations/Left Openable Door-Window.jpg';
-    }
-
-    if (description === 'Right Openable Window' || description === 'Right Openable Door') {
-      console.log(description, 'description', '/Quotations/Right Openable Door-Window.jpg');
-      return '/Quotations/Right Openable Door-Window.jpg';
-    }
-
-    console.log(description, 'description', `/Quotations/${description}.jpg`);
-
-    return description ? `/Quotations/${description}.jpg` : "";
-  };
-
-  const updateItem = (id: string, field: keyof QuotationItem, value: string | number) => {
-    setItems(items.map(item => {
-      if (item.id === id) {
-        const updatedItem = { ...item, [field]: value };
-
-        // Auto-calculate area when width or height changes
-        if (field === 'width' || field === 'height') {
-          updatedItem.area = (updatedItem.width * updatedItem.height) / (304.78 ** 2);
-        }
-
-        // Auto-calculate amount when quantity, rate, or area changes
-        if (field === 'quantity' || field === 'rate' || field === 'area') {
-          updatedItem.amount = updatedItem.quantity * updatedItem.rate;
-        }
-
-        // Auto-update refImage when description changes
-        if (field === 'description') {
-          updatedItem.refImage = getImagePath(value as string);
-        }
-
-        if (field !== 'rate') {
-          const rate = calculateRate(updatedItem);
-          console.log(rate);
-          updatedItem.rate = rate;
-        }
-
-        
-        updatedItem.amount = updatedItem.quantity * updatedItem.rate;
-
-        return updatedItem;
-      }
-      return item;
-    }));
+  const updateItem = (nextItem: QuotationItem) => {
+    setItems((prev) => prev.map((item) => (item.id === nextItem.id ? nextItem : item)));
   };
 
   // Add item function
@@ -561,9 +224,7 @@ export default function EditQuotationPage() {
   };
 
   const calculateTotalArea = () => {
-    const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
-    const totalArea = items.reduce((total, item) => total + item.area, 0);
-    return totalArea * totalQuantity;
+    return items.reduce((total, item) => total + item.area * item.quantity, 0);
   };
 
   const calculateTotalQuantity = () => {
@@ -577,27 +238,46 @@ export default function EditQuotationPage() {
   };
 
   // Update quotation (instead of create new)
-  const handleUpdate = () => {
-    const updatedQuotation = {
-      id: quotationId, // Keep the same ID
-      ...quotationDetails,
+  const handleUpdate = async () => {
+    const totalAmount = calculateTotalWithProfit().toFixed(2);
+
+    console.log("Total amount", totalAmount);
+
+    const payload = {
+      quotationDetails: {
+        date: quotationDetails.date,
+        opportunity: quotationDetails.opportunity || "",
+        terms: quotationDetails.terms,
+        notes: quotationDetails.notes,
+        validUntil: quotationDetails.validUntil,
+      },
       customerDetails,
-      items,
-      total: calculateTotalWithProfit(), // Save with profit included
-      baseTotal: calculateTotal(), // Save base total separately
-      profitPercentage,
-      updatedAt: new Date().toISOString(), // Add updated timestamp
+      items: items.map((item) => ({
+        ...item,
+        handleCount: item.handleCount ?? 0,
+        meshPresent: item.meshPresent === "Yes",
+      })),
+      breakdown: {
+        totalAmount,
+        profitPercentage
+      },
     };
 
-    // Update in localStorage
-    const existingQuotations = JSON.parse(localStorage.getItem('quotations') || '[]');
-    const updatedQuotations = existingQuotations.map((q: any) =>
-      q.id === quotationId ? { ...q, ...updatedQuotation } : q
-    );
-    localStorage.setItem('quotations', JSON.stringify(updatedQuotations));
-
-    alert('Quotation updated successfully!');
-    router.push('/quotations');
+    try {
+      const token = localStorage.getItem("authToken");
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/quotations/${quotationId}`,
+        payload,
+        token
+          ? { headers: { Authorization: `Bearer ${token}` } }
+          : undefined
+      );
+      alert('Quotation updated successfully!');
+      router.push('/quotations');
+    } catch (err) {
+      console.error("Error updating quotation", err);
+      alert('Error updating quotation. Please try again.');
+    }
   };
 
   // Download PDF function
@@ -622,8 +302,39 @@ export default function EditQuotationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="px-4 pt-24 pb-8">
+    <QueryClientProvider client={queryClient}>
+      {loading ? (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#124657] mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading quotation...</p>
+          </div>
+        </div>
+      ) : !quotationFound ? (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-gray-400 text-3xl">📄</span>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Quotation not found</h3>
+            <p className="text-gray-600 mb-6">The quotation you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
+            <Link
+              href="/quotations"
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-[#124657] text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Quotations</span>
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="min-h-screen bg-gray-50">
+          {error && (
+            <div className="mx-4 mb-4 rounded border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+          <div className="px-4 pt-24 pb-8">
         {/* Fixed Header with Action Buttons */}
         <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm z-50">
           <div className="px-4 py-4">
@@ -639,7 +350,7 @@ export default function EditQuotationPage() {
                 <div className="h-6 w-px bg-gray-300"></div>
                 <div>
                   <h1 className="text-xl font-bold text-[#124657]">Edit Quotation</h1>
-                  <p className="text-sm text-gray-600">#{quotationDetails.quotationNumber}</p>
+                  <p className="text-sm text-gray-600">#{quotationId}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -666,18 +377,7 @@ export default function EditQuotationPage() {
           {/* Quotation Details */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Quotation Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Quotation Number
-                  </label>
-                  <input
-                    type="text"
-                    value={quotationDetails.quotationNumber}
-                    onChange={(e) => setQuotationDetails({...quotationDetails, quotationNumber: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Date
@@ -880,362 +580,14 @@ export default function EditQuotationPage() {
                 </thead>
                 <tbody>
                   {items.map((item, index) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-3 py-3 text-center text-sm font-medium">{index + 1}</td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.refCode}
-                          onChange={(e) => updateItem(item.id, 'refCode', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          placeholder="Ref code..."
-                        />
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.location}
-                          onChange={(e) => updateItem(item.id, 'location', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          placeholder="Location..."
-                        />
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="number"
-                          value={item.width}
-                          onChange={(e) => updateItem(item.id, 'width', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          placeholder="Width"
-                        />
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="number"
-                          value={item.height}
-                          onChange={(e) => updateItem(item.id, 'height', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          placeholder="Height"
-                        />
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <select
-                          value={item.systemType}
-                          onChange={(e) => updateItem(item.id, 'systemType', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
-                        >
-                          <option value="">Select System</option>
-                          <option value="Casement">Casement</option>
-                          <option value="Sliding">Sliding</option>
-                          <option value="Slide N Fold">Slide N Fold</option>
-                        </select>
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <select
-                          value={item.series}
-                          onChange={(e) => updateItem(item.id, 'series', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-                          disabled={item.systemType === ''}
-                        >
-                          <option value="">Select Series</option>
-                          {item.systemType === 'Casement' && (
-                            <>
-                              <option value="40mm">40mm</option>
-                              <option value="50mm">50mm</option>
-                              <option value="114mm">114mm</option>
-                            </>
-                          )}
-                          {item.systemType === 'Sliding' && (
-                            <>
-                              <option value="29mm">29mm</option>
-                              <option value="44mm">44mm</option>
-                            </>
-                          )}
-                          {item.systemType === 'Slide N Fold' && (
-                            <>
-                              <option value="Glazia GU">Glazia GU</option>
-                            </>
-                          )}
-                        </select>
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                          <select
-                            value={item.description}
-                            onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-                            disabled={item.series === ''}
-                          >
-                            <option value="">Select Description</option>
-                            {
-                              item.systemType === 'Casement' && item.series === '40mm' && (
-                                <>
-                                  <option value="Fix">Fix</option>
-                                  <option value="Left Openable Window">Left Openable Window</option>
-                                  <option value="Right Openable Window">Right Openable Window</option>
-                                  <option value="Top Hung Window">Top Hung Window</option>
-                                  <option value="Bottom Hung Window">Bottom Hung Window</option>
-                                  <option value="French Window">French Window</option>
-                                </>
-                              )
-                            }
-                            {
-                              item.systemType === 'Casement' && item.series === '50mm' && (
-                                <>
-                                  <option value="Fix">Fix</option>
-                                  <option value="Left Openable Window">Left Openable Window</option>
-                                  <option value="Right Openable Window">Right Openable Window</option>
-                                  <option value="Top Hung Window">Top Hung Window</option>
-                                  <option value="Bottom Hung Window">Bottom Hung Window</option>
-                                  <option value="Tilt and Turn Window">Tilt and Turn Window</option>
-                                  <option value="Parallel Window">Parallel Window</option>
-                                  <option value="French Window">French Window</option>
-                                  <option value="Left Openable Door">Left Openable Door</option>
-                                  <option value="Right Openable Door">Right Openable Door</option>
-                                  <option value="French Door">French Door</option>
-                                </>
-                              )
-                            }
-                            {
-                              item.systemType === 'Casement' && item.series === '114mm' && (
-                                <>
-                                    <option value="Left Openable">Left Openable</option>
-                                    <option value="Right Openable">Right Openable</option>
-                                    <option value="Left Openable + Fixed">Left Openable + Fixed</option>
-                                    <option value="Fixed + Right Openable">Fixed + Right Openable</option>
-                                    <option value="Left Openable + Fixed + right Openable">Left Openable + Fixed + right Openable</option>
-                                </>
-                              )
-                            }
-                            {
-                              item.systemType === 'Sliding' && item.series === '29mm' && (
-                                <>
-                                  <option value="2 Track 2 Glass Panel">2 Track 2 Glass Panel</option>
-                                  <option value="2 Track 3 Glass Panel">2 Track 3 Glass Panel</option>
-                                  <option value="2 Track 4 Glass Panel">2 Track 4 Glass Panel</option>
-                                  <option value="3 Track 2 Glass 1 Mesh Panel">3 Track 2 Glass 1 Mesh Panel</option>
-                                  <option value="3 Track 3 Glass Panel">3 Track 3 Glass Panel</option>
-                                  <option value="3 Track 3 Glass 1 Mesh Panel">3 Track 3 Glass 1 Mesh Panel</option>
-                                  <option value="3 Track 4 Glass Panel 2 Mesh Panel">3 Track 4 Glass Panel 2 Mesh Panel</option>
-                                </>
-                              )
-                            }
-                            {
-                              item.systemType === 'Sliding' && item.series === '44mm' && (
-                                <>
-                                  <option value="2 Track 2 Glass Panel">2 Track 2 Glass Panel</option>
-                                  <option value="2 Track 3 Glass Panel">2 Track 3 Glass Panel</option>
-                                  <option value="2 Track 4 Glass Panel">2 Track 4 Glass Panel</option>
-                                  <option value="3 Track 2 Glass 1 Mesh Panel">3 Track 2 Glass 1 Mesh Panel</option>
-                                  <option value="3 Track 3 Glass Panel">3 Track 3 Glass Panel</option>
-                                  <option value="3 Track 3 Glass 1 Mesh Panel">3 Track 3 Glass 1 Mesh Panel</option>
-                                  <option value="3 Track 4 Glass Panel 2 Mesh Panel">3 Track 4 Glass Panel 2 Mesh Panel</option>
-                                  <option value="3 Track 6 Glass Panel">3 Track 6 Glass Panel</option>
-                                </>
-                              )
-                            }
-                            {
-                              item.systemType === 'Slide N Fold' && item.series === 'Glazia GU' && (
-                                <>
-                                  <option value="2 Panel (1+1)">2 Panel (1+1)</option>
-                                  <option value="3 Panel (1+2)">3 Panel (1+2)</option>
-                                  <option value="4 Panel (1+3)">4 Panel (1+3)</option>
-                                  <option value="5 Panel (1+4)">5 Panel (1+4)</option>
-                                  <option value="6 Panel (1+5)">6 Panel (1+5)</option>
-                                </>
-                              )
-                            }
-                          </select>
-                        </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                          <select
-                            value={item.colorFinish}
-                            onChange={(e) => updateItem(item.id, 'colorFinish', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
-                          >
-                            <option value="">Select Color Finish</option>
-
-                            {/* Powder Coating Options */}
-                            <optgroup label="Powder Coating">
-                              <option value="Grey-Tex 2200">Grey-Tex 2200</option>
-                              <option value="Grey-Tex 2900">Grey-Tex 2900</option>
-                              <option value="Matt Black-9005">Matt Black - 9005</option>
-                              <option value="White-9003">White - 9003</option>
-                              <option value="Anodic Bronze-SW28BN">Anodic Bronze - SW28BN</option>
-                              <option value="Champagne-SDA53N">Champagne - SDA53N</option>
-                            </optgroup>
-
-                            {/* Anodizing Options */}
-                            <optgroup label="Anodizing">
-                              <option value="Champagne">Champagne</option>
-                              <option value="Black">Black</option>
-                            </optgroup>
-
-                            {/* Wooden Options */}
-                            <optgroup label="Wooden">
-                              <option value="Wenge">Wenge</option>
-                              <option value="XYZ">XYZ</option>
-                              <option value="ABC">ABC</option>
-                            </optgroup>
-                          </select>
-                        </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                          <select
-                            value={item.glassSpec}
-                            onChange={(e) => updateItem(item.id, 'glassSpec', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
-                          >
-                            <option value="">Select Glass Spec</option>
-
-                            {/* Clear Toughened Glass Options */}
-                            <optgroup label="Clear Toughened Glass">
-                              <option value="5mm Clear Toughened">5mm Clear Toughened</option>
-                              <option value="6mm Clear Toughened">6mm Clear Toughened</option>
-                              <option value="8mm Clear Toughened">8mm Clear Toughened</option>
-                              <option value="10mm Clear Toughened">10mm Clear Toughened</option>
-                              <option value="12mm Clear Toughened">12mm Clear Toughened</option>
-                            </optgroup>
-
-                            {/* Frosted Toughened Glass Options */}
-                            <optgroup label="Frosted Toughened Glass">
-                              <option value="5/6mm Frosted Toughened">5/6mm Frosted Toughened</option>
-                            </optgroup>
-
-                            {/* DGU Glass Options */}
-                            <optgroup label="DGU Glass">
-                              <option value="20mm (5+10+5) DGU Glass">20mm (5+10+5) DGU Glass</option>
-                              <option value="24mm (6+12+6) DGU Glass">24mm (6+12+6) DGU Glass</option>
-                              <option value="32mm (8+12+8) DGU Glass">32mm (8+12+8) DGU Glass</option>
-                            </optgroup>
-
-                            {/* Security/Laminated Glass Options */}
-                            <optgroup label="Security/Laminated Glass">
-                              <option value="11.52mm (5+1.52+5) Laminated Glass">11.52mm (5+1.52+5) Laminated Glass</option>
-                              <option value="13.52mm (6+1.52+6) Laminated Glass">13.52mm (6+1.52+6) Laminated Glass</option>
-                              <option value="17.52mm (8+1.52+8) Laminated Glass">17.52mm (8+1.52+8) Laminated Glass</option>
-                            </optgroup>
-
-                            {/* DGU Laminated Glass Options */}
-                            <optgroup label="DGU Laminated Glass">
-                              <option value="31.52mm (6+1.52+6+12+6) DGU Laminated Glass">31.52mm (6+1.52+6+12+6) DGU Laminated Glass</option>
-                            </optgroup>
-
-                            {/* Clear Float Glass Options */}
-                            <optgroup label="Clear Float Glass">
-                              <option value="5/6mm Clear Float Glass">5/6mm Clear Float Glass</option>
-                            </optgroup>
-                          </select>
-                        </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                          <select
-                            value={item.handleType}
-                            onChange={(e) => updateItem(item.id, 'handleType', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
-                          >
-                            <option value="">Select Handle</option>
-                            {
-                              item.systemType === 'Sliding' && (
-                                <>
-                                  <option value="Metro Handle">Metro Handle</option>
-                                  <option value="Touch Lock">Touch Lock</option>
-                                  <option value="D handle">D handle</option>
-                                  <option value="Pop-up handle">Pop-up handle</option>
-                                </>
-                              )
-                            }
-                            {
-                              (item.systemType === 'Casement' || item.systemType === 'Slide N Fold') && (
-                                <>
-                                  <option value="Mortise Handle with lock">Mortise Handle with lock</option>
-                                  <option value="L handle">L handle</option>
-                                  <option value="Cremone Handle">Cremone Handle</option>
-                                  <option value="Cocksper Handle">Cocksper Handle</option>
-                                </>
-                              )
-                            }
-                          </select>
-                        </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                          <select
-                            value={item.handleColor}
-                            onChange={(e) => updateItem(item.id, 'handleColor', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
-                          >
-                            <option value="">Select Color</option>
-                            <option value="Black">Black</option>
-                            <option value="Silver">Silver</option>
-                          </select>
-                        </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <select
-                          value={item.meshPresent}
-                          onChange={(e) => updateItem(item.id, 'meshPresent', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
-                        >
-                          <option value="">Select</option>
-                          <option value="Yes">Yes</option>
-                          <option value="No">No</option>
-                        </select>
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                          <select
-                            value={item.meshType}
-                            onChange={(e) => updateItem(item.id, 'meshType', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
-                          >
-                            <option value="">Select Mesh</option>
-                            <option value="SS Mesh - Black">SS Mesh - Black</option>
-                            <option value="SS Mesh - Natural">SS Mesh - Natural</option>
-                            <option value="Pleated Mesh">Pleated Mesh</option>
-                          </select>
-                        </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="number"
-                          value={item.rate.toFixed(2)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded bg-gray-50"
-                          onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
-                        />
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          min="1"
-                        />
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        {item.refImage && (
-                          <img
-                            src={item.refImage}
-                            alt="Reference"
-                            className="w-16 h-12 object-cover rounded"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        )}
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.remarks}
-                          onChange={(e) => updateItem(item.id, 'remarks', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                          placeholder="Remarks..."
-                        />
-                      </td>
-                      <td className="border border-gray-300 px-2 py-2">
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
-                          disabled={items.length <= 1}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
+                    <QuotationItemRow
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      onChange={updateItem}
+                      removeItem={removeItem}
+                      canRemove={items.length > 1}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -1274,5 +626,7 @@ export default function EditQuotationPage() {
         </div>
       </div>
     </div>
+      )}
+    </QueryClientProvider>
   );
 }

@@ -2,7 +2,7 @@
 
 // Helper function to convert image URL to base64
 const imageToBase64 = (url: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (!url) {
       resolve('');
       return;
@@ -46,66 +46,62 @@ const imageToBase64 = (url: string): Promise<string> => {
   });
 };
 
-type SystemType = "Casement" | "Sliding" | "Slide N Fold" | "";
-
 interface QuotationItem {
-  id: string;
-  refCode: string;
-  location: string;
-  width: number;
-  height: number;
-  area: number;
-  systemType: SystemType;
-  series: string;
-  description: string;
-  colorFinish: string;
-  glassSpec: string;
-  handleType: string;
-  handleColor: string;
-  meshPresent: string;
-  meshType: string;
-  rate: number;
-  quantity: number;
-  amount: number;
-  refImage: string;
-  remarks: string;
-}
-
-interface CustomerDetails {
-  name: string;
-  company: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  pincode: string;
+  id?: string;
+  refCode?: string;
+  location?: string;
+  width?: number;
+  height?: number;
+  area?: number;
+  systemType?: string;
+  series?: string;
+  description?: string;
+  colorFinish?: string;
+  glassSpec?: string;
+  handleType?: string;
+  handleColor?: string;
+  handleCount?: number;
+  meshPresent?: boolean | string;
+  meshType?: string;
+  rate?: number;
+  quantity?: number;
+  amount?: number;
+  refImage?: string;
+  remarks?: string;
 }
 
 interface QuotationData {
   id: string;
-  quotationNumber: string;
-  date: string;
-  validUntil: string;
-  customerDetails: CustomerDetails;
-  items: QuotationItem[];
-  total: number;
-  baseTotal?: number;
-  profitPercentage: number;
-  terms: string;
-  notes: string;
+  quotationNumber?: string;
+  createdAt?: string;
+  quotationDetails?: {
+    id?: string;
+    date?: string;
+    opportunity?: string;
+    terms?: string;
+    notes?: string;
+  };
+  customerDetails?: {
+    name?: string;
+    company?: string;
+    email?: string;
+    phone?: string;
+  };
+  items?: QuotationItem[];
+  breakdown?: {
+    baseRate?: number;
+    areaSlabIndex?: number;
+  };
+  validUntil?: string;
+  totalAmount?: number;
 }
 
 export const createQuotationHTML = (quotation: QuotationData): string => {
-
   const user = window.localStorage.getItem('glazia-user');
-  let userData;
-
-  console.log("quotation", quotation);
+  let userData: { name?: string; email?: string; phone?: string } = {};
 
   if (user) {
     userData = JSON.parse(user);
-    console.log('User data:', userData);
   }
 
   const nl2br = (str: string) => {
@@ -113,15 +109,36 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
     return str.replace(/\n/g, "<br>");
   };
 
-  // Calculate profit multiplier for individual items
-  const profitMultiplier = 1 + (quotation.profitPercentage || 0) / 100;
+  const profitMultiplier =
+    (quotation as unknown as { profitPercentage?: number })?.profitPercentage
+      ? 1 + ((quotation as unknown as { profitPercentage?: number }).profitPercentage || 0) / 100
+      : 1;
 
   // Adjust item rates and amounts to include profit
-  const adjustedItems = quotation.items.map(item => ({
+  const adjustedItems = (quotation.items || []).map((item) => ({
     ...item,
-    rate: item.rate * profitMultiplier,
-    amount: item.amount * profitMultiplier
+    rate: (item.rate || 0) * profitMultiplier,
+    amount: (item.amount || 0) * profitMultiplier,
   }));
+
+  const rawTotal = quotation.totalAmount ?? adjustedItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const baseTotal = rawTotal;
+  const gstValue = baseTotal * 0.18;
+  const grandTotal = baseTotal + gstValue;
+  const totalArea = adjustedItems.reduce((sum, item) => sum + (item.area || 0) * (item.quantity || 1), 0);
+  const totalQty = adjustedItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const avgWithGst = totalArea ? grandTotal / totalArea : 0;
+  const avgWithoutGst = totalArea ? baseTotal / totalArea : 0;
+
+  const quotationNumber =
+    quotation.quotationNumber || quotation.quotationDetails?.id || quotation.id || "";
+  const quotationDate =
+    quotation.quotationDetails?.date ||
+    quotation.createdAt ||
+    new Date().toISOString();
+  const quotationTerms =
+    quotation.quotationDetails?.terms || "";
+  const customer = quotation.customerDetails || {};
 
   return `
     <!DOCTYPE html>
@@ -131,351 +148,331 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
       <title>Quotation ${quotation.quotationNumber}</title>
       <style>
         * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Arial', sans-serif;
-      font-size: 11px;
-      line-height: 1.3;
-      color: #333;
-      background: white;
-    }
-
-    .container {
-      max-width: 297mm;
-      margin: 0 auto;
-      padding: 10mm;
-      background: white;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 15px;
-      border-bottom: 2px solid #124657;
-      padding-bottom: 10px;
-    }
-
-    .company-name {
-      font-size: 22px;
-      font-weight: bold;
-      color: #124657;
-      margin-bottom: 3px;
-    }
-
-    .company-tagline {
-      font-size: 12px;
-      color: #666;
-      margin-bottom: 5px;
-    }
-
-    .company-contact {
-      font-size: 9px;
-      color: #888;
-    }
-
-    .quotation-title {
-      font-size: 18px;
-      font-weight: bold;
-      color: #124657;
-      text-align: center;
-      margin: 15px 0;
-    }
-
-    .quotation-details {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 15px;
-    }
-
-    .quotation-info, .customer-info {
-      flex: 1;
-    }
-
-    .customer-info {
-      margin-left: 30px;
-    }
-
-    .section-title {
-      font-size: 12px;
-      font-weight: bold;
-      color: #124657;
-      margin-bottom: 5px;
-    }
-
-    .info-line {
-      margin-bottom: 3px;
-      font-size: 10px;
-    }
-
-    .items-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 15px 0;
-      font-size: 8px;
-    }
-
-    .items-table th {
-      background-color: #124657 !important;
-      color: #ffffff !important;
-      padding: 6px 3px;
-      text-align: center;
-      font-weight: bold;
-      border: 1px solid #ddd;
-      font-size: 8px; /* reduced for PDF fit */
-    }
-
-
-    .items-table td {
-      padding: 4px 3px;
-      border: 1px solid #ddd;
-      text-align: center;
-      vertical-align: middle;
-      font-size: 7px;
-    }
-
-    .items-table th, .items-table td {
-        white-space: nowrap;
-      }
-
-      .items-table th:nth-child(1) { width: 15px; }
-      .items-table th:nth-child(2) { width: 60px; }
-      .items-table th:nth-child(3) { width: 70px; }
-      .items-table th:nth-child(4) { width: 45px; }
-      .items-table th:nth-child(5) { width: 45px; }
-      .items-table th:nth-child(6) { width: 70px; }
-      .items-table th:nth-child(7) { width: 50px; }
-      .items-table th:nth-child(8) { width: 110px; }
-      .items-table th:nth-child(9) { width: 60px; }
-      .items-table th:nth-child(10) { width: 60px; }
-      .items-table th:nth-child(11), .items-table th:nth-child(12) { width: 60px; }
-      .items-table th:nth-child(13), .items-table th:nth-child(14) { width: 60px; }
-      .items-table th:nth-child(15) { width: 60px; }
-      .items-table th:nth-child(16) { width: 40px; }
-      .items-table th:nth-child(17) { width: 50px; }
-      .items-table th:nth-child(18) { width: 60px; }
-
-    .items-table tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-
-    .text-left { text-align: left !important; }
-    .text-right { text-align: right !important; }
-    .text-center { text-align: center !important; }
-
-    .image-cell {
-      width: 50px !important;
-      height: 35px !important;
-      padding: 2px !important;
-      text-align: center;
-    }
-
-    .image-cell img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
-
-    .no-image {
-      font-size: 5px;
-      color: #999;
-      text-align: center;
-    }
-
-    .total-section {
-      margin-top: 15px;
-      text-align: right;
-    }
-
-    .total-amount {
-      font-size: 14px;
-      font-weight: bold;
-      color: #124657;
-      margin-top: 8px;
-    }
-
-    .terms-section {
-      margin-top: 20px;
-    }
-
-    .terms-title {
-      font-size: 11px;
-      font-weight: bold;
-      color: #124657;
-      margin-bottom: 8px;
-    }
-
-    .terms-list {
-      font-size: 9px;
-      line-height: 1.4;
-    }
-
-    .terms-list li {
-      margin-bottom: 3px;
-    }
-
-    .footer {
-      margin-top: 25px;
-      text-align: center;
-      font-size: 9px;
-      color: #666;
-      border-top: 1px solid #ddd;
-      padding-top: 10px;
-    }
-
-    .grouped-header {
-      background-color: #0f3a49 !important;
-      font-weight: bold;
-    }
-
-    @media print {
-      .container {
-        margin: 0;
-        padding: 5mm;
-      }
-
-      body {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-    }
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        body {
+          font-family: 'Arial', sans-serif;
+          font-size: 10px;
+          color: #2b2b2b;
+          background: #ffffff;
+        }
+        .container {
+          width: 100%;
+          margin: 0 auto;
+          padding: 8mm 6mm;
+          background: #ffffff;
+        }
+        .top-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8mm;
+        }
+        .logo {
+          font-size: 36px;
+          letter-spacing: 0.5px;
+          font-weight: 500;
+        }
+        .quotation-label {
+          color: #E10E0E;
+          font-size: 16px;
+          font-weight: 600;
+          letter-spacing: 1px;
+        }
+        .contact {
+          text-align: right;
+          font-size: 12px;
+          line-height: 1.4;
+        }
+        .navy-bar {
+          background: #2F3A4F;
+          color: #fff;
+          padding: 8px;
+          text-align: center;
+          font-size: 24px;
+          font-weight: 500;
+          margin-bottom: 8mm;
+        }
+        .info-grid {
+          border: 1px solid #000;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 6mm;
+          margin-bottom: 6mm;
+        }
+        .info-card {
+         
+          padding: 8px;
+          min-height: 110px;
+        }
+        .info-title {
+          font-size: 10px;
+          font-weight: 700;
+          color: #2b2b2b;
+          margin-bottom: 4px;
+        }
+        .info-line {
+          font-size: 10px;
+          color: #2f2f2f;
+          line-height: 1.4;
+        }
+        .meta-card {
+          border: 1px solid #d8d8d8;
+          padding: 8px;
+          min-height: 96px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4px 8px;
+          font-size: 10px;
+        }
+        .meta-label {
+          color: #444;
+        }
+        .meta-value {
+          font-weight: 600;
+          color: #000;
+          text-align: right;
+        }
+        .table-wrapper {
+          border: 1px solid #d8d8d8;
+          border-radius: 2px;
+          overflow: hidden;
+          margin-bottom: 6mm;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        thead {
+          background: #f7f7f7;
+        }
+        .head-top th {
+          background: #FFF;
+          color: #222;
+          font-size: 8px;
+          padding: 5px;
+          border: 1px solid #e0e0e0;
+          text-align: center;
+          font-weight: 700;
+        }
+        .head-sub th {
+          background: #FFF;
+          color: #222;
+          font-size: 8px;
+          padding: 4px 3px;
+          border: 1px solid #e0e0e0;
+          text-align: center;
+          font-weight: 700;
+        }
+        tbody td {
+          border: 1px solid #e0e0e0;
+          padding: 4px 3px;
+          font-size: 8px;
+          text-align: center;
+          line-height: 1.35;
+        }
+        tbody tr:nth-child(even) {
+          background: #fafafa;
+        }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+        .no-image {
+          font-size: 7px;
+          color: #999;
+        }
+        .summary {
+          display: flex;
+          justify-content: left;
+          margin: 6mm 0;
+        }
+        .total-card {
+          padding: 10px 12px;
+          width: 50%;
+        }
+        .total-heading {
+          color: #d5272b;
+          font-size: 11px;
+          font-weight: 700;
+          margin-bottom: 6px;
+        }
+        .total-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          font-size: 9px;
+          padding: 4px 0;
+          border-bottom: 1px solid #000; 
+        }
+        .total-row strong {
+          font-size: 10px;
+        }
+        .lists {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6mm;
+          margin-top: 4mm;
+        }
+        .list-card {
+          border: 1px solid #d8d8d8;
+          padding: 10px 12px;
+        }
+        .list-title {
+          color: #d5272b;
+          font-size: 11px;
+          font-weight: 700;
+          margin-bottom: 6px;
+        }
+        .list-body {
+          font-size: 9px;
+          line-height: 1.5;
+        }
+        .signature-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20mm;
+          margin-top: 10mm;
+          font-size: 9px;
+        }
+        .sig-line {
+          border-top: 1px solid #000;
+          padding-top: 6px;
+          text-align: center;
+        }
+        @media print {
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
       </style>
     </head>
     <body>
       <div class="container">
-
-      <img src="/logo_n.png" alt="Logo" style="width: 40px; height: auto; position: fixed; top: 10px; left: 20px;">
-       
-      <div class="header">
-        <div class="company-name">${userData.name}</div>
-        <div class="company-contact">Email: ${userData.email} | Phone: +91-${userData.phone}</div>
-      </div>
-
-
-        <div class="quotation-title">QUOTATION</div>
-
-        <!-- Quotation Details -->
-        <div class="quotation-details">
-          <div class="quotation-info">
-            <div class="info-line"><strong>Quotation No:</strong> ${quotation.quotationNumber}</div>
-            <div class="info-line"><strong>Date:</strong> ${new Date(quotation.date).toLocaleDateString('en-IN')}</div>
-            ${quotation.validUntil ? `<div class="info-line"><strong>Valid Until:</strong> ${new Date(quotation.validUntil).toLocaleDateString('en-IN')}</div>` : ''}
-          </div>
-          <div class="customer-info">
-            <div class="section-title">Bill To:</div>
-            <div class="info-line"><strong>${quotation.customerDetails.name}</strong></div>
-            ${quotation.customerDetails.company ? `<div class="info-line">${quotation.customerDetails.company}</div>` : ''}
-            ${quotation.customerDetails.address ? `<div class="info-line">${quotation.customerDetails.address}</div>` : ''}
-            ${quotation.customerDetails.city || quotation.customerDetails.state || quotation.customerDetails.pincode ?
-              `<div class="info-line">${[quotation.customerDetails.city, quotation.customerDetails.state, quotation.customerDetails.pincode].filter(Boolean).join(', ')}</div>` : ''}
-            <div class="info-line">Phone: ${quotation.customerDetails.phone}</div>
-            <div class="info-line">Email: ${quotation.customerDetails.email}</div>
+        <div class="top-bar">
+          <div class="logo">GLAZIA</div>
+          <div class="quotation-label">QUOTATION</div>
+          <div class="contact">
+            <div>Contact</div>
+            <div>+91-${userData.phone || "99XXXXXXXX"}</div>
+            <div>${userData.email || "sales@glazia.com"}</div>
           </div>
         </div>
 
-        <table class="items-table">
-          <thead>
-            <tr style="background-color:#124657; color:#ffffff;">
-              <th style="width: 15px;" rowspan="2">S.No</th>
-              <th rowspan="2">Ref Code</th>
-              <th rowspan="2">Location</th>
-              <th rowspan="2">Width</th>
-              <th rowspan="2">Height</th>
-              <th rowspan="2">System Type</th>
-              <th rowspan="2">Series</th>
-              <th rowspan="2">Description</th>
-              <th rowspan="2">Color Finish</th>
-              <th rowspan="2">Glass Spec</th>
-              <th colspan="2">Handle</th>
-              <th colspan="2">Mesh</th>
-              <th rowspan="2">Rate</th>
-              <th rowspan="2">Qty</th>
-              <th rowspan="2">Ref Image</th>
-              <th rowspan="2">Remarks</th>
-            </tr>
+        <div class="navy-bar">Glazia Windoors Private Limited</div>
 
-            
-          </thead>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-title">Bill To:</div>
+            <div class="info-line"><strong>${customer.name || "-"}</strong></div>
+            ${customer.company ? `<div class="info-line">${customer.company}</div>` : ""}
+            ${customer.address ? `<div class="info-line">${customer.address}</div>` : ""}
+            <div class="info-line">${[customer.city, customer.state, customer.pincode].filter(Boolean).join(", ")}</div>
+            <div class="info-line">Phone: ${customer.phone || "-"}</div>
+            <div class="info-line">Email: ${customer.email || "-"}</div>
+          </div>
+          <div class="info-card">
+            <div class="info-title">Bill From:</div>
+            <div class="info-line"><strong>Glazia Windooros Pvt. Ltd.</strong></div>
+            <div class="info-line">Khata No. 361, Rect. No. 21/470,</div>
+            <div class="info-line">Khokri Dholai Village Road,</div>
+            <div class="info-line">Gurgaon, Haryana - 122001</div>
+            <div class="info-line">India</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">Quotation no.:</div><div class="meta-value">${quotation._id}</div>
+            <div class="meta-label">Quote Generated on:</div><div class="meta-value">${new Date(quotationDate).toLocaleDateString("en-IN")}</div>
+            <div class="meta-label">Valid On:</div><div class="meta-value">${quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString("en-IN") : "N/A"}</div>
+          </div>
+        </div>
 
-
-          <tbody>
-            <tr>
-              <th></th>
-              <th></th>
-              <th></th>
-              <th></th>
-              <th></th>
-              <th> </th>
-              <th></th>
-              <th></th>
-              <th></th>
-              <th> </th>
-              <th>Type</th>
-              <th>Color</th>
-              <th>Present</th>
-              <th>Type</th>
-              <th></th>
-              <th></th>
-              <th></th>
-              <th></th>
-            </tr>
-            ${adjustedItems.map((item, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                <td>${item.refCode || '-'}</td>
-                <td class="text-left">${item.location || '-'}</td>
-                <td>${item.width}×${item.height}</td>
-                <td>${item.area.toFixed(2)}</td>
-                <td>${item.systemType || '-'}</td>
-                <td>${item.series || '-'}</td>
-                <td class="text-left">${item.description}</td>
-                <td class="text-left">${item.colorFinish || '-'}</td>
-                <td class="text-left">${item.glassSpec || '-'}</td>
-                <td class="text-left">${item.handleType || '-'}</td>
-                <td>${item.handleColor || '-'}</td>
-                <td>${item.meshPresent || '-'}</td>
-                <td class="text-left">${item.meshType || '-'}</td>
-                <td class="text-right">₹${item.rate.toFixed(2)}</td>
-                <td>${item.quantity}</td>
-                <td class="image-cell">
-                  ${item.refImage ? `<img src="${item.refImage}" style="width: 40px" alt="${item.description}" />` : '<div class="no-image">No Image</div>'}
-                </td>
-                <td class="text-right">₹${item.amount.toFixed(2)}</td>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr class="head-top">
+                <th rowspan="2">S.No.</th>
+                <th rowspan="2">Ref</th>
+                <th rowspan="2">Series</th>
+                <th rowspan="2">Color</th>
+                <th rowspan="2">Product</th>
+                <th rowspan="2">Location</th>
+                <th rowspan="2">Description</th>
+                <th rowspan="2">Glass Spec</th>
+                <th colspan="2">Handle</th>
+                <th colspan="2">Mesh</th>
+                <th rowspan="2">Unit Price</th>
+                <th rowspan="2">Qty</th>
+                <th rowspan="2">AMOUNT</th>
+                <th rowspan="2">REMARKS</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+              <tr class="head-sub">
+                <th>Type</th>
+                <th>Color</th>
+                <th>Present</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${adjustedItems.map((item, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${item.refCode || "-"}</td>
+                  <td>${item.series || "-"}</td>
+                  <td class="text-left">${item.colorFinish || "-"}</td>
+                  <td>${item.systemType || "-"}</td>
+                  <td class="text-left">${item.location || "-"}</td>
+                  <td class="text-left">${item.description || "-"}</td>
+                  <td class="text-left">${item.glassSpec || "-"}</td>
+                  <td class="text-left">${item.handleType || "-"}</td>
+                  <td>${item.handleColor || "-"}</td>
+                  <td>${item.meshPresent || "-"}</td>
+                  <td class="text-left">${item.meshType || "-"}</td>
+                  <td class="text-right">${item.rate.toLocaleString("en-IN")}</td>
+                  <td>${item.quantity}</td>
+                  <td class="text-right">${(item.rate * item.quantity).toLocaleString("en-IN")}</td>
+                  <td class="text-left">${item.remarks || ""}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
 
-        <!-- Total -->
-        <div class="total-section">
-          <div class="total-amount">
-            Total Amount: ₹${quotation.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+        <div class="summary">
+          <div class="total-card">
+            <div class="total-heading">Quote Total</div>
+            <div class="total-row"><span>No. of Components</span><span class="text-right">${totalQty}</span></div>
+            <div class="total-row"><span>Total Area</span><span class="text-right">${totalArea.toFixed(2)}</span></div>
+            <div class="total-row"><span><strong>Basic Value</strong></span><span class="text-right"><strong>${baseTotal.toLocaleString("en-IN")}</strong></span></div>
+            <div class="total-row"><span>Total Project Cost</span><span class="text-right">${quotation.breakdown?.totalAmount.toLocaleString("en-IN")}</span></div>
+            <div class="total-row"><span>GST 18%</span><span class="text-right">${gstValue.toLocaleString("en-IN")}</span></div>
+            <div class="total-row"><span><strong>Grand Total</strong></span><span class="text-right"><strong>${grandTotal.toLocaleString("en-IN")}</strong></span></div>
+            <div class="total-row"><span>Avg. Price Per Sq. Ft. Without GST</span><span class="text-right">${avgWithoutGst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+            <div class="total-row"><span>Avg. Price Per Sq. Ft.</span><span class="text-right">${avgWithGst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
           </div>
         </div>
 
-        <!-- Terms and Conditions -->
-        ${quotation.terms ? `
-        <div class="terms-section">
-          <div class="terms-title">Terms & Conditions:</div>
-          <div class="terms-list">${nl2br(quotation.terms)}</div>
+        <div class="lists">
+          <div class="list-card">
+            <div class="list-title">Terms & Conditions</div>
+            <div class="list-body">${quotationTerms ? nl2br(quotationTerms) : "N/A"}</div>
+          </div>
+          <div class="list-card">
+            <div class="list-title">Pre-requisites for Installation of Windows</div>
+            <div class="list-body">
+              1. Walls should be plastered from inside and outside, with inside POP complete.<br>
+              2. All jambs, sills and soffits should be plastered.<br>
+              3. Flooring (where doors have to be installed) should be complete.<br>
+              4. Aperture should be smooth.<br>
+              5. Base and top of window should be water leveled and sides should be in vertical plumb.<br>
+              6. Sill width should be more than the window width.<br>
+              7. Opening should be accessible from inside for installation.<br>
+              8. Grills: adequate care should be taken if grills have to be installed.<br>
+              9. Installation should happen before the last coat of paint.<br>
+              10. After installation security tape will be removed by us that should be chargeable per window.
+            </div>
+          </div>
         </div>
-        ` : ''}
 
-        <!-- Notes -->
-        ${quotation.notes ? `
-        <div class="terms-section">
-          <div class="terms-title">Notes:</div>
-          <div class="terms-list">${quotation.notes}</div>
-        </div>
-        ` : ''}
-
-        <!-- Footer -->
-        <div class="footer">
-          <div>Thank you for your business!</div>
-          <div>Generated on ${new Date().toLocaleDateString('en-IN')}</div>
+        <div class="signature-row">
+          <div class="sig-line">Authorized Signatory</div>
+          <div class="sig-line">Signature of Customer</div>
         </div>
       </div>
     </body>
@@ -509,8 +506,8 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
 
   // Configure html2pdf options
   const options = {
-    margin: [5, 5, 5, 5] as [number, number, number, number],
-    filename: `${quotation.quotationNumber}.pdf`,
+    margin: [5, 1, 5, 1] as [number, number, number, number],
+    filename: `${quotation._id}.pdf`,
     image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {
       scale: 2,

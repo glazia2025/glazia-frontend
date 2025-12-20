@@ -1,52 +1,65 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar } from "lucide-react";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import PDFViewerModal from "@/components/PDFViewerModal";
 
+interface QuotationItem {
+  id?: string;
+  refCode?: string;
+  location?: string;
+  width?: number;
+  height?: number;
+  area?: number;
+  systemType?: string;
+  series?: string;
+  description?: string;
+  colorFinish?: string;
+  glassSpec?: string;
+  handleType?: string;
+  handleColor?: string;
+  handleCount?: number;
+  meshPresent?: boolean | string;
+  meshType?: string;
+  rate?: number;
+  quantity?: number;
+  amount?: number;
+  refImage?: string;
+  remarks?: string;
+}
+
 interface Quotation {
   id: string;
-  quotationNumber: string;
-  date: string;
-  validUntil: string;
-  customerDetails: {
-    name: string;
-    company: string;
-    email: string;
-    phone: string;
+  quotationNumber?: string;
+  createdAt?: string;
+  quotationDetails?: {
+    id?: string;
+    date?: string;
+    opportunity?: string;
+    terms?: string;
+    notes?: string;
   };
-  items: Array<{
-    id: string;
-    refCode: string;
-    location: string;
-    width: number;
-    height: number;
-    area: number;
-    systemType: string;
-    series: string;
-    description: string;
-    colorFinish: string;
-    glassSpec: string;
-    handleType: string;
-    handleColor: string;
-    meshPresent: string;
-    meshType: string;
-    rate: number;
-    quantity: number;
-    amount: number;
-    refImage: string;
-    remarks: string;
-  }>;
-  total: number;
-  createdAt: string;
-  terms: string;
-  notes: string;
+  customerDetails?: {
+    name?: string;
+    company?: string;
+    email?: string;
+    phone?: string;
+  };
+  items?: QuotationItem[];
+  breakdown?: {
+    baseRate?: number;
+    areaSlabIndex?: number;
+  };
+  validUntil?: string;
+  totalAmount?: number;
 }
 
 export default function QuotationsPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("date");
@@ -54,45 +67,77 @@ export default function QuotationsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    // Load quotations from localStorage
-    const savedQuotations = JSON.parse(localStorage.getItem('quotations') || '[]');
-    setQuotations(savedQuotations);
+    const getQuotations = async () => {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/quotations`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch quotations (${response.status})`);
+        }
+        const data = await response.json();
+        const list: Quotation[] = Array.isArray(data) ? data : Array.isArray(data?.quotations) ? data.quotations : [];
+        setQuotations(list);
+      } catch (err: unknown) {
+        console.error("Error loading quotations", err);
+        setError(err instanceof Error ? err.message : "Failed to load quotations");
+      } finally {
+        setLoading(false);
+      }
+    };
+    getQuotations();
   }, []);
 
-  const filteredQuotations = quotations.filter(quotation => {
-    const matchesSearch = 
-      quotation.quotationNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      quotation.customerDetails.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      quotation.customerDetails.company.toLowerCase().includes(searchQuery.toLowerCase());
+  const enrichedQuotations = useMemo(() => {
+    return quotations.map((q) => {
+      const items = q.items ?? [];
+      const totalAmount = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+      const validUntil = q.validUntil || "";
+      const quotationNumber = q.quotationNumber || q.quotationDetails?.id || (q as { _id?: string })._id || "";
+      const date = q.quotationDetails?.date || (q as { date?: string }).date || q.createdAt || "";
+      return {
+        ...q,
+        quotationNumber,
+        totalAmount,
+        validUntil,
+        date,
+      };
+    });
+  }, [quotations]);
 
-    const today = new Date();
-    const validUntil = new Date(quotation.validUntil);
-    const isExpired = validUntil < today;
-    const isValid = validUntil >= today;
-
-    if (filterStatus === "valid") return matchesSearch && isValid;
-    if (filterStatus === "expired") return matchesSearch && isExpired;
-    return matchesSearch;
-  });
-
-  const sortedQuotations = [...filteredQuotations].sort((a, b) => {
-    if (sortBy === "date") {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    }
-    if (sortBy === "amount") {
-      return b.total - a.total;
-    }
-    if (sortBy === "customer") {
-      return a.customerDetails.name.localeCompare(b.customerDetails.name);
-    }
-    return 0;
-  });
+  const sortedQuotations = useMemo(() => {
+    const list = [...enrichedQuotations];
+    list.sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(b.date || b.createdAt || 0).getTime() - new Date(a.date || a.createdAt || 0).getTime();
+      }
+      if (sortBy === "amount") {
+        return (b.totalAmount || 0) - (a.totalAmount || 0);
+      }
+      if (sortBy === "customer") {
+        return (a.customerDetails?.name || "").localeCompare(b.customerDetails?.name || "");
+      }
+      return 0;
+    });
+    return list;
+  }, [enrichedQuotations, sortBy]);
 
   const deleteQuotation = (id: string) => {
     if (confirm('Are you sure you want to delete this quotation?')) {
-      const updatedQuotations = quotations.filter(q => q.id !== id);
+      const updatedQuotations = quotations.filter(q => {
+        const backendId = (q as { _id?: string })._id;
+        return backendId !== id && q.id !== id;
+      });
       setQuotations(updatedQuotations);
-      localStorage.setItem('quotations', JSON.stringify(updatedQuotations));
     }
   };
 
@@ -129,6 +174,16 @@ export default function QuotationsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
+        {loading && (
+          <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            Loading quotations...
+          </div>
+        )}
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
@@ -206,7 +261,7 @@ export default function QuotationsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Value</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  ₹{quotations.reduce((sum, q) => sum + q.total, 0).toLocaleString('en-IN')}
+                  ₹{quotations.reduce((sum, q) => sum + q.breakdown.totalAmount, 0).toLocaleString('en-IN')}
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -221,7 +276,7 @@ export default function QuotationsPage() {
                 <p className="text-sm font-medium text-gray-600">This Month</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {quotations.filter(q => {
-                    const quotationDate = new Date(q.date);
+                    const quotationDate = new Date(q.createdAt);
                     const now = new Date();
                     return quotationDate.getMonth() === now.getMonth() && quotationDate.getFullYear() === now.getFullYear();
                   }).length}
@@ -287,7 +342,7 @@ export default function QuotationsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {quotation.quotationNumber}
+                            {quotation._id}
                           </div>
                           <div className="text-sm text-gray-500">
                             {quotation.items.length} item{quotation.items.length !== 1 ? 's' : ''}
@@ -305,13 +360,13 @@ export default function QuotationsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(quotation.date).toLocaleDateString('en-IN')}
+                        {quotation.date ? new Date(quotation.date).toLocaleDateString('en-IN') : "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString('en-IN') : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        ₹{quotation.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        ₹{(quotation.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(quotation)}
@@ -326,7 +381,7 @@ export default function QuotationsPage() {
                             <Eye className="w-4 h-4" />
                           </button>
                           <Link
-                            href={`/quotations/edit/${quotation.id}`}
+                            href={`/quotations/edit/${quotation._id}`}
                             className="text-gray-600 hover:text-gray-800 transition-colors"
                             title="Edit Quotation"
                           >
