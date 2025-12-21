@@ -76,7 +76,7 @@ export default function QuotationsPage() {
         return;
       }
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/quotations`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

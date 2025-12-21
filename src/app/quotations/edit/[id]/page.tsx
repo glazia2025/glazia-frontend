@@ -82,7 +82,7 @@ export default function EditQuotationPage() {
         setError(null);
         const token = localStorage.getItem("authToken");
         const response = await axios.get<BackendQuotation>(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/quotations/${quotationId}`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations/${quotationId}`,
           token
             ? { headers: { Authorization: `Bearer ${token}` } }
             : undefined
@@ -266,7 +266,7 @@ export default function EditQuotationPage() {
     try {
       const token = localStorage.getItem("authToken");
       await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/quotations/${quotationId}`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations/${quotationId}`,
         payload,
         token
           ? { headers: { Authorization: `Bearer ${token}` } }
