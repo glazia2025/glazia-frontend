@@ -163,7 +163,7 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
           businessLogo
         };
 
-        const response = await axios.post('https://api.glazia.inapi/user/register', registrationData);
+        const response = await axios.post('https://api.glazia.in/api/user/register', registrationData);
 
         if (response.data.token) {
           localStorage.setItem('authToken', response.data.token);

@@ -71,7 +71,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     }
     setIsLoading(true);
     try {
-      await axios.post("https://api.glazia.inapi/auth/send-otp", { phoneNumber });
+      await axios.post("https://api.glazia.in/api/auth/send-otp", { phoneNumber });
       setStep('otp');
       setCountdown(30);
       startCountdown();
@@ -109,7 +109,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     }
     setIsLoading(true);
     try {
-      const response = await axios.post("https://api.glazia.inapi/auth/verify-otp", { phoneNumber, otp: otpValue });
+      const response = await axios.post("https://api.glazia.in/api/auth/verify-otp", { phoneNumber, otp: otpValue });
       const { userExists, token, existingUser } = response.data;
       if (!userExists) {
         setStep('register');
@@ -153,7 +153,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     setIsLoading(true);
     setError('');
     try {
-      await axios.post("https://api.glazia.inapi/auth/send-otp", { phoneNumber });
+      await axios.post("https://api.glazia.in/api/auth/send-otp", { phoneNumber });
       setCountdown(30);
       startCountdown();
     } catch {
