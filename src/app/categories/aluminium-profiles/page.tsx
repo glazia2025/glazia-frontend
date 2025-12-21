@@ -57,7 +57,7 @@ export default function AluminiumProfilesPage() {
   const [loading, setLoading] = useState(true);
   const [loadingCategoryData, setLoadingCategoryData] = useState(false);
 
-  const { addToCart } = useCartState();
+  const { addToCart, getCartItem } = useCartState();
   const profileApi = useMemo(() => new ProfileApiService(), []);
 
   // Load categories on component mount
@@ -175,8 +175,18 @@ export default function AluminiumProfilesPage() {
     }));
   };
 
+  const getCartQuantityForProduct = (product: Product): number => {
+    if (!selectedCategory || !selectedSize) return 0;
+    const cartItemId = `${product.sapCode}-${selectedCategory.name}-${selectedSize}`;
+    const cartItem = getCartItem(cartItemId);
+    return cartItem ? cartItem.quantity : 0;
+  };
+
   const handleAddToCart = (product: Product) => {
-    const quantity = quantities[product._id] || 1;
+    const quantity = quantities[product._id] || 0;
+    if (quantity <= 0) {
+      return;
+    }
     const rate = categoryData?.sizes.find(s => s.size.label === selectedSize)?.size.rate || 0;
 
     const cartItem = {
@@ -198,7 +208,7 @@ export default function AluminiumProfilesPage() {
       addToCart(cartItem);
     }
 
-    // Reset quantity after adding to cart
+    // Reset local quantity after adding to cart
     setQuantities(prev => ({
       ...prev,
       [product._id]: 0
@@ -218,6 +228,7 @@ export default function AluminiumProfilesPage() {
         <Navigation />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-8">
+            <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-[#124657]"></div>
             <div className="text-lg">Loading categories...</div>
           </div>
         </div>
@@ -282,7 +293,10 @@ export default function AluminiumProfilesPage() {
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Select Sub Category</h2>
             {loadingCategoryData ? (
-              <div className="text-center py-4">Loading sub category...</div>
+              <div className="text-center py-4">
+                <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-[#124657]"></div>
+                <div>Loading sub category...</div>
+              </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {categoryData.sizes.map((sizeData) => sizeData.size.enabled && (
@@ -354,7 +368,12 @@ export default function AluminiumProfilesPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {productsToDisplay.map((product) => (
+                {productsToDisplay.map((product) => {
+                  const cartQuantity = getCartQuantityForProduct(product);
+                  const localQuantity = quantities[product._id] || 0;
+                  const displayQuantity = cartQuantity + localQuantity;
+
+                  return (
                   <div key={product._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
 
                     <div className="bg-gray-50 p-4 border-b">
@@ -388,20 +407,25 @@ export default function AluminiumProfilesPage() {
                       <div className=" mb-3">
                         <h3 className="font-medium text-gray-900 text-sm mb-1">{product.description}</h3>
                         <p className="text-xs text-gray-600">SAP Code: {product.sapCode}</p>
+                        {cartQuantity > 0 && (
+                          <p className="text-xs font-medium" style={{ color: '#124657' }}>
+                            ✓ {cartQuantity} in cart
+                          </p>
+                        )}
                       </div>
 
                       <div className="">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => handleQuantityChange(product._id, Math.max(0, (quantities[product._id] || 0) - 1))}
+                            onClick={() => handleQuantityChange(product._id, Math.max(0, localQuantity - 1))}
                             className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
-                          <span className="w-8 text-center">{quantities[product._id] || 0}</span>
+                          <span className="w-8 text-center">{displayQuantity}</span>
                           <button
-                            onClick={() => handleQuantityChange(product._id, (quantities[product._id] || 0) + 1)}
+                            onClick={() => handleQuantityChange(product._id, localQuantity + 1)}
                             className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50"
                           >
                             <Plus className="w-4 h-4" />
@@ -409,7 +433,7 @@ export default function AluminiumProfilesPage() {
                         </div>
                         <button
                           onClick={() => handleAddToCart(product)}
-                          disabled={!quantities[product._id] || quantities[product._id] === 0}
+                          disabled={localQuantity === 0}
                           className="px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-[#0f3a4a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                         >
                           <ShoppingCart className="w-4 h-4" />
@@ -421,7 +445,8 @@ export default function AluminiumProfilesPage() {
                     </div>
                     
                   </div>
-                ))}
+                );
+                })}
               </div>
             )}
           </div>

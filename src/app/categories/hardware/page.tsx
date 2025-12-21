@@ -240,6 +240,7 @@ export default function HardwarePage() {
         {/* Loading State */}
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-8">
+            <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-[#124657]"></div>
             <div className="text-lg">Loading hardware data...</div>
             <div className="text-sm text-gray-500 mt-2">Fetching hardware options and products</div>
           </div>

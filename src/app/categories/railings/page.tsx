@@ -281,6 +281,7 @@ export default function RailingsPage() {
         <div className="container mx-auto px-4 py-8">
           {loading ? (
             <div className="text-center py-8">
+              <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-[#124657]"></div>
               <div className="text-lg">Loading railings data...</div>
             </div>
           ) : (
