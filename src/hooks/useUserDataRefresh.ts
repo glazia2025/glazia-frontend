@@ -21,35 +21,35 @@ export const useUserDataRefresh = () => {
         return { success: false, error: 'No authentication token' };
       }
 
-      console.log('🔄 Manually refreshing user data from API...');
+      console.log('🔄 Manually refreshing user data from API...', '<<>>>Result');
       
       // Fetch fresh user data from API
       const response = await userApi.getProfile();
+
+      console.log(response, '<<>>>Result')
       
-      if (response.success && response.data) {
-        console.log('✅ User data refreshed successfully:', response.data);
+      if (response.user) {
+        console.log('✅ User data refreshed successfully:', response.user);
         
         // Transform the API response to match the expected user data format
         const userData = {
-          id: response.data._id || response.data.id,
-          name: response.data.userName || response.data.name,
-          email: response.data.email || '',
-          phone: response.data.phoneNumber || response.data.phone,
-          company: response.data.company || '',
-          gstNumber: response.data.gstNumber || '',
-          pincode: response.data.pincode || '',
-          city: response.data.city || '',
-          state: response.data.state || '',
-          completeAddress: response.data.completeAddress || '',
-          memberSince: response.data.createdAt 
-            ? new Date(response.data.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) 
-            : 'Recently',
-          totalOrders: response.data.totalOrders || 0,
-          totalSpent: response.data.totalSpent || 0,
-          loyaltyPoints: response.data.loyaltyPoints || 0,
-          paUrl: response.data.paUrl || '',
+          id: response.user._id || response.user.id,
+          name: response.user.userName || response.user.name,
+          email: response.user.email || '',
+          phone: response.user.phoneNumber || response.user.phone,
+          company: response.user.company || '',
+          gstNumber: response.user.gstNumber || '',
+          pincode: response.user.pincode || '',
+          city: response.user.city || '',
+          state: response.user.state || '',
+          completeAddress: response.user.completeAddress || '',
+          memberSince: response.user.createdAt,
+          totalOrders: response.user.totalOrders || 0,
+          totalSpent: response.user.totalSpent || 0,
+          loyaltyPoints: response.user.loyaltyPoints || 0,
+          paUrl: response.user.paUrl || '',
           isAuthenticated: true,
-          dynamicPricing: response.data.dynamicPricing || {}
+          dynamicPricing: response.user.dynamicPricing || {}
         };
 
         // Update the context state

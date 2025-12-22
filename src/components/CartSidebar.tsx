@@ -633,7 +633,7 @@ const CartSidebar: React.FC = () => {
                     
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-medium text-gray-900 truncate">{item.name}</h4>
-                      <p className="text-xs text-gray-500">{item.brand}</p>
+                      <p className="text-xs text-gray-500">{item.category?.toLowerCase().includes("hardware") ? 'pcs' : 'per kg'}</p>
                       <div className="flex items-center space-x-2 mt-1">
                         <span className="text-sm font-semibold text-gray-900">
                           {

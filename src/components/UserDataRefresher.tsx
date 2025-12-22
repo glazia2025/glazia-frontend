@@ -19,6 +19,8 @@ export default function UserDataRefresher() {
     console.log(`🔄 UserDataRefresher: Triggered by ${trigger}`);
     const result = await refreshUserData();
 
+    console.log(result, '<<>>>Result');
+
     if (result.success) {
       console.log(`✅ UserDataRefresher: Successfully refreshed user data via ${trigger}`);
     } else {

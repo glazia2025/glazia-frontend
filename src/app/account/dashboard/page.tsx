@@ -380,17 +380,17 @@ function DashboardContent() {
                   <Phone className="w-5 h-5 text-gray-400 mr-3" />
                   <p className="text-sm text-gray-600">{user.phone}</p>
                 </div>
-                <div className="flex items-center">
+                {/* <div className="flex items-center">
                   <Calendar className="w-5 h-5 text-gray-400 mr-3" />
                   <p className="text-sm text-gray-600">Member since {user.memberSince}</p>
-                </div>
+                </div> */}
               </div>
-              <Link
+              {/* <Link
                 href="/account/profile"
                 className="mt-4 w-full bg-[#124657} hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors inline-block text-center"
               >
                 Edit Profile
-              </Link>
+              </Link> */}
             </div>
             {/* Support */}
             <div className="bg-blue-50 rounded-lg p-6">

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ShoppingCart, X, Plus, Minus, Eye } from 'lucide-react';
-import { useCartState } from '@/contexts/AppContext';
+import { useAuth, useCartState } from '@/contexts/AppContext';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -56,6 +56,7 @@ export default function AluminiumProfilesPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingCategoryData, setLoadingCategoryData] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const { addToCart, getCartItem } = useCartState();
   const profileApi = useMemo(() => new ProfileApiService(), []);
@@ -65,18 +66,6 @@ export default function AluminiumProfilesPage() {
     const loadCategories = async () => {
       try {
         setLoading(true);
-        console.log('Loading categories...');
-
-        // Test direct fetch first
-        try {
-          const directResponse = await fetch('https://api.glazia.in/api/profile/categories');
-          console.log('Direct fetch response status:', directResponse.status);
-          const directData = await directResponse.json();
-          console.log('Direct fetch data:', directData);
-        } catch (directError) {
-          console.error('Direct fetch error:', directError);
-        }
-
         const response = await profileApi.getProfileCategories();
         console.log('Categories response:', response);
 
@@ -142,7 +131,8 @@ export default function AluminiumProfilesPage() {
     if (!categoryData || !selectedSize) return [];
 
     const sizeData = categoryData.sizes.find(s => s.size.label === selectedSize && s.size.enabled);
-    return sizeData ? sizeData.products : [];
+    const products = sizeData?.products.filter(p => p.enabled) || [];
+    return sizeData ? products : [];
   };
 
   // Filter products based on search query
@@ -293,9 +283,16 @@ export default function AluminiumProfilesPage() {
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Select Sub Category</h2>
             {loadingCategoryData ? (
-              <div className="text-center py-4">
-                <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-[#124657]"></div>
-                <div>Loading sub category...</div>
+              <div className="space-y-3">
+                <div className="text-center text-sm text-gray-600">Loading sub category...</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div
+                      key={`size-skeleton-${index}`}
+                      className="h-12 rounded-lg border-2 border-gray-200 bg-gray-100 animate-pulse"
+                    />
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -344,13 +341,22 @@ export default function AluminiumProfilesPage() {
         )}
 
         {/* Products */}
-        {selectedSize && (
+        {(selectedSize || loadingCategoryData) && (
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-xl font-semibold mb-4">
-              Products - {selectedCategory?.name} ({selectedSize})
+              Products - {selectedCategory?.name} {selectedSize ? `(${selectedSize})` : ''}
             </h2>
 
-            {productsToDisplay.length === 0 && searchQuery ? (
+            {loadingCategoryData ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={`product-skeleton-${index}`}
+                    className="h-64 rounded-lg border border-gray-200 bg-gray-100 animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : productsToDisplay.length === 0 && searchQuery ? (
               <div className="text-center py-8">
                 <div className="text-gray-600">
                   No products found matching {searchQuery}
@@ -415,7 +421,7 @@ export default function AluminiumProfilesPage() {
                       </div>
 
                       <div className="">
-                      <div className="flex items-center justify-between">
+                      {isAuthenticated && <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => handleQuantityChange(product._id, Math.max(0, localQuantity - 1))}
@@ -439,7 +445,12 @@ export default function AluminiumProfilesPage() {
                           <ShoppingCart className="w-4 h-4" />
                           <span>Add to Cart</span>
                         </button>
-                      </div>
+                      </div>}
+                      {
+                        !isAuthenticated && <div className="text-center">
+                          <p className="text-xs text-gray-600">Login to add to cart</p>
+                        </div>
+                      }
                     </div>
 
                     </div>

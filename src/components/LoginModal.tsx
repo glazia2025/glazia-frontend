@@ -126,9 +126,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
           city: existingUser.city || '',
           state: existingUser.state || '',
           completeAddress: existingUser.completeAddress || '',
-          memberSince: existingUser.createdAt
-            ? new Date(existingUser.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-            : 'Recently',
+          memberSince: existingUser.createdAt,
           totalOrders: existingUser.totalOrders || 0,
           totalSpent: existingUser.totalSpent || 0,
           loyaltyPoints: existingUser.loyaltyPoints || 0,

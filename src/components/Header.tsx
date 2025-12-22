@@ -112,6 +112,27 @@ export default function Header() {
                     </div>
                   )}
                 </div>
+                <button
+                  onClick={toggleCart}
+                  className="flex items-center space-x-1 text-gray-700 hover:text-[#124657} relative"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  <span className="hidden md:inline">Cart</span>
+                  {cart.itemCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {cart.itemCount}
+                    </span>
+                  )}
+                </button>
+
+                <Link href="/quotations">
+                  <button
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <Dock className="w-4 h-4 mr-3" />
+                    Quotations
+                  </button>
+                </Link>
               </>
             ) : (
               <>
@@ -124,27 +145,6 @@ export default function Header() {
                 </button>
               </>
             )}
-
-            <button
-              onClick={toggleCart}
-              className="flex items-center space-x-1 text-gray-700 hover:text-[#124657} relative"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              <span className="hidden md:inline">Cart</span>
-              {cart.itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {cart.itemCount}
-                </span>
-              )}
-            </button>
-            <Link href="/quotations">
-              <button
-                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <Dock className="w-4 h-4 mr-3" />
-                Quotations
-              </button>
-            </Link>
           </div>
         </div>
 
