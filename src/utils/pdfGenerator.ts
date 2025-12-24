@@ -313,6 +313,10 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           gap: 6mm;
           margin-top: 4mm;
         }
+        .page-break {
+          page-break-before: always;
+          break-before: page;
+        }
         .list-card {
           border: 1px solid #d8d8d8;
           padding: 10px 12px;
@@ -448,7 +452,7 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           </div>
         </div>
 
-        <div class="lists">
+        <div class="lists page-break">
           <div class="list-card">
             <div class="list-title">Terms & Conditions</div>
             <div class="list-body">${quotationTerms ? nl2br(quotationTerms) : "N/A"}</div>
@@ -506,7 +510,7 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
 
   // Configure html2pdf options
   const options = {
-    margin: [5, 1, 5, 1] as [number, number, number, number],
+    margin: [1, 1, 1, 1] as [number, number, number, number],
     filename: `${quotation._id}.pdf`,
     image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {

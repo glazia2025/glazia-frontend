@@ -73,7 +73,8 @@ export default function AluminiumProfilesPage() {
           const categoriesData = response.data.map(cat => ({
             _id: cat._id,
             name: cat.name,
-            description: cat.description || ''
+            description: cat.description || '',
+            enabled: cat.enabled
           }));
           setCategories(categoriesData);
           console.log('Categories loaded:', categoriesData);
@@ -262,7 +263,7 @@ export default function AluminiumProfilesPage() {
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Select Category</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((category) => category.name === 'Railings' ? null : (
+            {categories.map((category) => (category.name === 'Railings' || category.enabled === false) ? null : (
               <button
                 key={category._id}
                 onClick={() => setSelectedCategory(category)}
