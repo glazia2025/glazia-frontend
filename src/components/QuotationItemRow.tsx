@@ -6,7 +6,7 @@ import {
   useSeriesQuery,
   useSystemsQuery,
 } from "@/lib/quotations/queries";
-import { Description, OptionWithRate } from "@/lib/quotations/types";
+import { Description, HandleOption, OptionWithRate } from "@/lib/quotations/types";
 import { Trash2 } from "lucide-react";
 
 export interface QuotationItem {

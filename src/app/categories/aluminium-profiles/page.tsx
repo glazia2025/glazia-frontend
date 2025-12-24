@@ -57,9 +57,19 @@ export default function AluminiumProfilesPage() {
   const [loading, setLoading] = useState(true);
   const [loadingCategoryData, setLoadingCategoryData] = useState(false);
   const { isAuthenticated } = useAuth();
+  const [nalcoPrice, setNalcoPrice] = useState<number>(0);
 
-  const { addToCart, getCartItem } = useCartState();
+  const { addToCart, getCartItem, getAdjustedItemPrice } = useCartState();
   const profileApi = useMemo(() => new ProfileApiService(), []);
+
+  useEffect(() => {
+      if (window.localStorage) {
+        const temp = window.localStorage.getItem('nalcoPrice');
+        if (temp) {
+          setNalcoPrice(parseFloat(temp)); // Use parseFloat to preserve decimal values
+        }
+      }
+    }, []);
 
   // Load categories on component mount
   useEffect(() => {
@@ -345,8 +355,11 @@ export default function AluminiumProfilesPage() {
         {(selectedSize || loadingCategoryData) && (
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-xl font-semibold mb-4">
-              Products - {selectedCategory?.name} {selectedSize ? `(${selectedSize})` : ''}
+              Products - {selectedCategory?.name} {selectedSize ? `(${selectedSize})` : ''} 
             </h2>
+            <h3 style={{marginBottom: '12px'}}>
+              Rate: {isAuthenticated  ? `₹${((nalcoPrice / 1000) + 75 + getAdjustedItemPrice({category: selectedCategory?.name, subCategory: selectedSize})).toFixed(2)}` : 'Login to view rate'}
+            </h3>
 
             {loadingCategoryData ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
