@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, ShoppingCart, X, Plus, Minus } from 'lucide-react';
-import { useCartState } from '@/contexts/AppContext';
+import { useAuth, useCartState } from '@/contexts/AppContext';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -28,6 +28,7 @@ export default function HardwarePage() {
   const [activeCategory, setActiveCategory] = useState<string>(HARDWARE_CATEGORIES[0]);
   const [products, setProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const { isAuthenticated } = useAuth();
 
   // Quantity state for hardware products
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -359,7 +360,15 @@ export default function HardwarePage() {
                         )}
                       </div>
 
-                      <div className="mb-3">
+                      {
+                        !isAuthenticated && <div className="text-center">
+                          <p className="text-xs text-gray-600">Login to add to cart</p>
+                        </div>
+                      }
+
+                      {
+                        isAuthenticated && <>
+                          <div className="mb-3">
                         <div className="text-center">
                           <div className="text-lg font-bold text-gray-900">Rate: ₹{product.rate}</div>
                         </div>
@@ -397,6 +406,8 @@ export default function HardwarePage() {
                           </span>
                         </button>
                       </div>
+                        </>
+                      }
                     </div>
                   </div>
                 );
