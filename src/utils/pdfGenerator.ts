@@ -96,6 +96,31 @@ interface QuotationData {
   totalAmount?: number;
 }
 
+export function getInitials(name?: string): string {
+  if (!name) return "??";
+
+  // Remove domain parts and special characters
+  const cleanName = name
+    .replace(/\.in|\.com|\.org|\.net/gi, "")
+    .replace(/[^a-zA-Z ]/g, "")
+    .trim();
+
+  const parts = cleanName.split(" ").filter(Boolean);
+
+  // Case 1: Multi-word name → first letter of first two words
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  // Case 2: Single word → first two letters
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return "??";
+}
+
+
 export const createQuotationHTML = (quotation: QuotationData): string => {
   const user = window.localStorage.getItem('glazia-user');
   let userData: { name?: string; email?: string; phone?: string } = {};
@@ -161,7 +186,7 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
         .container {
           width: 100%;
           margin: 0 auto;
-          padding: 8mm 6mm;
+          padding: 4mm 3mm;
           background: #ffffff;
         }
         .top-bar {
@@ -169,6 +194,21 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 8mm;
+        }
+        .user-logo {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: 600;
+          text-transform: uppercase;
+          color: #ffffff;
+          background-color: #6b7280; /* fallback */
+          overflow: hidden;
+          user-select: none;
         }
         .logo {
           font-size: 36px;
@@ -193,19 +233,25 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           text-align: center;
           font-size: 24px;
           font-weight: 500;
-          margin-bottom: 8mm;
         }
-        .info-grid {
+
+        .info-container {
           border: 1px solid #000;
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        
+        .info-grid {
+          
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 6mm;
-          margin-bottom: 6mm;
         }
         .info-card {
          
-          padding: 8px;
-          min-height: 110px;
         }
         .info-title {
           font-size: 10px;
@@ -219,9 +265,8 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           line-height: 1.4;
         }
         .meta-card {
-          border: 1px solid #d8d8d8;
+          border-left: 1px solid #d8d8d8;
           padding: 8px;
-          min-height: 96px;
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 4px 8px;
@@ -236,7 +281,7 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           text-align: right;
         }
         .table-wrapper {
-          border: 1px solid #d8d8d8;
+          border: 1px solid #000;
           border-radius: 2px;
           overflow: hidden;
           margin-bottom: 6mm;
@@ -244,9 +289,11 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
         table {
           width: 100%;
           border-collapse: collapse;
+          text-align: center;
         }
         thead {
           background: #f7f7f7;
+          text-align: center;
         }
         .head-top th {
           background: #FFF;
@@ -281,6 +328,13 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
         .no-image {
           font-size: 7px;
           color: #999;
+        }
+        .ref-image {
+          max-width: 28mm;
+          max-height: 18mm;
+          object-fit: contain;
+          display: block;
+          margin: 0 auto;
         }
         .summary {
           display: flex;
@@ -351,16 +405,14 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
     <body>
       <div class="container">
         <div class="top-bar">
-          <div class="logo">GLAZIA</div>
+          ${userData.logo ? `<img src="${userData.logo}" alt="User Logo" />` : `<div class='user-logo'>${getInitials(userData.name)}</div>`}
           <div class="quotation-label">QUOTATION</div>
-          <div class="contact">
-            <div>Contact</div>
-            <div>+91-${userData.phone || "99XXXXXXXX"}</div>
-            <div>${userData.email || "sales@glazia.com"}</div>
-          </div>
+          <div class="logo">GLAZIA</div>
         </div>
 
         <div class="navy-bar">Glazia Windoors Private Limited</div>
+
+        <div class="info-container">
 
         <div class="info-grid">
           <div class="info-card">
@@ -374,10 +426,9 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           </div>
           <div class="info-card">
             <div class="info-title">Bill From:</div>
-            <div class="info-line"><strong>Glazia Windooros Pvt. Ltd.</strong></div>
-            <div class="info-line">Khata No. 361, Rect. No. 21/470,</div>
-            <div class="info-line">Khokri Dholai Village Road,</div>
-            <div class="info-line">Gurgaon, Haryana - 122001</div>
+            <div class="info-line"><strong>${userData.name}</strong></div>
+            <div class="info-line">${userData.completeAddress}</div>
+            <div class="info-line">${userData.city}, ${userData.state} - ${userData.pincode}</div>
             <div class="info-line">India</div>
           </div>
           <div class="meta-card">
@@ -385,6 +436,11 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
             <div class="meta-label">Quote Generated on:</div><div class="meta-value">${new Date(quotationDate).toLocaleDateString("en-IN")}</div>
             <div class="meta-label">Valid On:</div><div class="meta-value">${quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString("en-IN") : "N/A"}</div>
           </div>
+        </div>
+
+        <div>Contact: ${userData.phone} | ${userData.email}</div>
+        <div style="font-size: 8px;">We are pleased to submit our quotation of price of products as following :-</div>
+
         </div>
 
         <div class="table-wrapper">
@@ -404,7 +460,7 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
                 <th rowspan="2">Unit Price</th>
                 <th rowspan="2">Qty</th>
                 <th rowspan="2">AMOUNT</th>
-                <th rowspan="2">REMARKS</th>
+                <th rowspan="2">IMAGE</th>
               </tr>
               <tr class="head-sub">
                 <th>Type</th>
@@ -419,19 +475,23 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
                   <td>${index + 1}</td>
                   <td>${item.refCode || "-"}</td>
                   <td>${item.series || "-"}</td>
-                  <td class="text-left">${item.colorFinish || "-"}</td>
+                  <td>${item.colorFinish || "-"}</td>
                   <td>${item.systemType || "-"}</td>
-                  <td class="text-left">${item.location || "-"}</td>
-                  <td class="text-left">${item.description || "-"}</td>
-                  <td class="text-left">${item.glassSpec || "-"}</td>
-                  <td class="text-left">${item.handleType || "-"}</td>
+                  <td>${item.location || "-"}</td>
+                  <td>${item.description || "-"}</td>
+                  <td>${item.glassSpec || "-"}</td>
+                  <td>${item.handleType || "-"}</td>
                   <td>${item.handleColor || "-"}</td>
                   <td>${item.meshPresent || "-"}</td>
-                  <td class="text-left">${item.meshType || "-"}</td>
-                  <td class="text-right">${item.rate.toLocaleString("en-IN")}</td>
+                  <td>${item.meshType || "-"}</td>
+                  <td>${item.rate.toLocaleString("en-IN")}</td>
                   <td>${item.quantity}</td>
-                  <td class="text-right">${(item.rate * item.quantity).toLocaleString("en-IN")}</td>
-                  <td class="text-left">${item.remarks || ""}</td>
+                  <td>${(item.rate * item.quantity).toLocaleString("en-IN")}</td>
+                  <td>
+                    ${item.refImage
+                      ? `<img class="ref-image" src="${item.refImage}" alt="Reference image">`
+                      : `<span class="no-image">No image</span>`}
+                  </td>
                 </tr>
               `).join("")}
             </tbody>

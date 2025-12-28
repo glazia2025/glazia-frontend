@@ -42,7 +42,7 @@ export const useUserDataRefresh = () => {
           pincode: response.user.pincode || '',
           city: response.user.city || '',
           state: response.user.state || '',
-          completeAddress: response.user.completeAddress || '',
+          completeAddress: response.user.address || '',
           memberSince: response.user.createdAt,
           totalOrders: response.user.totalOrders || 0,
           totalSpent: response.user.totalSpent || 0,

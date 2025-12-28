@@ -101,7 +101,7 @@ export default function LoginPage() {
           pincode: existingUser.pincode || '',
           city: existingUser.city || '',
           state: existingUser.state || '',
-          completeAddress: existingUser.completeAddress || '',
+          completeAddress: existingUser.address || '',
           memberSince: existingUser.createdAt,
           totalOrders: existingUser.totalOrders || 0,
           totalSpent: existingUser.totalSpent || 0,
