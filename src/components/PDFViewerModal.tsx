@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Download } from "lucide-react";
 import { generateQuotationPDF, createQuotationHTML } from "@/utils/pdfGenerator";
+import { createPdfFrame } from "@/utils/pdfFrame";
 
 interface PDFViewerModalProps {
   isOpen: boolean;
@@ -61,6 +62,7 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
     setIsLoading(true);
     setError("");
 
+    let cleanupFrame: (() => void) | null = null;
     try {
       const html2pdf = (await import("html2pdf.js")).default;
 
@@ -78,14 +80,10 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
       };
 
       // Generate HTML for PDF
-      const htmlContent = createQuotationHTML(quotationWithImages);
+      const htmlContent = await createQuotationHTML(quotationWithImages);
 
-      // Create hidden container
-      const element = document.createElement("div");
-      element.innerHTML = htmlContent;
-      element.style.position = "absolute";
-      element.style.left = "-9999px";
-      document.body.appendChild(element);
+      const { body, cleanup } = await createPdfFrame(htmlContent);
+      cleanupFrame = cleanup;
 
       const options = {
         margin: [5, 5, 5, 5] as [number, number, number, number],
@@ -104,12 +102,10 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
       };
 
       // FIX: Proper PDF Worker
-      const worker = html2pdf().set(options).from(element);
+      const worker = html2pdf().set(options).from(body);
 
       await worker.toPdf();
       const pdfBlob = await worker.output("blob");
-
-      document.body.removeChild(element);
 
       const url = URL.createObjectURL(pdfBlob);
       setPdfUrl(url);
@@ -117,6 +113,7 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
       console.error(err);
       setError(`Failed to generate PDF preview: ${err.message}`);
     } finally {
+      cleanupFrame?.();
       setIsLoading(false);
     }
   };

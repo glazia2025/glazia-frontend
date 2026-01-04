@@ -1,4 +1,5 @@
 import { loadGlobalConfig } from "@/utils/globalConfig";
+import { createPdfFrame } from "@/utils/pdfFrame";
 
 // Helper function to convert image URL to base64
 const imageToBase64 = (url: string): Promise<string> => {
@@ -639,10 +640,8 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
   // Dynamic import to avoid SSR issues
   const html2pdf = (await import('html2pdf.js')).default;
 
-  await createQuotationHTML(quotationWithImages)
-  .then((html) => {
-    const element = document.createElement('div');
-    element.innerHTML = html;
+  const html = await createQuotationHTML(quotationWithImages);
+  const { body, cleanup } = await createPdfFrame(html);
 
   // Configure html2pdf options
   const options = {
@@ -666,7 +665,10 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
     }
   };
 
-  // Generate and download the PDF
-  html2pdf().set(options).from(element).save();
-  });
+  try {
+    // Generate and download the PDF
+    await html2pdf().set(options).from(body).save();
+  } finally {
+    cleanup();
+  }
 };

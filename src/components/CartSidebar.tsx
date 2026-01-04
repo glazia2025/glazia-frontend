@@ -7,6 +7,7 @@ import { useCartState, useAuth } from '@/contexts/AppContext';
 import OrderPlacement from './OrderPlacement';
 import ImageModal from '@/components/ImageModal';
 import LoginModal from './LoginModal';
+import { createPdfFrame } from '@/utils/pdfFrame';
 
 // Number to words conversion function for Indian currency
 const numberToWordsIndian = (num: number): string => {
@@ -523,13 +524,20 @@ const CartSidebar: React.FC = () => {
       }
     };
 
+    let cleanupFrame: (() => void) | null = null;
     try {
       // Dynamically import html2pdf to avoid SSR issues
       const html2pdf = (await import('html2pdf.js')).default;
-      html2pdf().set(opt).from(invoiceHTML).save();
+
+      const { body, cleanup } = await createPdfFrame(invoiceHTML);
+      cleanupFrame = cleanup;
+
+      await html2pdf().set(opt).from(body).save();
     } catch (error) {
       console.error('Error generating invoice:', error);
       alert('Failed to generate invoice. Please try again.');
+    } finally {
+      cleanupFrame?.();
     }
   };
 

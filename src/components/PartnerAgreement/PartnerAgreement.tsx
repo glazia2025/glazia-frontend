@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPdfFrame } from '@/utils/pdfFrame';
 
 interface PartnerAgreementProps {
   userName: string;
@@ -376,6 +377,7 @@ const PartnerAgreement: React.FC<PartnerAgreementProps> = ({
 
 </html>`;
 
+    let cleanupFrame: (() => void) | null = null;
     try {
       // Dynamically import html2pdf to avoid SSR issues
       const html2pdf = (await import('html2pdf.js')).default;
@@ -388,11 +390,16 @@ const PartnerAgreement: React.FC<PartnerAgreementProps> = ({
         jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const }
       };
 
-      const pdfBlob = await html2pdf().set(opt).from(htmlStr).outputPdf('blob');
+      const { body, cleanup } = await createPdfFrame(htmlStr);
+      cleanupFrame = cleanup;
+
+      const pdfBlob = await html2pdf().set(opt).from(body).outputPdf('blob');
       setBlob(pdfBlob);
       setUrl(URL.createObjectURL(pdfBlob));
     } catch (error) {
       console.error('Error generating PDF:', error);
+    } finally {
+      cleanupFrame?.();
     }
   };
 
