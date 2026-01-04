@@ -8,6 +8,7 @@ import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { QuotationItemRow, QuotationItem } from "@/components/QuotationItemRow";
 import axios from "axios";
+import { loadGlobalConfig } from "@/utils/globalConfig";
 
 
 interface CustomerDetails {
@@ -33,12 +34,20 @@ interface BackendQuotation {
   };
   customerDetails?: CustomerDetails;
   items?: Array<
-    Omit<QuotationItem, "meshPresent" | "handleCount"> & {
+    Omit<QuotationItem, "meshPresent" | "handleCount" | "subItems"> & {
       meshPresent?: boolean;
       handleCount?: number;
+      subItems?: Array<
+        Omit<QuotationItem, "meshPresent" | "handleCount" | "subItems"> & {
+          meshPresent?: boolean;
+          handleCount?: number;
+        }
+      >;
     }
   >;
 }
+
+const COMBINATION_SYSTEM = "Combination";
 
 export default function EditQuotationPage() {
   const router = useRouter();
@@ -72,6 +81,7 @@ export default function EditQuotationPage() {
   });
 
   const [profitPercentage, setProfitPercentage] = useState<number>(0);
+  const [globalConfig, setGlobalConfig] = useState({});
   const [error, setError] = useState<string | null>(null);
 
   // Load existing quotation data
@@ -82,7 +92,7 @@ export default function EditQuotationPage() {
         setError(null);
         const token = localStorage.getItem("authToken");
         const response = await axios.get<BackendQuotation>(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations/${quotationId}`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/quotations/${quotationId}`,
           token
             ? { headers: { Authorization: `Bearer ${token}` } }
             : undefined
@@ -136,6 +146,33 @@ export default function EditQuotationPage() {
             remarks: item.remarks || "",
             baseRate: item.baseRate || 0,
             areaSlabIndex: item.areaSlabIndex || 0,
+            subItems:
+              item.subItems?.map((subItem) => ({
+                id: subItem.id || crypto.randomUUID(),
+                refCode: subItem.refCode || "",
+                location: subItem.location || "",
+                width: subItem.width || 0,
+                height: subItem.height || 0,
+                area: subItem.area || 0,
+                systemType: subItem.systemType || "",
+                series: subItem.series || "",
+                description: subItem.description || "",
+                colorFinish: subItem.colorFinish || "",
+                glassSpec: subItem.glassSpec || "",
+                handleType: subItem.handleType || "",
+                handleColor: subItem.handleColor || "",
+                handleCount: subItem.handleCount ?? 0,
+                meshPresent:
+                  subItem.meshPresent ? "Yes" : subItem.meshPresent === false ? "No" : "",
+                meshType: subItem.meshType || "",
+                rate: subItem.rate || 0,
+                quantity: subItem.quantity || 1,
+                amount: subItem.amount || 0,
+                refImage: subItem.refImage || "",
+                remarks: subItem.remarks || "",
+                baseRate: subItem.baseRate || 0,
+                areaSlabIndex: subItem.areaSlabIndex || 0,
+              })) || [],
           })) || [
             {
               id: "1",
@@ -161,6 +198,7 @@ export default function EditQuotationPage() {
               remarks: "",
               baseRate: 0,
               areaSlabIndex: 0,
+              subItems: [],
             },
           ];
         setItems(mappedItems);
@@ -179,6 +217,18 @@ export default function EditQuotationPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quotationId]);
+
+  const fetchData = async () => {
+    const config = await loadGlobalConfig();
+    if (config) {
+      console.log(config, "Config<>><><>...");
+      setGlobalConfig(config);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const updateItem = (nextItem: QuotationItem) => {
     setItems((prev) => prev.map((item) => (item.id === nextItem.id ? nextItem : item)));
@@ -206,7 +256,8 @@ export default function EditQuotationPage() {
       quantity: 1,
       amount: 0,
       refImage: "",
-      remarks: ""
+      remarks: "",
+      subItems: [],
     };
     setItems([...items, newItem]);
   };
@@ -219,17 +270,34 @@ export default function EditQuotationPage() {
   };
 
   // Calculate total
-  const calculateTotal = () => {
-    return items.reduce((total, item) => total + item.amount, 0);
+  const getItemTotals = (item: QuotationItem) => {
+    if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
+      return item.subItems.reduce(
+        (acc, sub) => {
+          acc.amount += sub.amount;
+          acc.area += sub.area * sub.quantity;
+          acc.quantity += sub.quantity;
+          return acc;
+        },
+        { amount: 0, area: 0, quantity: 0 }
+      );
+    }
+
+    return {
+      amount: item.amount,
+      area: item.area * item.quantity,
+      quantity: item.quantity,
+    };
   };
 
-  const calculateTotalArea = () => {
-    return items.reduce((total, item) => total + item.area * item.quantity, 0);
-  };
+  const calculateTotal = () =>
+    items.reduce((total, item) => total + getItemTotals(item).amount, 0);
 
-  const calculateTotalQuantity = () => {
-    return items.reduce((total, item) => total + item.quantity, 0);
-  };
+  const calculateTotalArea = () =>
+    items.reduce((total, item) => total + getItemTotals(item).area, 0);
+
+  const calculateTotalQuantity = () =>
+    items.reduce((total, item) => total + getItemTotals(item).quantity, 0);
 
   const calculateTotalWithProfit = () => {
     const baseTotal = calculateTotal();
@@ -256,6 +324,11 @@ export default function EditQuotationPage() {
         ...item,
         handleCount: item.handleCount ?? 0,
         meshPresent: item.meshPresent === "Yes",
+        subItems: item.subItems?.map((sub) => ({
+          ...sub,
+          handleCount: sub.handleCount ?? 0,
+          meshPresent: sub.meshPresent === "Yes",
+        })),
       })),
       breakdown: {
         totalAmount,
@@ -265,8 +338,8 @@ export default function EditQuotationPage() {
 
     try {
       const token = localStorage.getItem("authToken");
-      await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations/${quotationId}`,
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/quotations/${quotationId}`,
         payload,
         token
           ? { headers: { Authorization: `Bearer ${token}` } }
@@ -496,6 +569,101 @@ export default function EditQuotationPage() {
               </div>
             </div>
 
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Global Config</h2>
+              <Link
+                href="/quotations/settings"
+                className="text-sm font-medium text-[#124657] hover:underline"
+              >
+                Manage
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Logo URL
+                </label>
+                
+                  <div className="mb-4 flex items-center gap-4">
+                    <img
+                      src={globalConfig.logo}
+                      alt="Logo preview"
+                      className="h-30 w-auto rounded border border-gray-200 bg-white p-2"
+                    />
+                  </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prerequisites of Installation
+                </label>
+                <textarea
+                  value={globalConfig?.prerequisites}
+                  readOnly
+                  rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                />
+              </div>
+            </div>
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Terms &amp; Conditions
+              </label>
+              <textarea
+                value={globalConfig?.terms}
+                readOnly
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+              />
+            </div>
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Installation
+                </label>
+                <input
+                  type="number"
+                  value={globalConfig?.additionalCosts?.installation}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Transport
+                </label>
+                <input
+                  type="number"
+                  value={globalConfig?.additionalCosts?.transport}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Loading &amp; Unloading
+                </label>
+                <input
+                  type="number"
+                  value={globalConfig?.additionalCosts?.loadingUnloading}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Discount (%)
+                </label>
+                <input
+                  type="number"
+                  value={globalConfig?.additionalCosts?.discountPercent}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Items Section */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
@@ -538,7 +706,7 @@ export default function EditQuotationPage() {
               </div>
               <div className="text-center">
                 <div className="text-sm font-medium text-gray-600">Final Amount</div>
-                <div className="text-lg font-bold text-[#124657]">₹{calculateTotalWithProfit().toLocaleString('en-IN')}</div>
+                <div className="text-lg font-bold text-[#124657]">₹{(calculateTotalWithProfit() + parseInt(globalConfig?.additionalCosts?.transport) + parseInt(globalConfig?.additionalCosts?.installation) + parseInt(globalConfig?.additionalCosts?.loadingUnloading) - ((parseInt(globalConfig?.additionalCosts?.discountPercent) / 100) * calculateTotalWithProfit())).toLocaleString('en-IN')}</div>
                 {profitPercentage > 0 && (
                   <div className="text-xs text-green-600 mt-1">
                     +₹{((calculateTotal() * profitPercentage) / 100).toLocaleString('en-IN')} profit
@@ -591,36 +759,6 @@ export default function EditQuotationPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </div>
-
-          {/* Terms and Notes */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Terms & Notes</h2>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Terms & Conditions
-                </label>
-                <textarea
-                  value={quotationDetails.terms}
-                  onChange={(e) => setQuotationDetails({...quotationDetails, terms: e.target.value})}
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Additional Notes
-                </label>
-                <textarea
-                  value={quotationDetails.notes}
-                  onChange={(e) => setQuotationDetails({...quotationDetails, notes: e.target.value})}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  placeholder="Any additional notes or special instructions..."
-                />
-              </div>
             </div>
           </div>
         </div>

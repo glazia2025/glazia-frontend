@@ -26,6 +26,15 @@ export default function CategoriesPage() {
     <>
       <Header />
       <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b">
+          <div className="container mx-auto px-4 py-4">
+            <nav className="text-sm font-medium text-gray-600">
+              <Link href="/" className="hover:text-[#124657] transition-colors">
+                Back to Home
+              </Link>
+            </nav>
+          </div>
+        </div>
         {/* Breadcrumb */}
         <div className="bg-white border-b">
           <div className="container mx-auto px-4 py-4">

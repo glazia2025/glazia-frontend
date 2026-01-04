@@ -121,7 +121,7 @@ function DashboardContent() {
 
         // Get recent 3 orders
         const recent = orders.slice(0, 3).map(order => ({
-          id: order.id,
+          id: order._id,
           date: order.createdAt,
           items: order.products.length,
           total: order.totalAmount,
@@ -265,7 +265,7 @@ function DashboardContent() {
               {!loadingOrders && recentOrders.length > 0 && (
                 <div className="space-y-4">
                   {recentOrders.map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div onClick={() => window.location.href = `/account/orders/${order.id}`} key={order.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div className="flex items-center">
                         <div className="bg-gray-100 p-3 rounded-lg">
                           <Package className="w-5 h-5 text-gray-600" />

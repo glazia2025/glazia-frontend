@@ -9,11 +9,13 @@ import { useCartState, useAuth } from "@/contexts/AppContext";
 import NalcoPriceDisplay from "./NalcoPriceDisplay";
 import NalcoGraphModal from "./NalcoGraphModal";
 import LoginModal from "./LoginModal";
+import PhoneTrackModal from "./PhoneTrackModal";
 
 export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNalcoModalOpen, setIsNalcoModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
   const { cart, toggleCart } = useCartState();
   const { isAuthenticated, clearUser } = useAuth();
   const router = useRouter();
@@ -55,7 +57,13 @@ export default function Header() {
           <div className="hidden md:block">Free Shipping on Aluminium Orders Above ₹1000000*</div>
           <div className="flex items-center space-x-4">
             <NalcoPriceDisplay
-              onClick={() => setIsNalcoModalOpen(true)}
+              onClick={() => {
+                if (isAuthenticated) {
+                  setIsNalcoModalOpen(true);
+                  return;
+                }
+                setIsPhoneModalOpen(true);
+              }}
               className="block"
             />
           </div>
@@ -138,7 +146,7 @@ export default function Header() {
               <>
                 <button
                   onClick={() => setIsLoginModalOpen(true)}
-                  className="hidden md:flex items-center space-x-1 text-gray-700 hover:text-[#124657] cursor-pointer"
+                  className="flex items-center space-x-1 text-gray-700 hover:text-[#124657] cursor-pointer"
                 >
                   <User className="w-5 h-5" />
                   <span>Login</span>
@@ -157,6 +165,15 @@ export default function Header() {
       <NalcoGraphModal
         isOpen={isNalcoModalOpen}
         onClose={() => setIsNalcoModalOpen(false)}
+      />
+
+      <PhoneTrackModal
+        isOpen={isPhoneModalOpen}
+        onClose={() => setIsPhoneModalOpen(false)}
+        onSuccess={() => setIsNalcoModalOpen(true)}
+        reason="view_nalco_graph"
+        title="View NALCO graph"
+        description="Please share your phone number to view the NALCO graph."
       />
 
       {/* Login Modal */}

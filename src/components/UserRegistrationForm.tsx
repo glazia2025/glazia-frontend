@@ -35,45 +35,7 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
   // New fields
   const [authorisedPerson, setAuthorisedPerson] = useState('');
   const [designation, setDesignation] = useState('');
-  const [businessLogo, setBusinessLogo] = useState<string>('');
-  const [logoFileName, setLogoFileName] = useState<string>('');
 
-  // Handle logo file upload
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setError('Please upload a valid image file');
-        return;
-      }
-
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        setError('Logo file size should be less than 2MB');
-        return;
-      }
-
-      setLogoFileName(file.name);
-
-      // Convert to base64
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setBusinessLogo(base64String);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Remove logo
-  const removeLogo = () => {
-    setBusinessLogo('');
-    setLogoFileName('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
 
 
 
@@ -159,11 +121,10 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
           pincode,
           paUrl,
           authorisedPerson,
-          designation,
-          businessLogo
+          designation
         };
 
-        const response = await axios.post('https://api.glazia.in/api/user/register', registrationData);
+        const response = await axios.post('http://localhost:5000/api/user/register', registrationData);
 
         if (response.data.token) {
           localStorage.setItem('authToken', response.data.token);
@@ -388,55 +349,6 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
             </div>
           </div>
 
-          {/* Business Logo Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Business Logo (Optional)
-            </label>
-            <div className="relative">
-              {businessLogo ? (
-                <div className="flex items-center gap-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-white border border-gray-200 flex items-center justify-center">
-                    <img
-                      src={businessLogo}
-                      alt="Business Logo"
-                      className="max-w-full max-h-full object-contain"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">{logoFileName}</p>
-                    <p className="text-xs text-gray-500">Logo uploaded successfully</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={removeLogo}
-                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              ) : (
-                <div
-                  className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <div className="p-3 bg-gray-100 rounded-full mb-3">
-                    <ImageIcon className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <p className="text-sm font-medium text-gray-700">Click to upload logo</p>
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</p>
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleLogoUpload}
-              />
-            </div>
-          </div>
-
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
               {error}
@@ -473,14 +385,6 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
               <div><strong>City:</strong> {city}</div>
               <div><strong>State:</strong> {state}</div>
               <div className="md:col-span-2"><strong>Address:</strong> {completeAddress}</div>
-              {businessLogo && (
-                <div className="md:col-span-2 flex items-center gap-3">
-                  <strong>Business Logo:</strong>
-                  <div className="w-12 h-12 rounded border border-gray-200 overflow-hidden bg-white flex items-center justify-center">
-                    <img src={businessLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 

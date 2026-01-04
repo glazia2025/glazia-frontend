@@ -125,7 +125,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
       console.log('🔑 Using auth token:', authToken.substring(0, 20) + '...');
 
       // Make API call
-      const response = await fetch('https://api.glazia.in/api/user/pi-generate', {
+      const response = await fetch('http://localhost:5000/api/user/pi-generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
       {/* UPI Payment Section */}
       <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           <div className="bg-blue-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Scan QR Code to Pay</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Scan QR Code to Pay (For orders less than 1 lakh)</h3>
           <p className="text-gray-600 mb-4">
             Scan this QR code with any UPI app to pay {formatAmount(finalTotal)}
           </p>

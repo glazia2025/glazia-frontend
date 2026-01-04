@@ -1,4 +1,4 @@
-// Dynamic import for html2pdf to avoid SSR issues
+import { loadGlobalConfig } from "@/utils/globalConfig";
 
 // Helper function to convert image URL to base64
 const imageToBase64 = (url: string): Promise<string> => {
@@ -46,7 +46,7 @@ const imageToBase64 = (url: string): Promise<string> => {
   });
 };
 
-interface QuotationItem {
+interface QuotationItemBase {
   id?: string;
   refCode?: string;
   location?: string;
@@ -68,6 +68,12 @@ interface QuotationItem {
   amount?: number;
   refImage?: string;
   remarks?: string;
+}
+
+interface QuotationSubItem extends QuotationItemBase {}
+
+interface QuotationItem extends QuotationItemBase {
+  subItems?: QuotationSubItem[];
 }
 
 interface QuotationData {
@@ -121,13 +127,15 @@ export function getInitials(name?: string): string {
 }
 
 
-export const createQuotationHTML = (quotation: QuotationData): string => {
+export const createQuotationHTML = async (quotation: QuotationData): Promise<string> => {
   const user = window.localStorage.getItem('glazia-user');
   let userData: { name?: string; email?: string; phone?: string } = {};
 
   if (user) {
     userData = JSON.parse(user);
   }
+
+  const globalConfig = await loadGlobalConfig();
 
   const nl2br = (str: string) => {
     if (!str) return "";
@@ -139,30 +147,70 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
       ? 1 + ((quotation as unknown as { profitPercentage?: number }).profitPercentage || 0) / 100
       : 1;
 
-  // Adjust item rates and amounts to include profit
-  const adjustedItems = (quotation.items || []).map((item) => ({
+  const COMBINATION_SYSTEM = "Combination";
+
+  const applyProfit = <T extends QuotationItemBase>(item: T): T => ({
     ...item,
     rate: (item.rate || 0) * profitMultiplier,
     amount: (item.amount || 0) * profitMultiplier,
+  });
+
+  type DisplayItem = QuotationItemBase & { __isSubRow?: boolean; __rowNumber?: number | string };
+
+  const effectiveItems = (quotation.items || []).flatMap((item) => {
+    if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
+      return item.subItems;
+    }
+    return [item];
+  });
+
+  const displayItems: DisplayItem[] = (quotation.items || []).flatMap((item) => {
+    if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
+      return [
+        { ...item, __isSubRow: false },
+        ...item.subItems.map((sub) => ({ ...sub, __isSubRow: true })),
+      ];
+    }
+    return [{ ...item, __isSubRow: false }];
+  });
+
+  let rowCounter = 0;
+  const numberedDisplayItems = displayItems.map((item) => ({
+    ...item,
+    __rowNumber: item.__isSubRow ? "" : ++rowCounter,
   }));
 
-  const rawTotal = quotation.totalAmount ?? adjustedItems.reduce((sum, item) => sum + (item.amount || 0), 0);
-  const baseTotal = rawTotal;
-  const gstValue = baseTotal * 0.18;
-  const grandTotal = baseTotal + gstValue;
-  const totalArea = adjustedItems.reduce((sum, item) => sum + (item.area || 0) * (item.quantity || 1), 0);
-  const totalQty = adjustedItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const avgWithGst = totalArea ? grandTotal / totalArea : 0;
-  const avgWithoutGst = totalArea ? baseTotal / totalArea : 0;
+  const adjustedEffectiveItems = effectiveItems.map(applyProfit);
+  const adjustedDisplayItems = numberedDisplayItems.map(applyProfit);
 
-  const quotationNumber =
-    quotation.quotationNumber || quotation.quotationDetails?.id || quotation.id || "";
+  const rawTotal =
+    quotation.totalAmount ??
+    adjustedEffectiveItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const baseTotal = rawTotal;
+  const transport = globalConfig?.additionalCosts?.transport || 0;
+  const installation = globalConfig?.additionalCosts?.installation || 0;
+  const loadingUnloading = globalConfig?.additionalCosts?.loadingUnloading || 0;
+  const discount = ((globalConfig?.additionalCosts?.discountPercent || 0) / 100) * (baseTotal + transport + installation + loadingUnloading);
+  const totalProjectCost = baseTotal + transport + installation + loadingUnloading - discount;
+  const gstValue = totalProjectCost * 0.18;
+  const grandTotal = totalProjectCost + gstValue;
+  const totalArea = effectiveItems.reduce(
+    (sum, item) => sum + (item.area || 0) * (item.quantity || 1),
+    0
+  );
+  const totalQty = effectiveItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const avgWithoutGst = totalArea ? totalProjectCost / totalArea : 0;
+  const avgWithGst = totalArea ? avgWithoutGst * 1.18 : 0;
+
+  console.log(quotation, 'quotation>>>>');
+
   const quotationDate =
     quotation.quotationDetails?.date ||
     quotation.createdAt ||
     new Date().toISOString();
   const quotationTerms =
-    quotation.quotationDetails?.terms || "";
+    globalConfig?.terms || "";
+  const prequisites = globalConfig?.prerequisites || "";
   const customer = quotation.customerDetails || {};
 
   return `
@@ -170,12 +218,19 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Quotation ${quotation.quotationNumber}</title>
+      <title>Quotation ${quotation.id}</title>
       <style>
+        @page {
+          size: A3 landscape;
+          margin: 8mm; /* or whatever you want */
+        }
         * {
           margin: 0;
           padding: 0;
           box-sizing: border-box;
+        }
+        html, body {
+          width: 100%;
         }
         body {
           font-family: 'Arial', sans-serif;
@@ -184,10 +239,8 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           background: #ffffff;
         }
         .container {
-          width: 100%;
-          margin: 0 auto;
-          padding: 4mm 3mm;
-          background: #ffffff;
+           width: 100%;
+          margin: 0;
         }
         .top-bar {
           display: flex;
@@ -210,6 +263,14 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           overflow: hidden;
           user-select: none;
         }
+
+        .logo-img {
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+        }
+
+
         .logo {
           font-size: 36px;
           letter-spacing: 0.5px;
@@ -291,6 +352,9 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           border-collapse: collapse;
           text-align: center;
         }
+        .sub-row td {
+          background: #f7f7f7;
+        }
         thead {
           background: #f7f7f7;
           text-align: center;
@@ -298,7 +362,7 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
         .head-top th {
           background: #FFF;
           color: #222;
-          font-size: 8px;
+          font-size: 10px;
           padding: 5px;
           border: 1px solid #e0e0e0;
           text-align: center;
@@ -307,7 +371,7 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
         .head-sub th {
           background: #FFF;
           color: #222;
-          font-size: 8px;
+          font-size: 9px;
           padding: 4px 3px;
           border: 1px solid #e0e0e0;
           text-align: center;
@@ -316,12 +380,16 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
         tbody td {
           border: 1px solid #e0e0e0;
           padding: 4px 3px;
-          font-size: 8px;
+          font-size: 10px;
           text-align: center;
           line-height: 1.35;
         }
         tbody tr:nth-child(even) {
           background: #fafafa;
+        }
+        tr {
+          page-break-inside: avoid;
+          break-inside: avoid;
         }
         .text-left { text-align: left; }
         .text-right { text-align: right; }
@@ -330,8 +398,7 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           color: #999;
         }
         .ref-image {
-          max-width: 28mm;
-          max-height: 18mm;
+          width: 32mm;
           object-fit: contain;
           display: block;
           margin: 0 auto;
@@ -371,6 +438,10 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           page-break-before: always;
           break-before: page;
         }
+        .avoid-break {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
         .list-card {
           border: 1px solid #d8d8d8;
           padding: 10px 12px;
@@ -405,18 +476,18 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
     <body>
       <div class="container">
         <div class="top-bar">
-          ${userData.logo ? `<img src="${userData.logo}" alt="User Logo" />` : `<div class='user-logo'>${getInitials(userData.name)}</div>`}
+          ${globalConfig.logo ? `<img class='logo-img' src="${globalConfig.logo}" alt="User Logo" />` : `<div class='user-logo'>${getInitials(userData.name)}</div>`}
           <div class="quotation-label">QUOTATION</div>
           <div class="logo">GLAZIA</div>
         </div>
 
-        <div class="navy-bar">Glazia Windoors Private Limited</div>
+        <div class="navy-bar">${userData.name}</div>
 
-        <div class="info-container">
+        <div class="info-container avoid-break">
 
         <div class="info-grid">
           <div class="info-card">
-            <div class="info-title">Bill To:</div>
+            <div class="info-title">To:</div>
             <div class="info-line"><strong>${customer.name || "-"}</strong></div>
             ${customer.company ? `<div class="info-line">${customer.company}</div>` : ""}
             ${customer.address ? `<div class="info-line">${customer.address}</div>` : ""}
@@ -425,21 +496,20 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
             <div class="info-line">Email: ${customer.email || "-"}</div>
           </div>
           <div class="info-card">
-            <div class="info-title">Bill From:</div>
+            <div class="info-title">From:</div>
             <div class="info-line"><strong>${userData.name}</strong></div>
             <div class="info-line">${userData.completeAddress}</div>
             <div class="info-line">${userData.city}, ${userData.state} - ${userData.pincode}</div>
             <div class="info-line">India</div>
           </div>
           <div class="meta-card">
-            <div class="meta-label">Quotation no.:</div><div class="meta-value">${quotation._id}</div>
+            <div class="meta-label">Quotation no.:</div><div class="meta-value">${quotation.id}</div>
             <div class="meta-label">Quote Generated on:</div><div class="meta-value">${new Date(quotationDate).toLocaleDateString("en-IN")}</div>
-            <div class="meta-label">Valid On:</div><div class="meta-value">${quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString("en-IN") : "N/A"}</div>
           </div>
         </div>
 
         <div>Contact: ${userData.phone} | ${userData.email}</div>
-        <div style="font-size: 8px;">We are pleased to submit our quotation of price of products as following :-</div>
+        <div style="font-size: 10px; font-weight: 600;">We are pleased to submit our quotation of price of products as following :-</div>
 
         </div>
 
@@ -449,18 +519,21 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
               <tr class="head-top">
                 <th rowspan="2">S.No.</th>
                 <th rowspan="2">Ref</th>
-                <th rowspan="2">Series</th>
-                <th rowspan="2">Color</th>
                 <th rowspan="2">Product</th>
+                <th rowspan="2">Series</th>
+                <th rowspan="2">Width\n(mm)</th>
+                <th rowspan="2">Height\n(mm)</th>
+                <th rowspan="2">Area\n(sqft)</th>
+                <th rowspan="2">Color</th>
                 <th rowspan="2">Location</th>
                 <th rowspan="2">Description</th>
                 <th rowspan="2">Glass Spec</th>
                 <th colspan="2">Handle</th>
                 <th colspan="2">Mesh</th>
-                <th rowspan="2">Unit Price</th>
+                <th rowspan="2">Rate\n(₹/sqft)</th>
                 <th rowspan="2">Qty</th>
-                <th rowspan="2">AMOUNT</th>
-                <th rowspan="2">IMAGE</th>
+                <th rowspan="2">Amount\n(₹)</th>
+                <th rowspan="2">Image</th>
               </tr>
               <tr class="head-sub">
                 <th>Type</th>
@@ -470,13 +543,16 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
               </tr>
             </thead>
             <tbody>
-              ${adjustedItems.map((item, index) => `
-                <tr>
-                  <td>${index + 1}</td>
+              ${adjustedDisplayItems.map((item) => `
+                <tr class="${item.__isSubRow ? "sub-row" : ""}">
+                  <td>${item.__rowNumber || ""}</td>
                   <td>${item.refCode || "-"}</td>
-                  <td>${item.series || "-"}</td>
-                  <td>${item.colorFinish || "-"}</td>
                   <td>${item.systemType || "-"}</td>
+                  <td>${item.series || "-"}</td>
+                  <td>${item.width || "-"}</td>
+                  <td>${item.height || "-"}</td>
+                  <td>${item.area?.toFixed(1) || "-"}</td>
+                  <td>${item.colorFinish || "-"}</td>
                   <td>${item.location || "-"}</td>
                   <td>${item.description || "-"}</td>
                   <td>${item.glassSpec || "-"}</td>
@@ -498,13 +574,17 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           </table>
         </div>
 
-        <div class="summary">
+        <div class="summary avoid-break">
           <div class="total-card">
             <div class="total-heading">Quote Total</div>
             <div class="total-row"><span>No. of Components</span><span class="text-right">${totalQty}</span></div>
             <div class="total-row"><span>Total Area</span><span class="text-right">${totalArea.toFixed(2)}</span></div>
             <div class="total-row"><span><strong>Basic Value</strong></span><span class="text-right"><strong>${baseTotal.toLocaleString("en-IN")}</strong></span></div>
-            <div class="total-row"><span>Total Project Cost</span><span class="text-right">${quotation.breakdown?.totalAmount.toLocaleString("en-IN")}</span></div>
+            <div class="total-row"><span>Transport</span><span class="text-right">${transport.toLocaleString("en-IN")}</span></div>
+            <div class="total-row"><span>Installation</span><span class="text-right">${installation.toLocaleString("en-IN")}</span></div>
+            <div class="total-row"><span>Loading & Unloading</span><span class="text-right">${loadingUnloading.toLocaleString("en-IN")}</span></div>
+            <div class="total-row"><span>Discount</span><span class="text-right">${discount.toLocaleString("en-IN")}</span></div>
+            <div class="total-row"><span>Total Project Cost</span><span class="text-right">${totalProjectCost.toLocaleString("en-IN")}</span></div>
             <div class="total-row"><span>GST 18%</span><span class="text-right">${gstValue.toLocaleString("en-IN")}</span></div>
             <div class="total-row"><span><strong>Grand Total</strong></span><span class="text-right"><strong>${grandTotal.toLocaleString("en-IN")}</strong></span></div>
             <div class="total-row"><span>Avg. Price Per Sq. Ft. Without GST</span><span class="text-right">${avgWithoutGst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
@@ -512,29 +592,18 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
           </div>
         </div>
 
-        <div class="lists page-break">
-          <div class="list-card">
+        <div class="lists">
+          <div class="list-card avoid-break">
             <div class="list-title">Terms & Conditions</div>
             <div class="list-body">${quotationTerms ? nl2br(quotationTerms) : "N/A"}</div>
           </div>
-          <div class="list-card">
+          <div class="list-card avoid-break">
             <div class="list-title">Pre-requisites for Installation of Windows</div>
-            <div class="list-body">
-              1. Walls should be plastered from inside and outside, with inside POP complete.<br>
-              2. All jambs, sills and soffits should be plastered.<br>
-              3. Flooring (where doors have to be installed) should be complete.<br>
-              4. Aperture should be smooth.<br>
-              5. Base and top of window should be water leveled and sides should be in vertical plumb.<br>
-              6. Sill width should be more than the window width.<br>
-              7. Opening should be accessible from inside for installation.<br>
-              8. Grills: adequate care should be taken if grills have to be installed.<br>
-              9. Installation should happen before the last coat of paint.<br>
-              10. After installation security tape will be removed by us that should be chargeable per window.
-            </div>
+            <div class="list-body">${prequisites ? nl2br(prequisites) : "N/A"}</div>
           </div>
         </div>
 
-        <div class="signature-row">
+        <div class="signature-row avoid-break">
           <div class="sig-line">Authorized Signatory</div>
           <div class="sig-line">Signature of Customer</div>
         </div>
@@ -547,9 +616,17 @@ export const createQuotationHTML = (quotation: QuotationData): string => {
 export const generateQuotationPDF = async (quotation: QuotationData) => {
   // Convert all images to base64 first
   const itemsWithBase64Images = await Promise.all(
-    quotation.items.map(async (item) => ({
+    (quotation.items || []).map(async (item) => ({
       ...item,
-      refImage: item.refImage ? await imageToBase64(item.refImage) : ''
+      refImage: item.refImage ? await imageToBase64(item.refImage) : "",
+      subItems: item.subItems
+        ? await Promise.all(
+            item.subItems.map(async (sub) => ({
+              ...sub,
+              refImage: sub.refImage ? await imageToBase64(sub.refImage) : "",
+            }))
+          )
+        : undefined,
     }))
   );
 
@@ -562,11 +639,10 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
   // Dynamic import to avoid SSR issues
   const html2pdf = (await import('html2pdf.js')).default;
 
-  const htmlContent = createQuotationHTML(quotationWithImages);
-
-  // Create a temporary element to hold the HTML
-  const element = document.createElement('div');
-  element.innerHTML = htmlContent;
+  await createQuotationHTML(quotationWithImages)
+  .then((html) => {
+    const element = document.createElement('div');
+    element.innerHTML = html;
 
   // Configure html2pdf options
   const options = {
@@ -582,13 +658,15 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
       imageTimeout: 15000,
       removeContainer: true
     },
+    pagebreak: { mode: ['css', 'legacy'] as Array<'css' | 'legacy'> },
     jsPDF: {
       unit: 'mm',
-      format: 'a4',
-      orientation: 'landscape' as const // Use landscape for better table fit
+      format: 'a3',
+      orientation: 'portrait' as const // Use landscape for better table fit
     }
   };
 
   // Generate and download the PDF
   html2pdf().set(options).from(element).save();
+  });
 };

@@ -7,7 +7,7 @@ import {
 } from "./types";
 
 const apiBaseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 const apiClient = axios.create({
   baseURL: apiBaseURL,

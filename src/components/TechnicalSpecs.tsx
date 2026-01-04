@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { CheckCircle, Award, Shield, Thermometer, Volume2, Lock } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AppContext";
+import PhoneTrackModal from "./PhoneTrackModal";
 
 const specifications = [
   {
@@ -93,7 +96,10 @@ const performanceFeatures = [
 ];
 
 export default function TechnicalSpecs() {
-  const handleDownloadCatalogue = () => {
+  const { isAuthenticated } = useAuth();
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+
+  const downloadCatalogue = () => {
     // Create a link element to trigger the download
     const link = document.createElement('a');
     link.href = '/Glazia Aluminium Catalogue.pdf'; // Path to the PDF file in public folder
@@ -104,6 +110,15 @@ export default function TechnicalSpecs() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleDownloadCatalogue = () => {
+    if (isAuthenticated) {
+      downloadCatalogue();
+      return;
+    }
+
+    setIsPhoneModalOpen(true);
   };
 
   return (
@@ -164,6 +179,15 @@ export default function TechnicalSpecs() {
           </div>
         </div>
       </div>
+
+      <PhoneTrackModal
+        isOpen={isPhoneModalOpen}
+        onClose={() => setIsPhoneModalOpen(false)}
+        onSuccess={downloadCatalogue}
+        reason="download_catalogue"
+        title="Download catalogue"
+        description="Please share your phone number to download the technical catalogue."
+      />
     </section>
   );
 }

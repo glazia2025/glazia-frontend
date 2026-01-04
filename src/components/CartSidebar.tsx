@@ -85,7 +85,7 @@ const CartSidebar: React.FC = () => {
     } else if (orderValue >= 500000) {
       // 5L-9.99L gets 5,000 off
       return 5000;
-    } else if (orderValue >= 250000) {
+    } else if (orderValue >= 200000 && orderValue >= 250000) {
       // 2.50L-4.99L gets 2,500 off
       return 2500;
     }

@@ -76,7 +76,7 @@ export default function QuotationsPage() {
         return;
       }
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/quotations`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -173,6 +173,23 @@ export default function QuotationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <nav className="text-sm font-medium text-gray-600">
+              <Link href="/" className="hover:text-[#124657] transition-colors">
+                Back to Home
+              </Link>
+            </nav>
+            <Link
+              href="/quotations/settings"
+              className="text-sm font-medium text-[#124657] hover:underline"
+            >
+              Quotation Settings
+            </Link>
+          </div>
+        </div>
+      </div>
       <div className="container mx-auto px-4 py-8">
         {loading && (
           <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
@@ -342,7 +359,7 @@ export default function QuotationsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {quotation._id}
+                            {quotation.generatedId}
                           </div>
                           <div className="text-sm text-gray-500">
                             {quotation.items.length} item{quotation.items.length !== 1 ? 's' : ''}
