@@ -20,9 +20,6 @@ export default function Header() {
   const { isAuthenticated, clearUser } = useAuth();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Authentication is now managed by AppContext, no need for local state
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -45,120 +42,70 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 w-full bg-white shadow-sm z-[10000]">
-      {/* Top Bar */}
-      <div className="bg-[#124657] text-white py-1">
-        <div className="container mx-auto px-4 flex justify-between items-center text-sm">
-          <div className="flex items-center space-x-4">
-            <Link href="tel:+919876543210" className="flex items-center">
-              <Phone className="w-4 h-4 mr-1" />
-              +91 9958053708
+      <div className="bg-[#E6E9EB] px-12 py-4 flex flex-row justify-between items-center">
+        <div className="flex flex-row justify-between items-center gap-12">
+          <Image width={200} height={200} src="/Logo.svg" alt="Glazia Logo" />
+          <Link className="nav-link" href="/">Home</Link>
+          <div className="relative">
+            <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center space-x-2"
+          >
+            <span>Products</span>
+            <ChevronDown className="w-4 h-4" />
+          </button>
+          <div
+            ref={dropdownRef}
+            className={`absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg ${isDropdownOpen ? 'block' : 'hidden'
+              }`}
+          >
+            <Link
+              href="/account/dashboard"
+              className="block px-4 py-2 text-sm hover:bg-gray-100"
+            >
+              Aluminium Profiles
+            </Link>
+            <Link
+              href="/account/orders"
+              className="block px-4 py-2 text-sm hover:bg-gray-100"
+            >
+              Hardware
+            </Link>
+            <Link
+              href="/account/orders"
+              className="block px-4 py-2 text-sm hover:bg-gray-100"
+            >
+              Railings
             </Link>
           </div>
-          <div className="hidden md:block">Free Shipping on Aluminium Orders Above ₹1000000*</div>
-          <div className="flex items-center space-x-4">
-            <NalcoPriceDisplay
-              onClick={() => {
-                if (isAuthenticated) {
-                  setIsNalcoModalOpen(true);
-                  return;
-                }
-                setIsPhoneModalOpen(true);
-              }}
-              className="block"
-            />
           </div>
+          <Link className="nav-link" href="/">About Us</Link>
+          <Link className="nav-link" href="/">Contact</Link>
+          <Link className="nav-link" href="/">Blogs</Link>
         </div>
-      </div>
 
-      {/* Main Header */}
-      <div className="container mx-auto px-4 py-4 bg-white">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <div className="text-2xl flex gap-2 font-bold text-[#124657}" style={{alignItems: 'center'}}>
-              <img src="/logo_n.png" alt="Glazia Logo" className="w-10" />
-              GLAZIA
+        <div>
+          {!isAuthenticated && (
+            <button
+              onClick={() => setIsLoginModalOpen(true)}
+              className="px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-[#0f3a4a] flex items-center space-x-2"
+            >
+              <User className="w-4 h-4" />
+              <span>Login</span>
+            </button>
+          )}
+          {isAuthenticated && (
+            <div className="flex flex-row justify-between items-center gap-8">
+              <Image width={20} height={20} src="/call.svg" alt="Call Logo" />
+              <Image width={20} height={20} src="/user.svg" alt="User Logo" />
+              <Image width={20} height={20} src="/cart.svg" alt="Cart Logo" />
+              <NalcoPriceDisplay onClick={() => setIsNalcoModalOpen(true)} />
             </div>
-          </Link>
-
-
-
-          {/* Right Side Icons */}
-          <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
-              <>
-
-                {/* User Avatar Dropdown */}
-                <div className="relative" ref={dropdownRef}>
-                  <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center space-x-1 text-gray-700 hover:text-[#124657} focus:outline-none"
-                  >
-                    <div className="w-8 h-8 bg-[#000000} border rounded-full flex items-center justify-center text-black font-semibold text-sm">
-                      <User className="w-4 h-4" />
-                    </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                       <Link href="/account/dashboard">
-                        <button
-                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                        >
-                          <LayoutDashboard className="w-4 h-4 mr-3" />
-                          Dashboard
-                        </button>
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                      >
-                        <LogOut className="w-4 h-4 mr-3" />
-                        Log out
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={toggleCart}
-                  className="flex items-center space-x-1 text-gray-700 hover:text-[#124657} relative"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  <span className="hidden md:inline">Cart</span>
-                  {cart.itemCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {cart.itemCount}
-                    </span>
-                  )}
-                </button>
-
-                <Link href="/quotations">
-                  <button
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    <Dock className="w-4 h-4 mr-3" />
-                    Quotations
-                  </button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="flex items-center space-x-1 text-gray-700 hover:text-[#124657] cursor-pointer"
-                >
-                  <User className="w-5 h-5" />
-                  <span>Login</span>
-                </button>
-              </>
-            )}
-          </div>
+          )}
         </div>
-
+        
 
       </div>
-
 
 
       {/* NALCO Graph Modal */}

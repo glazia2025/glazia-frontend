@@ -1,29 +1,18 @@
 @import "tailwindcss";
 
-:root {
-  --background: #D2D7DA;
-  --foreground: #171717;
-  --primary: #124657;
-  --secondary: #359496;
-  --banner-gradient-from: #35875C;
-  --banner-gradient-to: #7FB549;
-}
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-secondary: var(--secondary);
-  --color-banner-gradient-from: var(--banner-gradient-from);
-  --color-banner-gradient-to: var(--banner-gradient-to);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  --font-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
+    'Helvetica Neue', sans-serif;
+
+  --font-poppins: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
+    'Helvetica Neue', sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter);
 }
 
 /* Custom hover effects for primary color */
@@ -43,91 +32,13 @@ body {
   border-color: #124657 !important;
 }
 
-/* Admin Panel Specific Styles */
-.admin-layout {
-  font-family: var(--font-geist-sans);
-  background-color: #f9fafb;
-  min-height: 100vh;
-}
 
-.admin-layout * {
-  box-sizing: border-box;
-}
 
-/* Ensure admin layout doesn't inherit main site styles */
-.admin-layout .fixed {
-  position: fixed !important;
-}
-
-.admin-layout .sticky {
-  position: sticky !important;
-}
-
-/* Admin sidebar styles */
-.admin-sidebar {
-  height: 100vh;
-  overflow-y: auto;
-}
-
-/* Admin content area */
-.admin-content {
-  min-height: 100vh;
-  background-color: #f9fafb;
-}
-
-/* Admin table styles */
-.admin-table {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-/* Admin modal styles */
-.admin-modal {
-  z-index: 10050;
-}
-
-/* Admin responsive styles */
-@media (max-width: 1024px) {
-  .admin-sidebar {
-    position: fixed !important;
-  }
-}
-
-/* Admin table responsive */
-.admin-table-container {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Admin form styles */
-.admin-form-input {
-  transition: all 0.2s ease-in-out;
-}
-
-.admin-form-input:focus {
-  outline: none;
-  ring: 2px;
-  ring-color: #124657;
-  border-color: transparent;
-}
-
-/* Admin button styles */
-.admin-btn-primary {
-  background-color: #124657;
-  color: white;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.admin-btn-primary:hover {
-  background-color: #0f3a4a;
-}
-
-/* Admin toggle styles */
-.admin-toggle {
-  transition: all 0.2s ease-in-out;
-}
-
-.admin-toggle:hover {
-  opacity: 0.75;
+.nav-link {
+  font-family: var(--font-inter);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 120%;
+  letter-spacing: 0%;
+  vertical-align: middle;
 }

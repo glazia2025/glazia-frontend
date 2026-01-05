@@ -1,10 +1,7 @@
-import Image from "next/image";
-import Link from "next/link";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import FeaturedCategories from "@/components/FeaturedCategories";
-import FeaturedProducts from "@/components/FeaturedProducts";
 import TechnicalSpecs from "@/components/TechnicalSpecs";
 import Footer from "@/components/Footer";
 

@@ -114,19 +114,18 @@ export default function NalcoPriceDisplay({ onClick, className = '' }: NalcoPric
   return (
     <button
       onClick={onClick}
-      className={`flex items-center space-x-2 hover:bg-white/10 px-2 py-1 rounded transition-colors group ${className}`}
+      className={`flex items-center space-x-2  px-2 py-1 rounded transition-colors group ${className}`}
       title="Click to view NALCO price chart"
     >
-      <BarChart3 className="w-4 h-4 text-white/70 group-hover:text-white transition-colors" />
+      <BarChart3 className="w-4 h-4" />
       <div className="flex flex-col items-start">
-        <span className="text-xs text-white/70 group-hover:text-white/90 transition-colors">
+        <span className="text-xs font-semibold text-[#1F2933]">
           NALCO
         </span>
-        <div className="flex items-center space-x-1">
-          <span className={`text-sm font-semibold ${getTrendColor()} group-hover:text-white transition-colors`}>
+        <div className="flex text-[#EE1C25] items-center space-x-1">
+          <span className={`text-sm font-semibold`}>
             {nalcoApiService.formatPrice(currentData.nalcoPrice/1000)}/Kg
           </span>
-          {getTrendIcon()}
         </div>
       </div>
     </button>
