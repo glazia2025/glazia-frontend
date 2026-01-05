@@ -529,10 +529,23 @@ const CartSidebar: React.FC = () => {
       // Dynamically import html2pdf to avoid SSR issues
       const html2pdf = (await import('html2pdf.js')).default;
 
-      const { body, cleanup } = await createPdfFrame(invoiceHTML);
+      const { body, cleanup, doc } = await createPdfFrame(invoiceHTML);
       cleanupFrame = cleanup;
 
-      await html2pdf().set(opt).from(body).save();
+      const nextOpt = {
+        ...opt,
+        html2canvas: {
+          ...opt.html2canvas,
+          onclone: (clonedDoc: Document) => {
+            if (doc.head && clonedDoc.head) {
+              clonedDoc.head.innerHTML = "";
+              clonedDoc.head.appendChild(doc.head.cloneNode(true));
+            }
+          },
+        },
+      };
+
+      await html2pdf().set(nextOpt).from(body).save();
     } catch (error) {
       console.error('Error generating invoice:', error);
       alert('Failed to generate invoice. Please try again.');

@@ -64,13 +64,25 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
 
     let cleanupFrame: (() => void) | null = null;
     try {
+      if (!quotation) {
+        return;
+      }
       const html2pdf = (await import("html2pdf.js")).default;
 
       // Convert images → base64
+      const items = quotation.items ?? [];
       const itemsWithImages = await Promise.all(
-        quotation.items.map(async (item: any) => ({
+        items.map(async (item: any) => ({
           ...item,
           refImage: item.refImage ? await imageToBase64(item.refImage) : "",
+          subItems: item.subItems
+            ? await Promise.all(
+                item.subItems.map(async (sub: any) => ({
+                  ...sub,
+                  refImage: sub.refImage ? await imageToBase64(sub.refImage) : "",
+                }))
+              )
+            : undefined,
         }))
       );
 
@@ -82,7 +94,7 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
       // Generate HTML for PDF
       const htmlContent = await createQuotationHTML(quotationWithImages);
 
-      const { body, cleanup } = await createPdfFrame(htmlContent);
+      const { body, cleanup, doc } = await createPdfFrame(htmlContent);
       cleanupFrame = cleanup;
 
       const options = {
@@ -93,6 +105,12 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
           scale: 2,
           useCORS: true,
           allowTaint: true,
+          onclone: (clonedDoc: Document) => {
+            if (doc.head && clonedDoc.head) {
+              clonedDoc.head.innerHTML = "";
+              clonedDoc.head.appendChild(doc.head.cloneNode(true));
+            }
+          },
         },
         jsPDF: {
           unit: "mm",

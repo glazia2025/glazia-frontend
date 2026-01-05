@@ -61,6 +61,28 @@ const AREA_SLABS = [
 ];
 const COMBINATION_SYSTEM = "Combination";
 
+const indexToAlpha = (index: number): string => {
+  let n = index;
+  let result = "";
+  while (n >= 0) {
+    result = String.fromCharCode(97 + (n % 26)) + result;
+    n = Math.floor(n / 26) - 1;
+  }
+  return result;
+};
+
+const buildSubLabel = (count: number): string =>
+  Array.from({ length: count }, (_, i) => indexToAlpha(i).toUpperCase()).join("+");
+
+const applySubRefCodes = (
+  parentRef: string,
+  subItems: QuotationSubItem[]
+): QuotationSubItem[] =>
+  subItems.map((sub, idx) => ({
+    ...sub,
+    refCode: parentRef ? `${parentRef}-${indexToAlpha(idx)}` : "",
+  }));
+
 function getImagePath(description: string): string {
   if (!description) return "";
   if (description === "Fix") return "/Quotations/Fix.png";
@@ -255,9 +277,9 @@ function QuotationSubItemRow({
         <input
           type="text"
           value={item.refCode}
-          onChange={(e) => handleFieldChange("refCode", e.target.value)}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
           placeholder="Ref code..."
+          disabled
         />
       </td>
       <td className="border border-gray-200 px-2 py-2">
@@ -481,6 +503,9 @@ function QuotationSubItemRow({
 export function QuotationItemRow({ item, index, onChange, removeItem, canRemove }: Props) {
   const isCombination = item.systemType === COMBINATION_SYSTEM;
   const querySystemType = isCombination ? "" : item.systemType;
+  const subLabel = isCombination && item.subItems?.length
+    ? buildSubLabel(item.subItems.length)
+    : "";
   const systemsQuery = useSystemsQuery();
   const seriesQuery = useSeriesQuery(querySystemType);
   const descriptionsQuery = useDescriptionsQuery(querySystemType, item.series);
@@ -497,13 +522,19 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
   };
 
   const addSubItem = () => {
-    const subItems = [...(item.subItems || []), createBlankSubItem()];
+    const subItems = applySubRefCodes(
+      item.refCode,
+      [...(item.subItems || []), createBlankSubItem()]
+    );
     const nextItem = syncCombinationValues({ ...item, subItems });
     onChange(nextItem);
   };
 
   const removeSubItem = (id: string) => {
-    const subItems = (item.subItems || []).filter((sub) => sub.id !== id);
+    const subItems = applySubRefCodes(
+      item.refCode,
+      (item.subItems || []).filter((sub) => sub.id !== id)
+    );
     const nextItem = syncCombinationValues({ ...item, subItems });
     onChange(nextItem);
   };
@@ -514,7 +545,10 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
 
     if (field === "systemType") {
       if (value === COMBINATION_SYSTEM) {
-        next.subItems = next.subItems?.length ? next.subItems : [createBlankSubItem()];
+        const initialSubItems = next.subItems?.length
+          ? next.subItems
+          : [createBlankSubItem()];
+        next.subItems = applySubRefCodes(next.refCode, initialSubItems);
       } else {
         next.subItems = [];
       }
@@ -536,6 +570,10 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
 
     if (field === "description") {
       next.refImage = getImagePath(String(value));
+    }
+
+    if (field === "refCode" && next.systemType === COMBINATION_SYSTEM) {
+      next.subItems = applySubRefCodes(String(value), next.subItems || []);
     }
 
     if (field === "width" || field === "height") {
@@ -779,7 +817,11 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
         </td>
         <td className="border border-gray-300 px-2 py-2">
           <div className="flex items-center justify-center h-20 w-24 bg-gray-50 rounded-lg border border-gray-200">
-            {item.refImage ? (
+            {subLabel ? (
+              <div className="text-sm font-semibold tracking-wide text-gray-700">
+                {subLabel}
+              </div>
+            ) : item.refImage ? (
               <img
                 src={item.refImage}
                 alt={item.description || "Product"}

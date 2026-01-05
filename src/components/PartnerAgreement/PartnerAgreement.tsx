@@ -390,10 +390,23 @@ const PartnerAgreement: React.FC<PartnerAgreementProps> = ({
         jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const }
       };
 
-      const { body, cleanup } = await createPdfFrame(htmlStr);
+      const { body, cleanup, doc } = await createPdfFrame(htmlStr);
       cleanupFrame = cleanup;
 
-      const pdfBlob = await html2pdf().set(opt).from(body).outputPdf('blob');
+      const nextOpt = {
+        ...opt,
+        html2canvas: {
+          ...opt.html2canvas,
+          onclone: (clonedDoc: Document) => {
+            if (doc.head && clonedDoc.head) {
+              clonedDoc.head.innerHTML = "";
+              clonedDoc.head.appendChild(doc.head.cloneNode(true));
+            }
+          },
+        },
+      };
+
+      const pdfBlob = await html2pdf().set(nextOpt).from(body).outputPdf('blob');
       setBlob(pdfBlob);
       setUrl(URL.createObjectURL(pdfBlob));
     } catch (error) {

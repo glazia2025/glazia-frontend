@@ -1,5 +1,6 @@
 export type PdfFrameHandle = {
   body: HTMLBodyElement;
+  doc: Document;
   cleanup: () => void;
 };
 
@@ -36,6 +37,7 @@ export const createPdfFrame = async (html: string): Promise<PdfFrameHandle> => {
 
   return {
     body: doc.body,
+    doc,
     cleanup: () => {
       if (iframe.parentNode) {
         iframe.parentNode.removeChild(iframe);

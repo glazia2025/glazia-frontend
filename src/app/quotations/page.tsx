@@ -150,9 +150,39 @@ export default function QuotationsPage() {
     }
   };
 
-  const viewQuotation = (quotation: Quotation) => {
+  const fetchQuotationDetails = async (quotationId: string) => {
+    const token = localStorage.getItem("authToken");
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/quotations/${quotationId}`,
+      token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch quotation (${response.status})`);
+    }
+    const data = await response.json();
+    return data.quotation ?? data;
+  };
+
+  const viewQuotation = async (quotation: Quotation) => {
     setSelectedQuotation(quotation);
     setIsModalOpen(true);
+
+    const id = quotation.id || (quotation as { _id?: string })._id;
+    if (!id || quotation.items?.length) {
+      return;
+    }
+
+    try {
+      const fullQuotation = await fetchQuotationDetails(id);
+      setSelectedQuotation((prev) => ({
+        ...prev,
+        ...fullQuotation,
+        id: id,
+      }));
+    } catch (error) {
+      console.error("Error loading quotation", error);
+      setError("Failed to load quotation");
+    }
   };
 
   const closeModal = () => {

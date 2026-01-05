@@ -149,6 +149,17 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
       : 1;
 
   const COMBINATION_SYSTEM = "Combination";
+  const indexToAlpha = (index: number): string => {
+    let n = index;
+    let result = "";
+    while (n >= 0) {
+      result = String.fromCharCode(65 + (n % 26)) + result;
+      n = Math.floor(n / 26) - 1;
+    }
+    return result;
+  };
+  const buildSubLabel = (count: number): string =>
+    Array.from({ length: count }, (_, i) => indexToAlpha(i)).join("+");
 
   const applyProfit = <T extends QuotationItemBase>(item: T): T => ({
     ...item,
@@ -156,7 +167,11 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     amount: (item.amount || 0) * profitMultiplier,
   });
 
-  type DisplayItem = QuotationItemBase & { __isSubRow?: boolean; __rowNumber?: number | string };
+  type DisplayItem = QuotationItemBase & {
+    __isSubRow?: boolean;
+    __rowNumber?: number | string;
+    __subLabel?: string;
+  };
 
   const effectiveItems = (quotation.items || []).flatMap((item) => {
     if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
@@ -168,7 +183,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
   const displayItems: DisplayItem[] = (quotation.items || []).flatMap((item) => {
     if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
       return [
-        { ...item, __isSubRow: false },
+        { ...item, __isSubRow: false, __subLabel: buildSubLabel(item.subItems.length) },
         ...item.subItems.map((sub) => ({ ...sub, __isSubRow: true })),
       ];
     }
@@ -392,14 +407,30 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
           page-break-inside: avoid;
           break-inside: avoid;
         }
+
+        .main-row {
+          height: 32mm;
+        }
         .text-left { text-align: left; }
         .text-right { text-align: right; }
         .no-image {
           font-size: 7px;
           color: #999;
         }
+        .combo-label {
+          display: inline-block;
+          font-weight: 600;
+          font-size: 9px;
+          letter-spacing: 0.5px;
+        }
         .ref-image {
           width: 32mm;
+          object-fit: contain;
+          display: block;
+          margin: 0 auto;
+        }
+        .sub-row-image {
+          width: 22mm;
           object-fit: contain;
           display: block;
           margin: 0 auto;
@@ -545,7 +576,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
             </thead>
             <tbody>
               ${adjustedDisplayItems.map((item) => `
-                <tr class="${item.__isSubRow ? "sub-row" : ""}">
+                <tr class="${item.__isSubRow ? "sub-row" : "main-row"}">
                   <td>${item.__rowNumber || ""}</td>
                   <td>${item.refCode || "-"}</td>
                   <td>${item.systemType || "-"}</td>
@@ -565,9 +596,11 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
                   <td>${item.quantity}</td>
                   <td>${(item.rate * item.quantity).toLocaleString("en-IN")}</td>
                   <td>
-                    ${item.refImage
-                      ? `<img class="ref-image" src="${item.refImage}" alt="Reference image">`
-                      : `<span class="no-image">No image</span>`}
+                    ${item.__subLabel
+                      ? `<span class="combo-label">${item.__subLabel}</span>`
+                      : item.refImage
+                        ? `<img class="${item.__isSubRow ? "sub-row-image" : "ref-image"}" src="${item.refImage}" alt="Reference image">`
+                        : `<span class="no-image">No image</span>`}
                   </td>
                 </tr>
               `).join("")}
@@ -641,7 +674,7 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
   const html2pdf = (await import('html2pdf.js')).default;
 
   const html = await createQuotationHTML(quotationWithImages);
-  const { body, cleanup } = await createPdfFrame(html);
+  const { body, cleanup, doc } = await createPdfFrame(html);
 
   // Configure html2pdf options
   const options = {
@@ -655,7 +688,13 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
       letterRendering: true,
       logging: false,
       imageTimeout: 15000,
-      removeContainer: true
+      removeContainer: true,
+      onclone: (clonedDoc: Document) => {
+        if (doc.head && clonedDoc.head) {
+          clonedDoc.head.innerHTML = "";
+          clonedDoc.head.appendChild(doc.head.cloneNode(true));
+        }
+      }
     },
     pagebreak: { mode: ['css', 'legacy'] as Array<'css' | 'legacy'> },
     jsPDF: {
