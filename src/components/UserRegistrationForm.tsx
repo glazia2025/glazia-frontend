@@ -124,7 +124,7 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
           designation
         };
 
-        const response = await axios.post('http://localhost:5000/api/user/register', registrationData);
+        const response = await axios.post('https://api.glazia.in/api/user/register', registrationData);
 
         if (response.data.token) {
           localStorage.setItem('authToken', response.data.token);
