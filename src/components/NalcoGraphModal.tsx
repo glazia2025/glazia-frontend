@@ -14,6 +14,11 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
+  const [hoveredPoint, setHoveredPoint] = useState<{
+    point: NalcoDataPoint;
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -144,10 +149,38 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
                 r="3"
                 fill="#124657"
                 className="hover:r-5 transition-all cursor-pointer"
-                title={`${nalcoApiService.formatPrice((point.nalcoPrice / 1000))} on ${nalcoApiService.formatDate(point.date)}`}
+                onMouseEnter={() => setHoveredPoint({ point, x, y })}
+                onMouseMove={() => setHoveredPoint({ point, x, y })}
+                onMouseLeave={() => setHoveredPoint(null)}
               />
             );
           })}
+
+          {/* Hover tooltip */}
+          {hoveredPoint && (() => {
+            const tooltipWidth = 160;
+            const tooltipHeight = 44;
+            const tooltipX = Math.min(Math.max(hoveredPoint.x - tooltipWidth / 2, 0), 800 - tooltipWidth);
+            const tooltipY = Math.max(hoveredPoint.y - tooltipHeight - 8, 0);
+            return (
+              <g transform={`translate(${tooltipX}, ${tooltipY})`} pointerEvents="none">
+                <rect
+                  width={tooltipWidth}
+                  height={tooltipHeight}
+                  rx="6"
+                  ry="6"
+                  fill="#111827"
+                  opacity="0.9"
+                />
+                <text x="8" y="18" fill="#f9fafb" fontSize="12" fontFamily="system-ui, sans-serif">
+                  {nalcoApiService.formatPrice(hoveredPoint.point.nalcoPrice / 1000)}
+                </text>
+                <text x="8" y="34" fill="#d1d5db" fontSize="11" fontFamily="system-ui, sans-serif">
+                  {nalcoApiService.formatDate(hoveredPoint.point.date)}
+                </text>
+              </g>
+            );
+          })()}
         </svg>
 
         {/* Y-axis labels - showing rate values with Indian Rupees symbol */}
