@@ -81,6 +81,18 @@ interface QuotationData {
   id: string;
   quotationNumber?: string;
   createdAt?: string;
+  globalConfig?: {
+    logo?: string;
+    logoUrl?: string;
+    prerequisites?: string;
+    terms?: string;
+    additionalCosts?: {
+      installation?: number;
+      transport?: number;
+      loadingUnloading?: number;
+      discountPercent?: number;
+    };
+  };
   quotationDetails?: {
     id?: string;
     date?: string;
@@ -136,7 +148,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     userData = JSON.parse(user);
   }
 
-  const globalConfig = await loadGlobalConfig();
+  const globalConfig = quotation.globalConfig || (await loadGlobalConfig());
 
   const nl2br = (str: string) => {
     if (!str) return "";
@@ -224,9 +236,9 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     quotation.quotationDetails?.date ||
     quotation.createdAt ||
     new Date().toISOString();
-  const quotationTerms =
-    globalConfig?.terms || "";
+  const quotationTerms = globalConfig?.terms || "";
   const prequisites = globalConfig?.prerequisites || "";
+  const logoSrc = globalConfig?.logoUrl || globalConfig?.logo;
   const customer = quotation.customerDetails || {};
 
   return `
@@ -508,7 +520,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     <body>
       <div class="container">
         <div class="top-bar">
-          ${globalConfig.logo ? `<img class='logo-img' src="${globalConfig.logo}" alt="User Logo" />` : `<div class='user-logo'>${getInitials(userData.name)}</div>`}
+          ${logoSrc ? `<img class='logo-img' src="${logoSrc}" alt="User Logo" />` : `<div class='user-logo'>${getInitials(userData.name)}</div>`}
           <div class="quotation-label">QUOTATION</div>
           <div class="logo">GLAZIA</div>
         </div>

@@ -293,18 +293,28 @@ function QuotationSubItemRow({
       </td>
       <td className="border border-gray-200 px-2 py-2">
         <input
-          type="number"
+          type="text"
           value={item.width}
-          onChange={(e) => handleFieldChange("width", parseFloat(e.target.value) || 0)}
+          onChange={(e) => {
+            const sanitizedValue = e.target.value
+              .replace(/[^0-9]/g, "")
+              .toUpperCase();
+            handleFieldChange("width", parseFloat(sanitizedValue) || 0)
+          }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
           placeholder="Width"
         />
       </td>
       <td className="border border-gray-200 px-2 py-2">
         <input
-          type="number"
+          type="text"
           value={item.height}
-          onChange={(e) => handleFieldChange("height", parseFloat(e.target.value) || 0)}
+          onChange={(e) => {
+            const sanitizedValue = e.target.value
+              .replace(/[^0-9]/g, "")
+              .toUpperCase();
+            handleFieldChange("height", parseFloat(sanitizedValue) || 0)
+          }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
           placeholder="Height"
         />
@@ -444,17 +454,27 @@ function QuotationSubItemRow({
       </td>
       <td className="border border-gray-200 px-2 py-2">
         <input
-          type="number"
+          type="text"
           value={item.rate.toFixed(2)}
-          onChange={(e) => handleFieldChange("rate", parseFloat(e.target.value) || 0)}
+          onChange={(e) => {
+            const sanitizedValue = e.target.value
+              .replace(/[^0-9]/g, "")
+              .toUpperCase();
+            handleFieldChange("rate", parseFloat(sanitizedValue) || 0)
+          }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-gray-50 text-gray-600"
         />
       </td>
       <td className="border border-gray-200 px-2 py-2">
         <input
-          type="number"
+          type="text"
           value={item.quantity}
-          onChange={(e) => handleFieldChange("quantity", parseFloat(e.target.value) || 0)}
+          onChange={(e) => {
+            const sanitizedValue = e.target.value
+              .replace(/[^0-9]/g, "")
+              .toUpperCase();
+            handleFieldChange("quantity", parseFloat(sanitizedValue) || 0)
+          }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
           min={0}
         />
@@ -637,7 +657,12 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
           <input
             type="number"
             value={item.width}
-            onChange={(e) => handleFieldChange("width", parseFloat(e.target.value) || 0)}
+             onChange={(e) => {
+              const sanitizedValue = e.target.value
+                .replace(/[^0-9]/g, "")
+                .toUpperCase();
+              handleFieldChange("width", parseFloat(sanitizedValue) || 0)
+            }}
             className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] disabled:bg-gray-50 disabled:text-gray-500"
             placeholder="Width"
             disabled={isCombination}
@@ -647,7 +672,12 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
           <input
             type="number"
             value={item.height}
-            onChange={(e) => handleFieldChange("height", parseFloat(e.target.value) || 0)}
+            onChange={(e) => {
+              const sanitizedValue = e.target.value
+                .replace(/[^0-9]/g, "")
+                .toUpperCase();
+              handleFieldChange("height", parseFloat(sanitizedValue) || 0)
+            }}
             className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] disabled:bg-gray-50 disabled:text-gray-500"
             placeholder="Height"
             disabled={isCombination}
@@ -798,18 +828,28 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
 
         <td className="border border-gray-300 px-2 py-2">
           <input
-            type="number"
+            type="text"
             value={item.rate.toFixed(2)}
-            onChange={(e) => handleFieldChange("rate", parseFloat(e.target.value) || 0)}
+            onChange={(e) => {
+              const sanitizedValue = e.target.value
+                .replace(/[^0-9]/g, "")
+                .toUpperCase();
+              handleFieldChange("rate", parseFloat(sanitizedValue) || 0)
+            }}
             className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-gray-50 text-gray-600"
             disabled={isCombination}
           />
         </td>
         <td className="border border-gray-300 px-2 py-2">
           <input
-            type="number"
+            type="text"
             value={item.quantity}
-            onChange={(e) => handleFieldChange("quantity", parseFloat(e.target.value) || 0)}
+            onChange={(e) => {
+              const sanitizedValue = e.target.value
+                .replace(/[^0-9]/g, "")
+                .toUpperCase();
+              handleFieldChange("quantity", parseFloat(sanitizedValue) || 0)
+            }}
             className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] disabled:bg-gray-50 disabled:text-gray-500"
             min={0}
             disabled={isCombination}
