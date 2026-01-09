@@ -84,47 +84,29 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
       setIsLoading(true);
 
       try {
-        // Upload partner agreement to Supabase storage if blob exists
-        let paUrl = '';
+        const registrationData = new FormData();
+        registrationData.append('name', userName);
+        registrationData.append('email', email);
+        registrationData.append('gstNumber', gstNumber);
+        registrationData.append('city', city);
+        registrationData.append('state', state);
+        registrationData.append('address', completeAddress);
+        registrationData.append('phoneNumber', phoneNumber || '');
+        registrationData.append('phoneNumbers', phoneNumber || '');
+        registrationData.append('pincode', pincode);
+        registrationData.append('authorizedPerson', authorisedPerson);
+        registrationData.append('authorizedPersonDesignation', designation);
+
         if (blob) {
-          const fileName = `${userName.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
-
-          const { data, error } = await supabase.storage
-            .from('pa')
-            .upload(fileName, blob, {
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          console.log('Supabase upload result:', data, error);
-
-          if (error) {
-            throw new Error(`Failed to upload partner agreement: ${error.message}`);
-          }
-
-          console.log(data);
-
-          if (data) {
-            paUrl = `https://kttdnoylgmnftrulhieg.supabase.co/storage/v1/object/public/pa/${encodeURIComponent(data.path)}`;
-          }
+          const fileName = 'partner-agreement.pdf';
+          const fileType = blob.type || 'application/pdf';
+          const paFile = new File([blob], fileName, { type: fileType });
+          registrationData.append('paPdf', paFile);
         }
 
-        // Submit registration data
-        const registrationData = {
-          name: userName,
-          email,
-          gstNumber,
-          city,
-          state,
-          address: completeAddress,
-          phoneNumber: phoneNumber || '',
-          pincode,
-          paUrl,
-          authorisedPerson,
-          designation
-        };
-
-        const response = await axios.post('https://api.glazia.in/api/user/register', registrationData);
+        const response = await axios.post('https://api.glazia.in/api/user/register', registrationData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
 
         if (response.data.token) {
           localStorage.setItem('authToken', response.data.token);
