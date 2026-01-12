@@ -21,6 +21,7 @@ export default function Header() {
   const { isAuthenticated, clearUser } = useAuth();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -37,7 +38,7 @@ export default function Header() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
         setIsUserDropdownOpen(false);
       }
     };
@@ -123,7 +124,7 @@ export default function Header() {
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div
-                  ref={dropdownRef}
+                  ref={userDropdownRef}
                   className={`absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg ${isUserDropdownOpen ? 'block' : 'hidden'
                     }`}
                 >
@@ -193,7 +194,7 @@ export default function Header() {
         <div>Railings</div>
       </Link>
 
-      <div className="border-[#B2B2B2] border-[1px] flex items-center rounded-[24px]">
+      <div className="hidden md:block border-[#B2B2B2] border-[1px] flex items-center rounded-[24px]">
         <input
           type="text"
           placeholder="Find the product you need"
