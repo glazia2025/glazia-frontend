@@ -13,6 +13,7 @@ import PhoneTrackModal from "./PhoneTrackModal";
 
 export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isNalcoModalOpen, setIsNalcoModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
@@ -25,6 +26,19 @@ export default function Header() {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsUserDropdownOpen(false);
       }
     };
 
@@ -89,7 +103,7 @@ export default function Header() {
           {!isAuthenticated && (
             <button
               onClick={() => setIsLoginModalOpen(true)}
-              className="px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-[#0f3a4a] flex items-center space-x-2"
+              className="px-4 py-2 bg-[#EE1C25] text-white rounded-lg flex items-center space-x-2"
             >
               <User className="w-4 h-4" />
               <span>Login</span>
@@ -97,9 +111,44 @@ export default function Header() {
           )}
           {isAuthenticated && (
             <div className="flex flex-row justify-between items-center gap-8">
-              <Image width={20} height={20} src="/call.svg" alt="Call Logo" />
-              <Image width={20} height={20} src="/user.svg" alt="User Logo" />
-              <Image width={20} height={20} src="/cart.svg" alt="Cart Logo" />
+              <Link href="tel:+919958053708">
+                <Image width={20} height={20} src="/call.svg" alt="Call Logo" />
+              </Link>
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                  className="flex items-center space-x-2"
+                >
+                  <Image width={20} height={20} src="/user.svg" alt="User Logo" />
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <div
+                  ref={dropdownRef}
+                  className={`absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg ${isUserDropdownOpen ? 'block' : 'hidden'
+                    }`}
+                >
+                  <Link
+                    href="/account/dashboard"
+                    className="block px-4 py-2 text-sm hover:bg-gray-100"
+                  >
+                    Dashboard
+                  </Link>
+                  <div
+                    onClick={handleLogout}
+                    className="block px-4 py-2 text-sm hover:bg-gray-100"
+                  >
+                    Logout
+                  </div>
+                </div>
+              </div>
+              <div className="relative" onClick={toggleCart}>
+                <Image width={20} height={20} src="/cart.svg" alt="Cart Logo" />
+                {cart.itemCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[12px] rounded-full w-4 h-4 flex items-center justify-center">
+                      {cart.itemCount}
+                    </span>
+                  )}
+              </div>
               <NalcoPriceDisplay onClick={() => setIsNalcoModalOpen(true)} />
             </div>
           )}

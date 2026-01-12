@@ -608,7 +608,7 @@ const CartSidebar: React.FC = () => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-[500] text-gray-900">
               Shopping Cart ({cart.itemCount})
             </h2>
             <button
@@ -637,7 +637,7 @@ const CartSidebar: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 {cart.items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={item.id} className="flex items-start space-x-3 p-3 rounded-lg">
                     <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                       {item.image ? (
                         <img
@@ -653,10 +653,10 @@ const CartSidebar: React.FC = () => {
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">{item.name}</h4>
-                      <p className="text-xs text-gray-500">{item.category?.toLowerCase().includes("hardware") ? 'pcs' : 'per kg'}</p>
+                      <h4 className="font-medium text-[#282828] truncate">{item.name}</h4>
+                      <p className="text-[10px] font-[400] text-[#282828]">{item.category?.toLowerCase().includes("hardware") ? 'pcs' : 'per kg'}</p>
                       <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-[10px] font-[400] text-[#282828] ">
                           {
                             item.category?.toLowerCase().includes("hardware") ? (
                               `₹${(parseFloat(item.price) + getAdjustedItemPrice(item)).toFixed(2)}`
@@ -672,19 +672,19 @@ const CartSidebar: React.FC = () => {
                           className="p-1 hover:bg-gray-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           disabled={item.quantity <= 0}
                         >
-                          <Minus className="w-3 h-3" />
+                          <Minus className="w-2 h-2 text-[#282828]" />
                         </button>
-                        <span className="text-sm font-medium w-8 text-center">{item.quantity}</span>
+                        <span className="text-[12px] text-[#282828] font-[400] w-8 text-center">{item.quantity}</span>
                         <button
                           onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
                           className="p-1 hover:bg-gray-200 rounded transition-colors"
                         >
-                          <Plus className="w-3 h-3" />
+                          <Plus className="w-2 h-2 text-[#282828]" />
                         </button>
                       </div>
                     </div>
                     
-                    <div className="flex flex-col items-end space-y-2">
+                    <div className="flex flex-col items-end justify-evenly space-y-6">
                       <button
                         onClick={() => removeFromCart(item.id)}
                         className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
@@ -714,31 +714,22 @@ const CartSidebar: React.FC = () => {
             )}
           </div>
 
-          {/* Footer */}
+          <div className='p-4'>
+            {shippingInfo.nextTier && (
+            <p className="text-[12px] text-[#575757] mb-2">
+              Add ₹{(shippingInfo.nextTier.amount - cart.total).toLocaleString()} more to get ₹{shippingInfo.nextTier.discount.toLocaleString()} shipping discount
+            </p>
+          )}
+            {/* Footer */}
           {cart.items.length > 0 && (
-            <div className="border-t p-4 space-y-4">
+            <div className="border-t pt-2 space-y-4">
               {/* Subtotal */}
               <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-900">Total:</span>
-                <span className="text-lg font-bold text-gray-900">₹{cart.total.toLocaleString()}</span>
+                <span className="text-[18px] font-[500] text-gray-900">Total:</span>
+                <span className="text-[18px] font-[500] text-gray-900">₹{cart.total.toLocaleString()}</span>
               </div>
 
-              {/* Shipping Info */}
-              <div className={`text-sm p-3 rounded-lg ${
-                shippingInfo.color === 'green' ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'
-              }`}>
-                <p className={`font-medium ${
-                  shippingInfo.color === 'green' ? 'text-green-700' : 'text-blue-700'
-                }`}>
-                  {shippingInfo.message}
-                </p>
-
-                {shippingInfo.nextTier && (
-                  <p className="text-xs text-gray-600 mt-1">
-                    Add ₹{(shippingInfo.nextTier.amount - cart.total).toLocaleString()} more to get ₹{shippingInfo.nextTier.discount.toLocaleString()} shipping discount
-                  </p>
-                )}
-              </div>
+               
               
               {/* Action Buttons */}
               <div className="space-y-2">
@@ -753,7 +744,7 @@ const CartSidebar: React.FC = () => {
                 {/* Performa Invoice Button */}
                 <button
                   onClick={generatePerformaInvoice}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 mb-3"
+                  className="w-full bg-white hover:bg-[#EE1C25] text-black hover:text-white border border-black font-medium py-3 px-4 transition-colors flex items-center justify-center space-x-2 mb-3"
                 >
                   <FileText className="w-4 h-4" />
                   <span>{isAuthenticated ? 'Generate Performa Invoice' : 'Login to Generate Invoice'}</span>
@@ -762,16 +753,16 @@ const CartSidebar: React.FC = () => {
                 {isAuthenticated ? (
                   <button
                     onClick={handleQuickOrder}
-                    className="w-full text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
-                    style={{ backgroundColor: '#124657' }}
+                    className="w-full text-white font-medium py-3 px-4 transition-colors flex items-center justify-center space-x-2"
+                    style={{ backgroundColor: '#EE1C25' }}
                   >
-                    <span>Checkout</span>
+                    <span>Proceed to Checkout</span>
                   </button>
                 ) : (
                   <button
                     onClick={handleQuickOrder}
-                    className="w-full text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
-                    style={{ backgroundColor: '#124657' }}
+                    className="w-full text-white font-medium py-3 px-4 transition-colors flex items-center justify-center space-x-2"
+                    style={{ backgroundColor: '#EE1C25' }}
                   >
                     <LogIn className="w-4 h-4" />
                     <span>Login to Checkout</span>
@@ -780,6 +771,8 @@ const CartSidebar: React.FC = () => {
               </div>
             </div>
           )}
+          </div>
+          
         </div>
       </div>
 

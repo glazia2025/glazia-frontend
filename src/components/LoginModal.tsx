@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Phone, Shield, Clock, X, Sparkles, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 import UserRegistrationForm from '@/components/UserRegistrationForm';
+import Image from 'next/image';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -172,28 +173,23 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   return (
     <div className="fixed inset-0 z-[10001] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div ref={modalRef} className="relative z-10 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
+      <div ref={modalRef} className="relative z-10 w-[70vw] h-[80vh] mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
         <button onClick={onClose} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all z-10">
           <X className="w-5 h-5" />
         </button>
-        <div className="bg-gradient-to-br from-[#124657] to-[#1a5a6e] px-8 py-8 text-white rounded-t-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-white/20 rounded-lg"><Sparkles className="w-6 h-6" /></div>
-            <h2 className="text-2xl font-bold">
-              {step === 'phone' && 'Welcome to Glazia'}
-              {step === 'otp' && 'Verify Your Number'}
-              {step === 'register' && 'Create Account'}
-            </h2>
-          </div>
-          <p className="text-white/80 text-sm">
-            {step === 'phone' && 'Sign in to access exclusive pricing and features'}
-            {step === 'otp' && `We've sent a 6-digit code to +91 ${phoneNumber}`}
-            {step === 'register' && 'Complete your profile to get started'}
-          </p>
-        </div>
-        <div className="p-8">
-          {step === 'phone' && (
-            <form onSubmit={handlePhoneSubmit} className="space-y-6">
+        {step === 'phone' && (
+            <div>
+              <div className='bg-[#2F3A4F] absolute rotate-[292deg] left-[-40vw] w-[100vw] h-[46vw] top-0   z-1000' />
+              <div style={{transform: 'translateY(-50%)'}} className='absolute text-white left-[4%] top-[50%] z-10001'>
+                <div className='text-[32px]'>Welcome To</div>
+                <div className='text-[68px] font-[500] mb-6'>Glazia</div>
+                <div className='text-[18px]'>Sign in to access exclusive<br />pricing and features</div>
+              </div>
+            <form onSubmit={handlePhoneSubmit} className="w-[40%] absolute right-[4%] top-[50%] translate-y-[-50%] p-8 z-10002 space-y-6">
+              <div className="flex flex-col items-center gap-4">
+                <Image width={100} height={100} src="/new-ui/logo-sm.svg" alt="Glazia Logo" />
+                <div className='text-[#2F3A4F] text-[30px] font-[600]'>Sign In</div>
+              </div>
               <div>
                 <label htmlFor="modal-phone" className="block text-sm font-medium text-gray-700 mb-2">Mobile Number</label>
                 <div className="relative">
@@ -205,39 +201,57 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
                     <div className="absolute inset-y-0 right-0 pr-4 flex items-center"><CheckCircle2 className="w-5 h-5 text-green-500" /></div>
                   )}
                 </div>
-                <p className="mt-2 text-xs text-gray-500 flex items-center gap-1"><Shield className="w-3 h-3" />We&apos;ll send you a verification code via SMS</p>
+                <p className="mt-2 text-xs text-gray-500 flex items-center gap-1"><Shield className="w-3 h-3" />We&apos;ll send you a verification code via Whatsapp</p>
               </div>
               {error && <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm">{error}</div>}
-              <button type="submit" disabled={isLoading || phoneNumber.length !== 10} className="w-full bg-[#124657] hover:bg-[#0d3544] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#124657]/20">
+              <button type="submit" disabled={isLoading || phoneNumber.length !== 10} className="w-full bg-[#EE1C25] hover:bg-[#EE1C25] disabled:bg-[#EE1C25] disabled:cursor-not-allowed text-white font-medium py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#124657]/20">
                 {isLoading ? (<><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sending OTP...</>) : (<><Phone className="w-5 h-5" />Send OTP</>)}
               </button>
               <p className="text-center text-xs text-gray-500">By continuing, you agree to our <a href="/terms" className="text-[#124657] hover:underline">Terms</a> and <a href="/privacy" className="text-[#124657] hover:underline">Privacy Policy</a></p>
             </form>
+            </div>
           )}
-          {step === 'otp' && (
-            <form onSubmit={handleOtpSubmit} className="space-y-6">
+
+        {step === 'otp' && (
+            <div>
+              <div className='bg-[#2F3A4F] absolute rotate-[292deg] left-[-40vw] w-[100vw] h-[46vw] top-0   z-1000' />
+              <div style={{transform: 'translateY(-50%)'}} className='absolute text-white left-[4%] top-[50%] z-10001'>
+                <div className='text-[32px]'>Welcome To</div>
+                <div className='text-[68px] font-[500] mb-6'>Glazia</div>
+                <div className='text-[18px]'>Sign in to access exclusive<br />pricing and features</div>
+              </div>
+            <form onSubmit={handleOtpSubmit} className="w-[40%] absolute right-[4%] top-[50%] translate-y-[-50%] p-8 z-10002 space-y-6">
+              <div className="flex flex-col items-center gap-4">
+                <Image width={100} height={100} src="/new-ui/logo-sm.svg" alt="Glazia Logo" />
+                <div className='text-[#2F3A4F] text-[30px] font-[600]'>Sign In</div>
+              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-4 text-center">Enter the 6-digit code</label>
-                <div className="flex justify-center gap-3">
-                  {otp.map((digit, index) => (
-                    <input key={index} id={`modal-otp-${index}`} type="text" inputMode="numeric" maxLength={1} className="w-12 h-14 text-center text-xl font-semibold border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#124657] focus:border-transparent transition-all" value={digit} onChange={(e) => handleOtpChange(index, e.target.value)} onKeyDown={(e) => handleOtpKeyDown(index, e)} autoFocus={index === 0} />
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-4 text-center">Enter the 6-digit code</label>
+                  <div className="flex justify-center gap-3">
+                    {otp.map((digit, index) => (
+                      <input key={index} id={`modal-otp-${index}`} type="text" inputMode="numeric" maxLength={1} className="w-12 h-14 text-center text-xl font-semibold border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#124657] focus:border-transparent transition-all" value={digit} onChange={(e) => handleOtpChange(index, e.target.value)} onKeyDown={(e) => handleOtpKeyDown(index, e)} autoFocus={index === 0} />
+                    ))}
+                  </div>
+                </div>
+                <div className="text-center">
+                  {countdown > 0 ? (
+                    <p className="text-sm text-gray-500 flex items-center justify-center gap-2"><Clock className="w-4 h-4" />Resend code in {countdown}s</p>
+                  ) : (
+                    <button type="button" onClick={resendOtp} disabled={isLoading} className="text-sm text-[#EE1C25] hover:underline font-medium">Resend OTP</button>
+                  )}
                 </div>
               </div>
-              <div className="text-center">
-                {countdown > 0 ? (
-                  <p className="text-sm text-gray-500 flex items-center justify-center gap-2"><Clock className="w-4 h-4" />Resend code in {countdown}s</p>
-                ) : (
-                  <button type="button" onClick={resendOtp} disabled={isLoading} className="text-sm text-[#124657] hover:underline font-medium">Resend OTP</button>
-                )}
-              </div>
               {error && <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm">{error}</div>}
-              <button type="submit" disabled={isLoading || otp.join('').length !== 6} className="w-full bg-[#124657] hover:bg-[#0d3544] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#124657]/20">
+              <button type="submit" disabled={isLoading || otp.join('').length !== 6} className="w-full bg-[#EE1C25] hover:bg-[#EE1C25] disabled:bg-[#EE1C25] disabled:cursor-not-allowed text-white font-medium py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#124657]/20">
                 {isLoading ? (<><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Verifying...</>) : (<><Shield className="w-5 h-5" />Verify OTP</>)}
               </button>
               <button type="button" onClick={() => setStep('phone')} className="w-full text-gray-500 hover:text-gray-700 text-sm font-medium py-2">← Change phone number</button>
             </form>
+            </div>
           )}
+        
+        <div className="p-8">
           {step === 'register' && (
             <div className="max-h-[60vh] overflow-y-auto -mx-8 px-8">
               <UserRegistrationForm phoneNumber={phoneNumber} onSuccess={handleRegistrationSuccess} isModal={true} />
