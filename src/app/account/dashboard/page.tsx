@@ -197,10 +197,10 @@ function DashboardContent() {
       </Suspense>
 
       <div className="bg-[#D6DADE]">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-3xl font-[500] text-gray-900 mb-2">Dashboard</h1>
+              <h1 className="text-2xl sm:text-3xl font-[500] text-gray-900 mb-1 sm:mb-2">Dashboard</h1>
               <p className="text-gray-600">Welcome back, {user.name}</p>
             </div>
             <div className="flex items-center space-x-4">
@@ -212,14 +212,14 @@ function DashboardContent() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="gap-8">
           {/* Main Content */}
           <div className="flex flex-col gap-8">
-            <div className='flex gap-4'>
+            <div className="flex flex-col lg:flex-row gap-4">
               {/* Stats Cards */}
-              <div className="w-[35%] grid grid-cols-1 gap-6">
-                <div className="bg-white border border-[3px] border-[#D6DADE] p-6 flex items-center">
+              <div className="w-full lg:w-[35%] grid grid-cols-1 gap-4 sm:gap-6">
+                <div className="bg-white border border-[3px] border-[#D6DADE] p-4 sm:p-6 flex items-center">
                   <ClipboardList size={52} strokeWidth={2} absoluteStrokeWidth />
                     <div className="ml-4">
                       <p className="text-sm text-gray-600">Total Orders</p>
@@ -227,7 +227,7 @@ function DashboardContent() {
                     </div>
                 </div>
 
-                <div className="bg-white border border-[3px] border-[#D6DADE] p-6 flex items-center">
+                <div className="bg-white border border-[3px] border-[#D6DADE] p-4 sm:p-6 flex items-center">
                   <Wallet size={52} strokeWidth={2} absoluteStrokeWidth />
                     <div className="ml-4">
                       <p className="text-sm text-gray-600">Total Spent</p>
@@ -237,8 +237,8 @@ function DashboardContent() {
               </div>
 
               {/* Recent Orders */}
-              <div className="w-full bg-white border border-[3px] border-[#D6DADE] p-6">
-                <div className="flex items-center justify-between mb-6">
+              <div className="w-full bg-white border border-[3px] border-[#D6DADE] p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 sm:mb-6">
                   <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
                   <Link href="/account/orders" className="text-[#EE1C25] hover:underline text-sm">
                     View All Orders
@@ -257,8 +257,8 @@ function DashboardContent() {
                 {!loadingOrders && recentOrders.length > 0 && (
                   <div className="space-y-4">
                     {recentOrders.map((order) => (
-                      <div onClick={() => window.location.href = `/account/orders/${order.id}`} key={order.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div className="flex items-center">
+                      <div onClick={() => window.location.href = `/account/orders/${order.id}`} key={order.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border border-gray-200 rounded-lg">
+                        <div className="flex items-start sm:items-center">
                           <div className="bg-gray-100 p-3 rounded-lg">
                             <Package className="w-5 h-5 text-gray-600" />
                           </div>
@@ -267,7 +267,7 @@ function DashboardContent() {
                             <p className="text-sm text-gray-600">{order.items} items • {order.date}</p>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <p className="font-semibold text-gray-900">₹{order.total.toLocaleString()}</p>
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             order.status === 'delivered' ? 'bg-green-100 text-green-800' :
@@ -301,13 +301,13 @@ function DashboardContent() {
 
             {/* Partner Agreement Section */}
             {partnerAgreementUrl && (
-              <div className="bg-white border border-[3px] border-[#D6DADE] p-6">
-                <div className="flex items-center justify-between mb-6">
+              <div className="bg-white border border-[3px] border-[#D6DADE] p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
                   <h2 className="text-lg font-semibold text-gray-900 flex items-center">
                     <FileText className="w-5 h-5 mr-2 text-[#124657]" />
                     Partner Agreement
                   </h2>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <a
                       href={partnerAgreementUrl}
                       target="_blank"
@@ -332,7 +332,7 @@ function DashboardContent() {
                 <div className="overflow-hidden">
                   <iframe
                     src={partnerAgreementUrl}
-                    className="w-full h-96"
+                    className="w-full h-64 sm:h-96"
                     title="Partner Agreement"
                     style={{ border: 'none' }}
                   />
@@ -348,9 +348,9 @@ function DashboardContent() {
                 </div>
               </div>
             )}
-            <div className="flex items-stretch gap-4">
+            <div className="flex flex-col lg:flex-row items-stretch gap-4">
             {/* Profile Summary */}
-            <div className="bg-white w-full border border-[3px] border-[#D6DADE] p-6">
+            <div className="bg-white w-full border border-[3px] border-[#D6DADE] p-4 sm:p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Summary</h2>
               <div className="space-y-3">
                 <div className="flex items-center">
@@ -381,7 +381,7 @@ function DashboardContent() {
               </Link> */}
             </div>
             {/* Support */}
-            <div className="w-full border border-[3px] border-[#D6DADE] p-6">
+            <div className="w-full border border-[3px] border-[#D6DADE] p-4 sm:p-6">
               <h3 className="font-semibold mb-2">Want to update your details?</h3>
               <p className="text-sm 700 mb-4">
                 Simply contact us and we&apos;ll take care of it.

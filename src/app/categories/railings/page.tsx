@@ -189,19 +189,19 @@ export default function RailingsPage() {
   
         {/* Page Header */}
         <div className="bg-[#D6DADE]">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h1 className="text-3xl font-[500] text-gray-900 mb-2">Aluminium Profiles</h1>
+                <h1 className="text-2xl sm:text-3xl font-[500] text-gray-900 mb-1 sm:mb-2">Aluminium Profiles</h1>
                 <p className="text-gray-600">High Quality Aluminium profile systems</p>
               </div>
             </div>
           </div>
         </div>
   
-        <div className="flex justify-between items-start border-[3px] border-[#D6DADE] bg-white mx-4 my-8">
+        <div className="flex flex-col lg:flex-row justify-between items-start border-[3px] border-[#D6DADE] bg-white mx-4 my-6 sm:my-8">
           {/* Category Selection */}
-          <div className="bg-white w-[20%] rounded-lg p-6">
+          <div className="bg-white w-full lg:w-[20%] rounded-lg p-4 sm:p-6">
             <div className="flex flex-col items-start gap-4">
               {categoryData && (
                     <div className="m-3 pl-3">
@@ -259,7 +259,7 @@ export default function RailingsPage() {
   
           {/* Products */}
           {(selectedSize || loadingCategoryData) && (
-            <div style={{borderLeft: '3px solid #D6DADE'}} className="bg-white w-full p-6">
+            <div className="bg-white w-full p-4 sm:p-6 border-t-[3px] border-[#D6DADE] lg:border-t-0 lg:border-l-[3px]">
               <h2 className="text-xl font-semibold mb-4">
                 Products - Railings {selectedSize ? `(${selectedSize})` : ''} 
               </h2>
@@ -268,7 +268,7 @@ export default function RailingsPage() {
               </h3>
   
               {loadingCategoryData ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {Array.from({ length: 6 }).map((_, index) => (
                     <div
                       key={`product-skeleton-${index}`}
@@ -293,7 +293,7 @@ export default function RailingsPage() {
                   <div className="text-gray-600">No products available for this size</div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {productsToDisplay.map((product) => {
                     const cartQuantity = getCartQuantityForProduct(product);
                     const localQuantity = quantities[product._id] || 0;

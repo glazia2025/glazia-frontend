@@ -220,10 +220,10 @@ export default function HardwarePage() {
       <Header />
 
       <div className="bg-[#D6DADE]">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-3xl font-[500] text-gray-900 mb-2">Hardware</h1>
+              <h1 className="text-2xl sm:text-3xl font-[500] text-gray-900 mb-1 sm:mb-2">Hardware</h1>
               <p className="text-gray-600">Complete hardware solutions for windows and doors</p>
             </div>
           </div>
@@ -231,8 +231,8 @@ export default function HardwarePage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex justify-between items-start border-[3px] border-[#D6DADE] bg-white mx-4 my-8">
-        <div className="bg-white w-[20%] rounded-lg p-6">
+      <div className="flex flex-col lg:flex-row justify-between items-start border-[3px] border-[#D6DADE] bg-white mx-4 my-6 sm:my-8">
+        <div className="bg-white w-full lg:w-[20%] rounded-lg p-4 sm:p-6">
           <div className="flex flex-col items-start gap-4">
             {HARDWARE_CATEGORIES.map((category) => (
               <button
@@ -276,7 +276,7 @@ export default function HardwarePage() {
           </div>
         </div> */}
 
-        <div style={{borderLeft: '3px solid #D6DADE'}} className="bg-white w-full p-6">
+        <div className="bg-white w-full p-4 sm:p-6 border-t-[3px] border-[#D6DADE] lg:border-t-0 lg:border-l-[3px]">
 
           {filteredProducts.length === 0 && searchQuery ? (
             <div className="text-center py-8">
@@ -295,7 +295,7 @@ export default function HardwarePage() {
               <div className="text-gray-600">No products available for this category</div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredProducts.map((product: any, index: number) => {
                 const productId = product.id || product.sapCode;
                 const localQuantity = quantities[productId] || 0;
@@ -356,9 +356,9 @@ export default function HardwarePage() {
                           className="px-4 py-2 bg-[#EE1C25] text-white rounded-lg hover:bg-[#0f3a4a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                         >
                           <ShoppingCart className="w-4 h-4" />
-                          <span className="font-medium">
+                          <span className="font-[400]">
                             {localQuantity === 0
-                              ? 'Adjust Quantity'
+                              ? 'Add to Cart'
                               : localQuantity > 0
                               ? 'Add to Cart'
                               : 'Remove from Cart'
