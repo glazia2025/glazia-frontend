@@ -171,21 +171,24 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[10001] flex items-center justify-center">
+    <div className="fixed inset-0 z-[10001] flex items-end justify-center md:items-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div ref={modalRef} className="relative z-10 w-[70vw] h-[80vh] mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
+      <div
+        ref={modalRef}
+        className="relative z-10 w-full h-[85vh] mx-0 max-h-[90vh] overflow-y-auto bg-white rounded-t-2xl shadow-2xl md:w-[70vw] md:h-[80vh] md:mx-4 md:rounded-2xl"
+      >
         <button onClick={onClose} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all z-10">
           <X className="w-5 h-5" />
         </button>
         {step === 'phone' && (
-            <div>
-              <div className='bg-[#2F3A4F] absolute rotate-[292deg] left-[-40vw] w-[100vw] h-[46vw] top-0   z-1000' />
-              <div style={{transform: 'translateY(-50%)'}} className='absolute text-white left-[4%] top-[50%] z-10001'>
+            <div className="relative md:h-full">
+              <div className='hidden md:block bg-[#2F3A4F] absolute rotate-[292deg] left-[-40vw] w-[100vw] h-[46vw] top-0 z-1000' />
+              <div style={{transform: 'translateY(-50%)'}} className='hidden md:block absolute text-white left-[4%] top-[50%] z-10001'>
                 <div className='text-[32px]'>Welcome To</div>
                 <div className='text-[68px] font-[500] mb-6'>Glazia</div>
                 <div className='text-[18px]'>Sign in to access exclusive<br />pricing and features</div>
               </div>
-            <form onSubmit={handlePhoneSubmit} className="w-[40%] absolute right-[4%] top-[50%] translate-y-[-50%] p-8 z-10002 space-y-6">
+            <form onSubmit={handlePhoneSubmit} className="w-full p-6 pt-12 z-10002 space-y-6 md:w-[40%] md:absolute md:right-[4%] md:top-[50%] md:translate-y-[-50%] md:p-8">
               <div className="flex flex-col items-center gap-4">
                 <Image width={100} height={100} src="/new-ui/logo-sm.svg" alt="Glazia Logo" />
                 <div className='text-[#2F3A4F] text-[30px] font-[600]'>Sign In</div>
@@ -213,14 +216,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
           )}
 
         {step === 'otp' && (
-            <div>
-              <div className='bg-[#2F3A4F] absolute rotate-[292deg] left-[-40vw] w-[100vw] h-[46vw] top-0   z-1000' />
-              <div style={{transform: 'translateY(-50%)'}} className='absolute text-white left-[4%] top-[50%] z-10001'>
+            <div className="relative md:h-full">
+              <div className='hidden md:block bg-[#2F3A4F] absolute rotate-[292deg] left-[-40vw] w-[100vw] h-[46vw] top-0 z-1000' />
+              <div style={{transform: 'translateY(-50%)'}} className='hidden md:block absolute text-white left-[4%] top-[50%] z-10001'>
                 <div className='text-[32px]'>Welcome To</div>
                 <div className='text-[68px] font-[500] mb-6'>Glazia</div>
                 <div className='text-[18px]'>Sign in to access exclusive<br />pricing and features</div>
               </div>
-            <form onSubmit={handleOtpSubmit} className="w-[40%] absolute right-[4%] top-[50%] translate-y-[-50%] p-8 z-10002 space-y-6">
+            <form onSubmit={handleOtpSubmit} className="w-full p-6 pt-12 z-10002 space-y-6 md:w-[40%] md:absolute md:right-[4%] md:top-[50%] md:translate-y-[-50%] md:p-8">
               <div className="flex flex-col items-center gap-4">
                 <Image width={100} height={100} src="/new-ui/logo-sm.svg" alt="Glazia Logo" />
                 <div className='text-[#2F3A4F] text-[30px] font-[600]'>Sign In</div>
@@ -251,9 +254,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
             </div>
           )}
         
-        <div className="p-8">
+        <div className="p-6 md:p-8">
           {step === 'register' && (
-            <div className="max-h-[60vh] overflow-y-auto -mx-8 px-8">
+            <div className="max-h-[70vh] overflow-y-auto -mx-6 px-6 md:max-h-[60vh] md:-mx-8 md:px-8">
               <UserRegistrationForm phoneNumber={phoneNumber} onSuccess={handleRegistrationSuccess} isModal={true} />
             </div>
           )}
