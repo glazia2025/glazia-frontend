@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Metadata } from "next";
+import TechnicalSpecs from "@/components/TechnicalSpecs";
 
 export const metadata: Metadata = {
   title: "Contact Us - Glazia",
@@ -9,20 +10,24 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-[110px]">
+    <div className="">
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-green-900 to-green-700 text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Contact Our Aluminium Experts
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100">
-              Get professional consultation, technical support, and custom quotes 
-              for your projects.
-            </p>
+      <section className="text-white">
+        <div className="relative h-64 overflow-hidden">
+          <img src="/new-ui/hero.png" alt="Contact Us" className="w-full h-auto" />
+          <div className="absolute inset-0 bg-black/50"></div>
+          <div className="absolute left-24 top-[50%] transform -translate-y-1/2 mx-auto px-4">
+            <div className="max-w-4xl mx-auto text-left">
+              <h1 className="text-3xl md:text-5xl font-[500] mb-6">
+                Contact Us
+              </h1>
+              <p className="text-xl md:text-2xl mb-8">
+                Get professional consultation, technical support, and custom quotes 
+                for your projects.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -30,10 +35,10 @@ export default function ContactPage() {
       {/* Contact Form & Info */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
             {/* Contact Form */}
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
+            <div className="bg-[#D9D9D9] rounded-l-lg p-12">
+              <h2 className="text-3xl font-[500] text-gray-900 mb-6">
                 Send Us a Message
               </h2>
               <form className="space-y-6">
@@ -47,7 +52,7 @@ export default function ContactPage() {
                       id="firstName"
                       name="firstName"
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border bg-white border-[#B4B4B4] border-[1px] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter your first name"
                     />
                   </div>
@@ -60,13 +65,12 @@ export default function ContactPage() {
                       id="lastName"
                       name="lastName"
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border bg-white  border-[#B4B4B4] border-[1px] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter your last name"
                     />
                   </div>
-                </div>
 
-                <div>
+                  <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     Email Address *
                   </label>
@@ -75,7 +79,7 @@ export default function ContactPage() {
                     id="email"
                     name="email"
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border bg-white  border-[#B4B4B4] border-[1px] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter your email address"
                   />
                 </div>
@@ -88,7 +92,7 @@ export default function ContactPage() {
                     type="tel"
                     id="phone"
                     name="phone"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border bg-white  border-[#B4B4B4] border-[1px] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter your phone number"
                   />
                 </div>
@@ -101,7 +105,7 @@ export default function ContactPage() {
                     type="text"
                     id="company"
                     name="company"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border bg-white  border-[#B4B4B4] border-[1px] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter your company name"
                   />
                 </div>
@@ -114,7 +118,7 @@ export default function ContactPage() {
                     id="subject"
                     name="subject"
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border bg-white  border-[#B4B4B4] border-[1px] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select a subject</option>
                     <option value="general">General Inquiry</option>
@@ -123,6 +127,7 @@ export default function ContactPage() {
                     <option value="partnership">Partnership Opportunity</option>
                     <option value="complaint">Complaint/Issue</option>
                   </select>
+                </div>
                 </div>
 
                 <div>
@@ -134,7 +139,7 @@ export default function ContactPage() {
                     name="message"
                     rows={6}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                    className="w-full px-4 py-3 border bg-white  border-[#B4B4B4] border-[1px]rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
                     placeholder="Please describe your inquiry in detail..."
                   ></textarea>
                 </div>
@@ -154,7 +159,7 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-300"
+                  className="w-full bg-[#EE1C25] cursor-pointer hover:bg-[#EE1C25] text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-300"
                 >
                   Send Message
                 </button>
@@ -162,79 +167,50 @@ export default function ContactPage() {
             </div>
 
             {/* Contact Information */}
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
+            <div className="bg-[#2F3A4F] text-white rounded-r-lg p-12">
+              <h2 className="text-3xl font-[500] mb-6">
                 Get in Touch
               </h2>
               
               <div className="space-y-8">
                 {/* Office Address */}
-                <div className="flex items-start space-x-4">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <svg className="w-6 h-6 text-[#124657}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Head Office</h3>
-                    <p className="text-gray-600">
-                      Near Manesar Toll Plaza, Gurgaon, Haryana - 122001
-                    </p>
-                  </div>
+
+                <div>
+                  <h2 className="text-lg font-[500] underline">Chat to Us</h2>
+                  <div className="mb-2">Our friendly team is here to help.</div>
+                  <a href="mailto:sales@glazia.in"><b>sales@glazia.in</b></a>
                 </div>
 
-                {/* Phone Numbers */}
-                <div className="flex items-start space-x-4">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <svg className="w-6 h-6 text-[#124657}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Phone</h3>
-                    <p className="text-gray-600">
-                      9958053708<br />
-                      9354876670
-                    </p>
-                  </div>
+                <div>
+                  <h2 className="text-lg font-[500] underline">Visit Us</h2>
+                  <div className="mb-2">Our friendly team is here to help.</div>
+                  <p><b>Near Manesar Toll Plaza, Gurgaon, Haryana - 122001</b></p>
                 </div>
 
-                {/* Email */}
-                <div className="flex items-start space-x-4">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <svg className="w-6 h-6 text-[#124657}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Email</h3>
-                    <p className="text-gray-600">
-                      sales@glazia.in
-                    </p>
-                  </div>
+                <div>
+                  <h2 className="text-lg font-[500] underline">Call Us</h2>
+                  <div className="mb-2">Mon-Sat From 9am to 6pm</div>
+                  <p><b>+91-9958053708<br />+91-9354876670</b></p>
                 </div>
 
-                {/* Business Hours */}
-                <div className="flex items-start space-x-4">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <svg className="w-6 h-6 text-[#124657}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Business Hours</h3>
-                    <p className="text-gray-600">
-                      Monday-Saturday : 9:00 AM - 6:00 PM<br />
-                      Sunday: Closed
-                    </p>
-                  </div>
+                <div style={{width: "100%", height: "300px", borderRadius: '12px', overflow: 'hidden'}}>
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{border:"0"}}
+                    loading="lazy"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3712.266887090091!2d76.98408071537633!3d28.399058079436698!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d3df3f3a5d4c5%3A0xb66beaf7f2aabddb!2sGlazia%20Windoors%20Private%20Limited!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin">
+                  </iframe>
                 </div>
+
+                
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      <TechnicalSpecs />
 
       <Footer />
     </div>

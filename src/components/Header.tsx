@@ -41,10 +41,11 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-white shadow-sm z-[10000]">
+    <>
+    <div className="fixed h-24 top-0 left-0 w-full bg-white z-[10000]">
       <div className="bg-[#E6E9EB] px-12 py-4 flex flex-row justify-between items-center">
         <div className="flex flex-row justify-between items-center gap-12">
-          <Image width={200} height={200} src="/Logo.svg" alt="Glazia Logo" />
+          <Image width={150} height={150} src="/Logo.svg" alt="Glazia Logo" />
           <Link className="nav-link" href="/">Home</Link>
           <div className="relative">
             <button
@@ -60,28 +61,28 @@ export default function Header() {
               }`}
           >
             <Link
-              href="/account/dashboard"
+              href="/categories/aluminium-profiles"
               className="block px-4 py-2 text-sm hover:bg-gray-100"
             >
               Aluminium Profiles
             </Link>
             <Link
-              href="/account/orders"
+              href="/categories/hardware"
               className="block px-4 py-2 text-sm hover:bg-gray-100"
             >
               Hardware
             </Link>
             <Link
-              href="/account/orders"
+              href="/categories/railings"
               className="block px-4 py-2 text-sm hover:bg-gray-100"
             >
               Railings
             </Link>
           </div>
           </div>
-          <Link className="nav-link" href="/">About Us</Link>
-          <Link className="nav-link" href="/">Contact</Link>
-          <Link className="nav-link" href="/">Blogs</Link>
+          <Link className="nav-link" href="/about">About Us</Link>
+          <Link className="nav-link" href="/contact">Contact</Link>
+          {isAuthenticated && <Link className="nav-link" href="/quotations">Quotations</Link>}
         </div>
 
         <div>
@@ -128,6 +129,31 @@ export default function Header() {
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
       />
-    </header>
+    </div>
+    <div style={{alignItems: 'center'}} className="bg-white px-[140px] py-[24px] mt-20 flex gap-12 flex-row items-center justify-center">
+      <Link className="text-center" href="/categories/aluminium-profiles" hrefLang="">
+        <Image className="shadow-md hover:shadow-xl transition-all duration-300 hover-primary-border" width={120} height={120} src="/new-ui/alpr.svg" alt="Aluminium Profiles" />
+        <div>Aluminium Profiles</div>
+      </Link>
+      <Link className="text-center" href="/categories/hardware" hrefLang="">
+        <Image className="shadow-md hover:shadow-xl transition-all duration-300 hover-primary-border" width={120} height={120} src="/new-ui/hardware.svg" alt="Aluminium Profiles" />
+        <div>Hardware</div>
+      </Link>
+      <Link className="text-center" href="/categories/railings" hrefLang="">
+        <Image className="shadow-md hover:shadow-xl transition-all duration-300 hover-primary-border" width={120} height={120} src="/new-ui/railing.svg" alt="Aluminium Profiles" />
+        <div>Railings</div>
+      </Link>
+
+      <div className="border-[#B2B2B2] border-[1px] flex items-center rounded-[24px]">
+        <input
+          type="text"
+          placeholder="Find the product you need"
+          className="w-[35vw] px-4 py-2 border-0 outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 placeholder:text-[#B2B2B2] text-[16px]"
+        />
+        <button className="bg-[#2F3A4F] rounded-full px-4 py-2 text-white">Search</button>
+      </div>
+
+    </div>
+    </>
   );
 }

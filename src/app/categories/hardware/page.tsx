@@ -201,9 +201,8 @@ export default function HardwarePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-[120px]" style={{ backgroundColor: '#D2D7DA' }}>
+      <div className="min-h-screen pt-[120px]" style={{ backgroundColor: '#FFF' }}>
         <Header />
-        <Navigation />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-8">
             <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-[#124657]"></div>
@@ -217,29 +216,14 @@ export default function HardwarePage() {
   }
 
   return (
-    <div className="min-h-screen pt-[120px]" style={{ backgroundColor: '#D2D7DA' }}>
+    <div className="" style={{ backgroundColor: '#FFF' }}>
       <Header />
-      <Navigation />
 
-      {/* Breadcrumb */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <nav className="text-sm text-gray-600">
-            <a className="transition-colors hover-primary" href="/">Home</a>
-            <span className="mx-2">/</span>
-            <a className="transition-colors hover-primary" href="/categories">Categories</a>
-            <span className="mx-2">/</span>
-            <span className="text-gray-900">Hardware</span>
-          </nav>
-        </div>
-      </div>
-
-      {/* Page Header */}
-      <div className="bg-white border-b">
+      <div className="bg-[#D6DADE]">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Hardware</h1>
+              <h1 className="text-3xl font-[500] text-gray-900 mb-2">Hardware</h1>
               <p className="text-gray-600">Complete hardware solutions for windows and doors</p>
             </div>
           </div>
@@ -247,10 +231,9 @@ export default function HardwarePage() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Select Category</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="flex justify-between items-start border-[3px] border-[#D6DADE] bg-white mx-4 my-8">
+        <div className="bg-white w-[20%] rounded-lg p-6">
+          <div className="flex flex-col items-start gap-4">
             {HARDWARE_CATEGORIES.map((category) => (
               <button
                 key={category}
@@ -258,10 +241,10 @@ export default function HardwarePage() {
                   setActiveCategory(category);
                   console.log('🎯 Selected category:', category);
                 }}
-                className={`p-4 rounded-lg border-2 transition-colors ${
+                className={`text-[18px] font-[500] ${
                   activeCategory === category
-                    ? 'border-[#124657] bg-[#124657] text-white'
-                    : 'border-gray-200 hover:border-[#124657] hover:bg-gray-50'
+                    ? 'text-[#EE1C25]'
+                    : 'text-[#1F2933]'
                 }`}
               >
                 <div className="font-medium">{category}</div>
@@ -270,7 +253,7 @@ export default function HardwarePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        {/* <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex items-center space-x-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -291,12 +274,9 @@ export default function HardwarePage() {
               </button>
             )}
           </div>
-        </div>
+        </div> */}
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold mb-4">
-            Products - {activeCategory}
-          </h2>
+        <div style={{borderLeft: '3px solid #D6DADE'}} className="bg-white w-full p-6">
 
           {filteredProducts.length === 0 && searchQuery ? (
             <div className="text-center py-8">
@@ -323,69 +303,49 @@ export default function HardwarePage() {
                 const displayQuantity = cartQuantity + localQuantity;
 
                 return (
-                  <div key={productId || index} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                    <div className="bg-gray-50 p-4 border-b">
-                      <div className="flex justify-center">
+                  <div key={productId || index} className="bg-white border border-1 border-[#D6DADE] overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="flex justify-center">
                         {product.image ? (
                           <img
                             src={product.image}
-                            alt={product.perticular || product.description || 'Hardware Item'}
-                            className="h-24 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => handleImageClick(product.image, product.perticular || product.description || 'Hardware Item')}
+                            alt={product.description}
+                            className="h-64 w-full object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => handleImageClick(product.image || '', product.description)}
                             title="Click to view larger image"
                           />
                         ) : (
-                          <div className="h-24 w-32 bg-white border border-gray-300 rounded flex items-center justify-center">
-                            <div className="text-xs text-gray-400 text-center">No Image</div>
+                          <div className="h-64 w-full bg-white border border-gray-300 rounded flex items-center justify-center">
+                            <div className="text-xs text-gray-400 text-center">Technical Drawing</div>
                           </div>
                         )}
                       </div>
+
+                    <div className='bg-[#B2B2B2] p-3'>
+                      <h3 className="h-12 font-[18px] text-[#1F2933] mb-4">{product.perticular || product.description || 'Hardware Item'}</h3>
+                      <div className='grid grid-cols-[1fr_2fr] text-[#606060] text-[13px]'>
+                        <div className="">System</div>
+                        <div className="text-right">{product.system || '-'}</div>
+                        <div className="">MOQ</div>
+                        <div className="text-right">{product.moq || '-'}</div>
+                        <p className="">SAP Code</p>
+                        <div className="text-right">{product.sapCode}</div>
+                        <p className="">Rate</p>
+                        <div className="text-right">{isAuthenticated ? `₹${product.rate}` : 'Login to view rate'}</div>
+                      </div>
                     </div>
 
-                    <div className="p-3">
-                      <div className="grid grid-cols-2 gap-1 text-xs mb-3">
-                        <div className="bg-gray-100 p-1 text-center font-medium">System</div>
-                        <div className="bg-gray-100 p-1 text-center font-medium">MOQ</div>
-                        <div className="bg-white p-1 text-center border">{product.system || '-'}</div>
-                        <div className="bg-white p-1 text-center border">{product.moq || '-'}</div>
-                      </div>
-
-                      <div className="mb-3">
-                        <h3 className="font-medium text-gray-900 text-sm mb-1">{product.perticular || product.description || 'Hardware Item'}</h3>
-                        <p className="text-xs text-gray-600">SAP Code: {product.sapCode}</p>
-                        {cartQuantity > 0 && (
-                          <p className="text-xs font-medium" style={{ color: '#124657' }}>
-                            ✓ {cartQuantity} in cart
-                          </p>
-                        )}
-                      </div>
-
+                    <div className="px-3 py-1  bg-[#2F3A4F]">
                       {
-                        !isAuthenticated && <div className="text-center">
-                          <p className="text-xs text-gray-600">Login to add to cart</p>
-                        </div>
-                      }
-
-                      {
-                        isAuthenticated && <>
-                          <div className="mb-3">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-gray-900">Rate: ₹{product.rate}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
+                        isAuthenticated ? <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-8 text-white">
                           <button
                             onClick={() => handleQuantityDecrement(productId)}
-                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
-                          <span className="w-8 text-center">{displayQuantity}</span>
+                          <span className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#2F3A4F] text-center">{displayQuantity}</span>
                           <button
                             onClick={() => handleQuantityIncrement(productId)}
-                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50"
                           >
                             <Plus className="w-4 h-4" />
                           </button>
@@ -393,7 +353,7 @@ export default function HardwarePage() {
                         <button
                           onClick={() => handleProductSelect(product)}
                           disabled={localQuantity === 0}
-                          className="px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-[#0f3a4a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                          className="px-4 py-2 bg-[#EE1C25] text-white rounded-lg hover:bg-[#0f3a4a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                         >
                           <ShoppingCart className="w-4 h-4" />
                           <span className="font-medium">
@@ -405,8 +365,9 @@ export default function HardwarePage() {
                             }
                           </span>
                         </button>
-                      </div>
-                        </>
+                      </div> : <div className="text-center">
+                          <p className="text-xs text-gray-600">Login to add to cart</p>
+                        </div>
                       }
                     </div>
                   </div>

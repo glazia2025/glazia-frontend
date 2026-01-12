@@ -116,7 +116,7 @@ export default function FeaturedProducts() {
   };
 
   return (
-    <section className="py-16" style={{ backgroundColor: '#D2D7DA' }}>
+    <section className="py-16" style={{ backgroundColor: '#FFF' }}>
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-12">

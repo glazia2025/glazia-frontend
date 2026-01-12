@@ -12,7 +12,7 @@
 }
 
 body {
-  font-family: var(--font-inter);
+  font-family: var(--font-poppins);
 }
 
 /* Custom hover effects for primary color */
@@ -41,4 +41,17 @@ body {
   line-height: 120%;
   letter-spacing: 0%;
   vertical-align: middle;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
 }

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, Award, Shield, Thermometer, Volume2, Lock } from "lucide-react";
+import { CheckCircle, Award, Shield, Thermometer, Volume2, Lock, Star } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AppContext";
 import PhoneTrackModal from "./PhoneTrackModal";
+import Image from "next/image";
 
 const specifications = [
   {
@@ -122,63 +123,174 @@ export default function TechnicalSpecs() {
   };
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-8 bg-white">
       <div className="container mx-auto px-4">
        
 
         {/* Performance Features */}
         <div className="mb-16">
-          <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">
-            Performance Features
+          <h3 className="text-3xl font-[500] text-gray-900 text-center mb-8">
+            Why Glazia
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {performanceFeatures.map((feature, index) => {
-              const IconComponent = feature.icon;
-              return (
-                <div key={index} className="text-center">
-                  <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <IconComponent className="w-8 h-8 text-[#124657}" />
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                    {feature.title}
-                  </h4>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <ul className="list-disc pl-5 flex flex-col gap-4 justify-between">
+              <li>Trusted by architects, fabricators, and homeowners across diverse projects</li>
+              <li>Known for consistent performance and refined finishes across installations</li>
+              <li>Valued for smooth operation and clean detailing across everyday usage</li>
+              <li>Relied on for long-term reliability in residential and large-scale projects</li>
+            </ul>
+            <img src="/new-ui/why.svg" alt="Why Glazia" />
           </div>
+        </div>
+
+        <div className="mb-16">
+          <h3 className="text-3xl font-[500] text-gray-900 text-center mb-8">
+            What Our Fabricators Have To Say
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div className="mx-auto w-full rounded-2xl bg-white p-10 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
+              <div className="flex justify-center gap-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className="h-4 w-4 fill-red-500 text-red-500"
+                  />
+                ))}
+              </div>
+              <p className="mt-6 font-light tracking-tight text-slate-900">
+                Website design did exactly what you said it does. Just what I was looking for.
+                Nice work on your website design.
+              </p>
+              <div className="mt-8 flex items-center gap-4">
+                <Image
+                  src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=120&q=80"
+                  alt="Armando McClure"
+                  width={56}
+                  height={56}
+                  className="rounded-full object-cover"
+                />
+
+                <div className="leading-tight">
+                  <div className="text-lg font-extrabold text-slate-900">
+                    Armando McClure
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    Senior Markets Architect
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mx-auto w-full rounded-2xl bg-white p-10 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
+              <div className="flex justify-center gap-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className="h-4 w-4 fill-red-500 text-red-500"
+                  />
+                ))}
+              </div>
+              <p className="mt-6 font-light tracking-tight text-slate-900">
+                Website design did exactly what you said it does. Just what I was looking for.
+                Nice work on your website design.
+              </p>
+              <div className="mt-8 flex items-center gap-4">
+                <Image
+                  src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=120&q=80"
+                  alt="Armando McClure"
+                  width={56}
+                  height={56}
+                  className="rounded-full object-cover"
+                />
+
+                <div className="leading-tight">
+                  <div className="text-lg font-extrabold text-slate-900">
+                    Armando McClure
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    Senior Markets Architect
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mx-auto w-full rounded-2xl bg-white p-10 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
+              <div className="flex justify-center gap-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className="h-4 w-4 fill-red-500 text-red-500"
+                  />
+                ))}
+              </div>
+              <p className="mt-6 font-light tracking-tight text-slate-900">
+                Website design did exactly what you said it does. Just what I was looking for.
+                Nice work on your website design.
+              </p>
+              <div className="mt-8 flex items-center gap-4">
+                <Image
+                  src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=120&q=80"
+                  alt="Armando McClure"
+                  width={56}
+                  height={56}
+                  className="rounded-full object-cover"
+                />
+
+                <div className="leading-tight">
+                  <div className="text-lg font-extrabold text-slate-900">
+                    Armando McClure
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    Senior Markets Architect
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
         </div>
 
         {/* Technical Data Sheet Download */}
-        <div className="text-center mt-12">
-          <div className="bg-blue-50 rounded-lg p-8 max-w-2xl mx-auto">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
-              Need Detailed Technical Information?
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Download our comprehensive technical data sheets with detailed specifications, 
-              installation guides, and performance data.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/contact">
-                <button className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-colors">
+      </div>
+      <div className="bg-[#D6DADE] mt-12 text-center p-12">
+          <h3 className="text-3xl font-[500] text-gray-900 text-center mb-2">
+            Need Detailed Technical Information?
+          </h3>
+
+          <h5 className="text-[#606060] text-sm mb-8">
+            Everything you need to evaluate, specify, or implement Glazia systems.
+          </h5>
+
+          <div className="bg-[#F7F8F8] grid grid-cols-1 md:grid-cols-2 gap-8 rounded-xl p-8 max-w-3xl mx-auto">
+
+            <div className="flex flex-col items-start text-left gap-12">
+              <div className="flex gap-2 justify-start items-center">
+                <div className="h-2 w-2 bg-[#EE1C25]" />
+                <div className="text-black font-semibold text-[18px]">Talk to Our Team</div>
+              </div>
+              <div  className="text-[#444E61] text-[18px]">Get expert assistance for product selection, technical queries, or project-specific requirements.</div>
+               <Link href="/contact">
+                <button className="bg-[#EE1C25] text-white font-medium py-3 px-6 rounded-lg transition-colors">
                   Contact Us
                 </button>
               </Link>
+            </div>
 
-              <button
-                onClick={handleDownloadCatalogue}
-                className="border border-[#124657} text-[#124657} hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-colors"
-              >
-                Download Technical Catalogue
-              </button>
-              
+            <div className="flex flex-col items-start text-left gap-12">
+              <div className="flex gap-2 justify-start items-center">
+                <div className="h-2 w-2 bg-[#EE1C25]" />
+                <div className="text-black font-semibold text-[18px]">Download Technical Brochure</div>
+              </div>
+              <div className="text-[#444E61] text-[18px]">Access detailed specifications, performance data, and installation guidelines for Glazia products.</div>
+               <button  onClick={handleDownloadCatalogue}className="bg-[#EE1C25] text-white font-medium py-3 px-6 rounded-lg transition-colors">
+                  Download Catalogue
+                </button>
             </div>
           </div>
         </div>
-      </div>
 
       <PhoneTrackModal
         isOpen={isPhoneModalOpen}

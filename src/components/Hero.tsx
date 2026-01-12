@@ -10,7 +10,7 @@ const slides = [
     title: "Premium Aluminium Profiles",
     subtitle: "High performance System Aluminium",
     description: "Discover our extensive range of Aluminium. Create energy-efficient and durable Aluminium fenestration products with Glazia's premium profile systems.",
-    image: "/hero-slide-1.jpg",
+    image: "/new-ui/hero.png",
     cta: "Explore Profiles",
     link: "/categories/aluminium-profiles"
   },
@@ -19,7 +19,7 @@ const slides = [
     title: "Professional Hardware",
     subtitle: "Complete Hardware Solutions for Aluminium",
     description: "From hinges and handles to locking systems and operators, find everything you need for professional windoors installation and operation.",
-    image: "/hero-slide-2.jpg",
+    image: "/new-ui/hero.png",
     cta: "Shop Hardware",
     link: "/categories/hardware"
   },
@@ -28,7 +28,7 @@ const slides = [
     title: "Premium Railings",
     subtitle: "Elegant Aluminum Railing Systems",
     description: "Explore our comprehensive range of aluminum railings for balconies, staircases, and architectural applications. Combining safety, durability, and aesthetic appeal.",
-    image: "/hero-slide-3.jpg",
+    image: "/new-ui/hero.png",
     cta: "View Railings",
     link: "/categories/railings"
   }
@@ -63,9 +63,15 @@ export default function Hero() {
             index < currentSlide ? '-translate-x-full' : 'translate-x-full'
           }`}
         >
-          {/* Background Image */}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, #35875C, #7FB549)' }}>
-            <div className="w-full h-full bg-gradient-to-r from-gray-900/30 to-transparent"></div>
+          <div className="absolute inset-0">
+            <img
+              src={slide.image}
+              alt={slide.title}
+              className="w-full h-full object-cover"
+            />
+
+            {/* Dark Overlay */}
+            <div className="absolute inset-0 bg-black/50"></div>
           </div>
           
           {/* Content */}
@@ -75,16 +81,13 @@ export default function Hero() {
               <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
                 {slide.title}
               </h1>
-              <h2 className="text-xl md:text-2xl mb-6 text-green-100">
-                {slide.subtitle}
-              </h2>
               <p className="text-lg mb-8 text-gray-200 leading-relaxed">
                 {slide.description}
               </p>
                 <Link
                   href={slide.link}
                   className="inline-block text-white font-semibold py-4 px-8 rounded-lg transition-colors duration-300 text-lg hover-primary-bg-dark"
-                  style={{ backgroundColor: '#124657' }}
+                  style={{ backgroundColor: '#EE1C25' }}
                 >
                   {slide.cta}
                 </Link>
