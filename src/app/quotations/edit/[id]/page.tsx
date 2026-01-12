@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Plus, Download, Save, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -20,6 +20,19 @@ interface CustomerDetails {
   city: string;
   state: string;
   pincode: string;
+}
+
+interface GlobalConfig {
+  logo?: string;
+  logoUrl?: string;
+  prerequisites?: string;
+  terms?: string;
+  additionalCosts: {
+    installation: number;
+    transport: number;
+    loadingUnloading: number;
+    discountPercent: number;
+  };
 }
 
 interface BackendQuotation {
@@ -45,14 +58,28 @@ interface BackendQuotation {
       >;
     }
   >;
+  globalConfig?: GlobalConfig;
 }
 
 const COMBINATION_SYSTEM = "Combination";
+const initialGlobalConfig: GlobalConfig = {
+  logo: "",
+  logoUrl: "",
+  prerequisites: "",
+  terms: "",
+  additionalCosts: {
+    installation: 0,
+    transport: 0,
+    loadingUnloading: 0,
+    discountPercent: 0,
+  },
+};
 
 export default function EditQuotationPage() {
   const router = useRouter();
   const params = useParams();
   const quotationId = params.id as string;
+  const globalConfigLocked = useRef(false);
 
   const [queryClient] = useState(() => new QueryClient());
   const [loading, setLoading] = useState(true);
@@ -81,7 +108,7 @@ export default function EditQuotationPage() {
   });
 
   const [profitPercentage, setProfitPercentage] = useState<number>(0);
-  const [globalConfig, setGlobalConfig] = useState({});
+  const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(initialGlobalConfig);
   const [error, setError] = useState<string | null>(null);
 
   // Load existing quotation data
@@ -202,6 +229,17 @@ export default function EditQuotationPage() {
             },
           ];
         setItems(mappedItems);
+        if (data.globalConfig) {
+          globalConfigLocked.current = true;
+          setGlobalConfig((prev) => ({
+            ...prev,
+            ...data.globalConfig,
+            additionalCosts: {
+              ...prev.additionalCosts,
+              ...(data.globalConfig.additionalCosts || {}),
+            },
+          }));
+        }
         setQuotationFound(true);
       } catch (err) {
         console.error("Error loading quotation", err);
@@ -220,9 +258,16 @@ export default function EditQuotationPage() {
 
   const fetchData = async () => {
     const config = await loadGlobalConfig();
-    if (config) {
+    if (config && !globalConfigLocked.current) {
       console.log(config, "Config<>><><>...");
-      setGlobalConfig(config);
+      setGlobalConfig((prev) => ({
+        ...prev,
+        ...config,
+        additionalCosts: {
+          ...prev.additionalCosts,
+          ...(config.additionalCosts || {}),
+        },
+      }));
     }
   };
 
@@ -305,9 +350,34 @@ export default function EditQuotationPage() {
     return baseTotal + profitAmount;
   };
 
+  const getAdditionalCost = (key: keyof GlobalConfig["additionalCosts"]) =>
+    Number(globalConfig.additionalCosts?.[key] || 0);
+
+  const calculateFinalTotal = () => {
+    const totalWithProfit = calculateTotalWithProfit();
+    const additionalCosts =
+      getAdditionalCost("transport") +
+      getAdditionalCost("installation") +
+      getAdditionalCost("loadingUnloading");
+    const discount = (getAdditionalCost("discountPercent") / 100) * totalWithProfit;
+    return totalWithProfit + additionalCosts - discount;
+  };
+
+  const handleLogoUpload = (file: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      setGlobalConfig((prev) => ({ ...prev, logoUrl: result, logo: result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const logoPreview = globalConfig.logoUrl || globalConfig.logo || "";
+
   // Update quotation (instead of create new)
   const handleUpdate = async () => {
-    const totalAmount = calculateTotalWithProfit().toFixed(2);
+    const totalAmount = calculateFinalTotal().toFixed(2);
 
     console.log("Total amount", totalAmount);
 
@@ -330,6 +400,7 @@ export default function EditQuotationPage() {
           meshPresent: sub.meshPresent === "Yes",
         })),
       })),
+      globalConfig,
       breakdown: {
         totalAmount,
         profitPercentage
@@ -360,6 +431,7 @@ export default function EditQuotationPage() {
       ...quotationDetails,
       customerDetails,
       items,
+      globalConfig,
       total: calculateTotalWithProfit(), // Use total with profit for PDF
       baseTotal: calculateTotal(), // Include base total
       profitPercentage, // Include profit percentage
@@ -582,26 +654,57 @@ export default function EditQuotationPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo URL
+                  Logo
                 </label>
-                
+                {logoPreview && (
                   <div className="mb-4 flex items-center gap-4">
                     <img
-                      src={globalConfig.logo}
+                      src={logoPreview}
                       alt="Logo preview"
-                      className="h-30 w-auto rounded border border-gray-200 bg-white p-2"
+                      className="h-16 w-auto rounded border border-gray-200 bg-white p-2"
                     />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setGlobalConfig((prev) => ({ ...prev, logoUrl: "", logo: "" }))
+                      }
+                      className="text-sm font-medium text-red-600 hover:text-red-700"
+                    >
+                      Remove logo
+                    </button>
                   </div>
+                )}
+                <input
+                  type="text"
+                  value={globalConfig.logo || ""}
+                  onChange={(e) =>
+                    setGlobalConfig((prev) => ({
+                      ...prev,
+                      logo: e.target.value,
+                      logoUrl: e.target.value,
+                    }))
+                  }
+                  placeholder="Paste logo URL"
+                  className="mb-3 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleLogoUpload(e.target.files?.[0] ?? null)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Prerequisites of Installation
                 </label>
                 <textarea
-                  value={globalConfig?.prerequisites}
-                  readOnly
+                  value={globalConfig.prerequisites || ""}
+                  onChange={(e) =>
+                    setGlobalConfig((prev) => ({ ...prev, prerequisites: e.target.value }))
+                  }
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>
             </div>
@@ -610,10 +713,12 @@ export default function EditQuotationPage() {
                 Terms &amp; Conditions
               </label>
               <textarea
-                value={globalConfig?.terms}
-                readOnly
+                value={globalConfig.terms || ""}
+                onChange={(e) =>
+                  setGlobalConfig((prev) => ({ ...prev, terms: e.target.value }))
+                }
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
               />
             </div>
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -623,9 +728,17 @@ export default function EditQuotationPage() {
                 </label>
                 <input
                   type="number"
-                  value={globalConfig?.additionalCosts?.installation}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  value={globalConfig.additionalCosts.installation}
+                  onChange={(e) =>
+                    setGlobalConfig((prev) => ({
+                      ...prev,
+                      additionalCosts: {
+                        ...prev.additionalCosts,
+                        installation: Number(e.target.value) || 0,
+                      },
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>
               <div>
@@ -634,9 +747,17 @@ export default function EditQuotationPage() {
                 </label>
                 <input
                   type="number"
-                  value={globalConfig?.additionalCosts?.transport}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  value={globalConfig.additionalCosts.transport}
+                  onChange={(e) =>
+                    setGlobalConfig((prev) => ({
+                      ...prev,
+                      additionalCosts: {
+                        ...prev.additionalCosts,
+                        transport: Number(e.target.value) || 0,
+                      },
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>
               <div>
@@ -645,9 +766,17 @@ export default function EditQuotationPage() {
                 </label>
                 <input
                   type="number"
-                  value={globalConfig?.additionalCosts?.loadingUnloading}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  value={globalConfig.additionalCosts.loadingUnloading}
+                  onChange={(e) =>
+                    setGlobalConfig((prev) => ({
+                      ...prev,
+                      additionalCosts: {
+                        ...prev.additionalCosts,
+                        loadingUnloading: Number(e.target.value) || 0,
+                      },
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>
               <div>
@@ -656,9 +785,17 @@ export default function EditQuotationPage() {
                 </label>
                 <input
                   type="number"
-                  value={globalConfig?.additionalCosts?.discountPercent}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  value={globalConfig.additionalCosts.discountPercent}
+                  onChange={(e) =>
+                    setGlobalConfig((prev) => ({
+                      ...prev,
+                      additionalCosts: {
+                        ...prev.additionalCosts,
+                        discountPercent: Number(e.target.value) || 0,
+                      },
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>
             </div>
@@ -696,7 +833,12 @@ export default function EditQuotationPage() {
                 <input
                   type="number"
                   value={profitPercentage}
-                  onChange={(e) => setProfitPercentage(parseFloat(e.target.value) || 0)}
+                   onChange={(e) => {
+                    const sanitizedValue = e.target.value
+                      .replace(/[^0-9]/g, "")
+                      .toUpperCase();
+                    setProfitPercentage(parseFloat(sanitizedValue) || 0)
+                  }}
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] text-center"
                   placeholder="0"
                   min="0"
@@ -706,7 +848,10 @@ export default function EditQuotationPage() {
               </div>
               <div className="text-center">
                 <div className="text-sm font-medium text-gray-600">Final Amount</div>
-                <div className="text-lg font-bold text-[#124657]">₹{(calculateTotalWithProfit() + parseInt(globalConfig?.additionalCosts?.transport) + parseInt(globalConfig?.additionalCosts?.installation) + parseInt(globalConfig?.additionalCosts?.loadingUnloading) - ((parseInt(globalConfig?.additionalCosts?.discountPercent) / 100) * calculateTotalWithProfit())).toLocaleString('en-IN')}</div>
+                <div className="text-lg font-bold text-[#124657]">
+                  ₹
+                  {calculateFinalTotal().toLocaleString("en-IN")}
+                </div>
                 {profitPercentage > 0 && (
                   <div className="text-xs text-green-600 mt-1">
                     +₹{((calculateTotal() * profitPercentage) / 100).toLocaleString('en-IN')} profit
