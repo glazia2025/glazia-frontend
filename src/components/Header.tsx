@@ -152,6 +152,14 @@ export default function Header() {
     router.push('/');
   };
 
+  const handleNalcoClick = () => {
+    if (isAuthenticated) {
+      setIsNalcoModalOpen(true);
+      return;
+    }
+    setIsPhoneModalOpen(true);
+  };
+
   const getSearchItemLabel = (item: SearchItem) => {
     if (item.type === "hardware") {
       return item.perticular || item.subCategory || item.sapCode;
@@ -210,7 +218,7 @@ export default function Header() {
             <Image width={100} height={100} src="/Logo.svg" alt="Glazia Logo Mobile" />
           </Link>
           <div className="md:hidden">
-            <NalcoPriceDisplay onClick={() => setIsNalcoModalOpen(true)} />
+            <NalcoPriceDisplay onClick={handleNalcoClick} />
           </div>
           <div className="hidden md:flex items-center gap-12">
             <Link className="nav-link" href="/">Home</Link>
@@ -255,6 +263,7 @@ export default function Header() {
 
         <div className="hidden md:block">
           {!isAuthenticated && (
+            <div className="flex item-center gap-4">
             <button
               onClick={() => setIsLoginModalOpen(true)}
               className="px-4 py-2 bg-[#EE1C25] text-white rounded-lg flex items-center space-x-2"
@@ -262,6 +271,8 @@ export default function Header() {
               <User className="w-4 h-4" />
               <span>Login</span>
             </button>
+            <NalcoPriceDisplay onClick={() => handleNalcoClick()} />
+              </div>
           )}
           {isAuthenticated && (
             <div className="flex flex-row justify-between items-center gap-8">
@@ -303,7 +314,7 @@ export default function Header() {
                     </span>
                   )}
               </div>
-              <NalcoPriceDisplay onClick={() => setIsNalcoModalOpen(true)} />
+              <NalcoPriceDisplay onClick={handleNalcoClick} />
             </div>
           )}
         </div>

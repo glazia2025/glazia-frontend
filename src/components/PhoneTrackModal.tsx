@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { trackPhone } from "@/services/trackPhoneApi";
+import axios from "axios";
 
 interface PhoneTrackModalProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export default function PhoneTrackModal({
 
   if (!isOpen) return null;
 
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -44,22 +46,21 @@ export default function PhoneTrackModal({
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const response = await trackPhone(phone, reason);
+    console.log(phone, reason, "<<<<<phone reason");
 
-      if (response?.success) {
+    await axios.post("https://api.glazia.in/api/user/track-phone", { phone, reason })
+      .then(data => {
+        console.log(data, "<<<<<response");
         onSuccess();
         onClose();
-        return;
-      }
-
-      setError(response?.message || "Unable to verify your phone number.");
-    } catch (err) {
-      setError("Unable to verify your phone number.");
-    } finally {
-      setIsSubmitting(false);
-    }
+      })
+      .catch(err => {
+        console.log(err);
+        setError(err.message || "Unable to verify your phone number.");
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   return (
@@ -110,7 +111,7 @@ export default function PhoneTrackModal({
             </button>
             <button
               type="submit"
-              className="w-full rounded-lg bg-[#124657] px-4 py-2 text-sm font-medium text-white hover:bg-[#0f3a4a] disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="w-full rounded-lg bg-[#EE1C25] px-4 py-2 text-sm font-medium text-white hover:bg-[#0f3a4a] disabled:cursor-not-allowed disabled:bg-gray-300"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Submitting..." : "Continue"}
