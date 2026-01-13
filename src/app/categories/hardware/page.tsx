@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import ImageModal from '@/components/ImageModal';
+import LoginModal from '@/components/LoginModal';
 import { apiClient } from '@/services/api';
 
 // Fixed hardware categories
@@ -29,6 +30,8 @@ export default function HardwarePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated } = useAuth();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Quantity state for hardware products
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -58,6 +61,10 @@ export default function HardwarePage() {
         );
       })
     : products;
+  const visibleProducts = isAuthenticated
+    ? filteredProducts
+    : filteredProducts.slice(0, 3);
+  const showViewMore = !isAuthenticated && filteredProducts.length > 3;
 
   // Fetch hardware data for selected category
   useEffect(() => {
@@ -91,6 +98,24 @@ export default function HardwarePage() {
 
     fetchHardwareData();
   }, [activeCategory]); // Re-fetch when category changes
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const handleChange = () => setIsMobile(mediaQuery.matches);
+    handleChange();
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange);
+    } else {
+      mediaQuery.addListener(handleChange);
+    }
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, []);
 
   // Get cart quantity for a product
   const getCartQuantityForProduct = (product: any): number => {
@@ -316,7 +341,7 @@ export default function HardwarePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {filteredProducts.map((product: any, index: number) => {
+              {visibleProducts.map((product: any, index: number) => {
                 const productId = product.id || product.sapCode;
                 const localQuantity = quantities[productId] || 0;
                 const cartQuantity = getCartQuantityForProduct(product);
@@ -395,6 +420,17 @@ export default function HardwarePage() {
               })}
             </div>
           )}
+          {showViewMore && (
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setIsLoginModalOpen(true)}
+                className="px-6 py-2 bg-[#EE1C25] text-white"
+              >
+                View more
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -407,6 +443,10 @@ export default function HardwarePage() {
         imageSrc={imageModal.imageSrc}
         imageAlt={imageModal.imageAlt}
         productName={imageModal.productName}
+      />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
       />
     </div>
   );

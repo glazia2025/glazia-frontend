@@ -6,10 +6,35 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { User, ChevronDown, Menu, Search, X } from "lucide-react";
 import { useCartState, useAuth } from "@/contexts/AppContext";
+import { API_CONFIG } from "@/services";
 import NalcoPriceDisplay from "./NalcoPriceDisplay";
 import NalcoGraphModal from "./NalcoGraphModal";
 import LoginModal from "./LoginModal";
 import PhoneTrackModal from "./PhoneTrackModal";
+
+type GlobalSearchProduct = {
+  _id?: string;
+  sapCode: string;
+  part?: string;
+  description?: string;
+  image?: string;
+  enabled?: boolean;
+};
+
+type GlobalSearchHardware = {
+  _id?: string;
+  sapCode: string;
+  perticular?: string;
+  subCategory?: string;
+  rate?: number;
+  system?: string;
+  moq?: string;
+  image?: string;
+};
+
+type SearchItem =
+  | (GlobalSearchProduct & { type: "product" })
+  | (GlobalSearchHardware & { type: "hardware" });
 
 export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -18,11 +43,21 @@ export default function Header() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { cart, toggleCart } = useCartState();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{
+    products: SearchItem[];
+    hardware: SearchItem[];
+  } | null>(null);
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [selectedSearchItem, setSelectedSearchItem] = useState<SearchItem | null>(null);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const { cart, toggleCart, addToCart } = useCartState();
   const { isAuthenticated, clearUser } = useAuth();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
+  const searchDropdownRef = useRef<HTMLDivElement>(null);
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,10 +85,112 @@ export default function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
+        setIsSearchDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const term = searchQuery.trim();
+    if (!term) {
+      setSearchResults(null);
+      setIsSearchDropdownOpen(false);
+      setIsSearchLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setIsSearchLoading(true);
+    setIsSearchDropdownOpen(true);
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `${API_CONFIG.BASE_URL}/api/user/global-search?search=${encodeURIComponent(term)}`,
+          { signal: controller.signal }
+        );
+        if (!response.ok) {
+          throw new Error(`Search failed with status ${response.status}`);
+        }
+        const data = await response.json();
+        const products = (data.products || []).map((item: GlobalSearchProduct) => ({
+          ...item,
+          type: "product" as const,
+        }));
+        const hardware = (data.hardware || []).map((item: GlobalSearchHardware) => ({
+          ...item,
+          type: "hardware" as const,
+        }));
+
+        setSearchResults({ products, hardware });
+        setIsSearchDropdownOpen(true);
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          setSearchResults({ products: [], hardware: [] });
+        }
+      } finally {
+        setIsSearchLoading(false);
+      }
+    }, 350);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [searchQuery]);
+
   const handleLogout = () => {
     clearUser();
     setIsDropdownOpen(false);
     router.push('/');
+  };
+
+  const getSearchItemLabel = (item: SearchItem) => {
+    if (item.type === "hardware") {
+      return item.perticular || item.subCategory || item.sapCode;
+    }
+    return item.description || item.part || item.sapCode;
+  };
+
+  const handleSearchSelect = (item: SearchItem) => {
+    setSelectedSearchItem(item);
+    setIsSearchModalOpen(true);
+    setIsSearchDropdownOpen(false);
+  };
+
+  const handleSearchAddToCart = (item: SearchItem) => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+
+    if (item.type === "hardware") {
+      addToCart({
+        id: item._id || item.sapCode,
+        name: item.perticular || item.subCategory || item.sapCode,
+        brand: "Glazia",
+        price: `${item.rate ?? 0}`,
+        originalPrice: item.rate ?? 0,
+        image: item.image || "/hardware.jpg",
+        inStock: true,
+        category: "Hardware",
+        subCategory: item.subCategory || "Hardware",
+        length: "1000",
+        per: "piece",
+        kgm: 1,
+      });
+      return;
+    }
+
+    router.push("/categories/aluminium-profiles");
+    setIsSearchModalOpen(false);
   };
 
   return (
@@ -69,7 +206,9 @@ export default function Header() {
           >
             <Menu className="h-7 w-7" />
           </button>
-          <Image width={100} height={100} src="/Logo.svg" alt="Glazia Logo Mobile" />
+          <Link href="/">
+            <Image width={100} height={100} src="/Logo.svg" alt="Glazia Logo Mobile" />
+          </Link>
           <div className="md:hidden">
             <NalcoPriceDisplay onClick={() => setIsNalcoModalOpen(true)} />
           </div>
@@ -240,13 +379,108 @@ export default function Header() {
         <div>Railings</div>
       </Link>
 
-      <div className="hidden md:block border-[#B2B2B2] border-[1px] flex items-center rounded-[24px]">
-        <input
-          type="text"
-          placeholder="Find the product you need"
-          className="w-[35vw] px-4 py-2 border-0 outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 placeholder:text-[#B2B2B2] text-[16px]"
-        />
-        <button className="bg-[#2F3A4F] rounded-full px-4 py-2 text-white">Search</button>
+      <div className="hidden md:block" ref={searchDropdownRef}>
+        <div className="border-[#B2B2B2] border-[1px] flex items-center rounded-[24px] relative">
+          <input
+            type="text"
+            placeholder="Find the product you need"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onFocus={() => {
+              if (searchResults || searchQuery.trim()) {
+                setIsSearchDropdownOpen(true);
+              }
+            }}
+            className="w-[35vw] px-4 py-2 border-0 outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 placeholder:text-[#B2B2B2] text-[16px]"
+          />
+          <button
+            type="button"
+            onClick={() => setIsSearchDropdownOpen(true)}
+            className="bg-[#2F3A4F] rounded-full px-4 py-2 text-white flex items-center gap-2"
+          >
+            <Search className="h-4 w-4" />
+            Search
+          </button>
+
+          {isSearchDropdownOpen && (
+            <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-[10001] max-h-[60vh] overflow-auto">
+              {isSearchLoading && (
+                <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
+              )}
+              {!isSearchLoading &&
+                (!searchResults ||
+                  (searchResults.products.length === 0 && searchResults.hardware.length === 0)) && (
+                  <div className="px-4 py-3 text-sm text-gray-500">
+                    No results found for "{searchQuery.trim()}"
+                  </div>
+                )}
+              {!isSearchLoading && searchResults && (
+                <>
+                  {searchResults.products.length > 0 && (
+                    <div className="py-2">
+                      <div className="px-4 py-2 text-xs uppercase tracking-wide text-gray-500">
+                        Profiles
+                      </div>
+                      {searchResults.products.map((item) => (
+                        <button
+                          type="button"
+                          key={`product-${item._id || item.sapCode}`}
+                          onClick={() => handleSearchSelect(item)}
+                          className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 text-left"
+                        >
+                          <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-gray-100">
+                            <Image
+                              src={item.image || "/profile.jpg"}
+                              alt={getSearchItemLabel(item)}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">
+                              {getSearchItemLabel(item)}
+                            </div>
+                            <div className="text-xs text-gray-500">SAP: {item.sapCode}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {searchResults.hardware.length > 0 && (
+                    <div className="py-2 border-t border-gray-100">
+                      <div className="px-4 py-2 text-xs uppercase tracking-wide text-gray-500">
+                        Hardware
+                      </div>
+                      {searchResults.hardware.map((item) => (
+                        <button
+                          type="button"
+                          key={`hardware-${item._id || item.sapCode}`}
+                          onClick={() => handleSearchSelect(item)}
+                          className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 text-left"
+                        >
+                          <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-gray-100">
+                            <Image
+                              src={item.image || "/hardware.jpg"}
+                              alt={getSearchItemLabel(item)}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">
+                              {getSearchItemLabel(item)}
+                            </div>
+                            <div className="text-xs text-gray-500">SAP: {item.sapCode}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
     </div>
@@ -260,7 +494,9 @@ export default function Header() {
         />
         <aside className="absolute left-0 top-0 h-full w-72 bg-white shadow-xl px-6 py-5 flex flex-col gap-6">
           <div className="flex items-center justify-between">
-            <Image width={120} height={40} src="/Logo.svg" alt="Glazia Logo" />
+            <Link href="/">
+              <Image width={120} height={40} src="/Logo.svg" alt="Glazia Logo" />
+            </Link>
             <button
               type="button"
               className="inline-flex items-center justify-center"
@@ -315,6 +551,114 @@ export default function Header() {
             )}
           </div>
         </aside>
+      </div>
+    )}
+    {isSearchModalOpen && selectedSearchItem && (
+      <div className="fixed inset-0 z-[10002] flex items-end md:items-center justify-center">
+        <button
+          type="button"
+          className="absolute inset-0 bg-black/40"
+          onClick={() => setIsSearchModalOpen(false)}
+          aria-label="Close search result"
+        />
+        <div className="relative w-full md:max-w-2xl bg-white rounded-t-2xl md:rounded-2xl p-6 md:p-8 max-h-[85vh] overflow-auto">
+          <button
+            type="button"
+            onClick={() => setIsSearchModalOpen(false)}
+            className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="relative w-full md:w-56 aspect-square rounded-2xl overflow-hidden bg-gray-100">
+              <Image
+                src={
+                  selectedSearchItem.image ||
+                  (selectedSearchItem.type === "hardware" ? "/hardware.jpg" : "/profile.jpg")
+                }
+                alt={getSearchItemLabel(selectedSearchItem)}
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-wide text-gray-500">
+                {selectedSearchItem.type === "hardware" ? "Hardware" : "Profile"}
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mt-2">
+                {getSearchItemLabel(selectedSearchItem)}
+              </h3>
+              <div className="text-sm text-gray-500 mt-1">SAP: {selectedSearchItem.sapCode}</div>
+
+              {selectedSearchItem.type === "product" && (
+                <div className="mt-4 space-y-2 text-sm text-gray-600">
+                  {selectedSearchItem.part && (
+                    <div>Part: {selectedSearchItem.part}</div>
+                  )}
+                  {selectedSearchItem.description && (
+                    <div>{selectedSearchItem.description}</div>
+                  )}
+                </div>
+              )}
+
+              {selectedSearchItem.type === "hardware" && (
+                <div className="mt-4 space-y-2 text-sm text-gray-600">
+                  {selectedSearchItem.subCategory && (
+                    <div>Category: {selectedSearchItem.subCategory}</div>
+                  )}
+                  {selectedSearchItem.system && <div>System: {selectedSearchItem.system}</div>}
+                  {selectedSearchItem.moq && <div>MOQ: {selectedSearchItem.moq}</div>}
+                </div>
+              )}
+
+              <div className="mt-6 border-t border-gray-200 pt-4">
+                {selectedSearchItem.type === "hardware" && isAuthenticated && (
+                  <div className="text-lg font-semibold text-gray-900">
+                    ₹{selectedSearchItem.rate ?? 0}
+                  </div>
+                )}
+                {!isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="text-sm font-medium text-[#EE1C25]"
+                  >
+                    Login to view price
+                  </button>
+                )}
+                {selectedSearchItem.type === "product" && isAuthenticated && (
+                  <div className="text-sm text-gray-500">
+                    Select size on the profiles page to view pricing.
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleSearchAddToCart(selectedSearchItem)}
+                  className="px-5 py-2.5 bg-[#2F3A4F] text-white rounded-full"
+                >
+                  {!isAuthenticated
+                    ? "Login to add to cart"
+                    : selectedSearchItem.type === "product"
+                      ? "Select size to add"
+                      : "Add to cart"}
+                </button>
+                {selectedSearchItem.type === "product" && (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/categories/aluminium-profiles")}
+                    className="px-5 py-2.5 border border-gray-200 rounded-full text-gray-700"
+                  >
+                    View profiles
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     )}
     </>

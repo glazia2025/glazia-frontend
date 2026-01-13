@@ -6,6 +6,7 @@ import { useAuth, useCartState } from '@/contexts/AppContext';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import LoginModal from '@/components/LoginModal';
 import { ProfileApiService } from '@/services/profileApi';
 
 // Interfaces for the new API structure
@@ -57,6 +58,8 @@ export default function AluminiumProfilesPage() {
   const [loading, setLoading] = useState(true);
   const [loadingCategoryData, setLoadingCategoryData] = useState(false);
   const { isAuthenticated } = useAuth();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [nalcoPrice, setNalcoPrice] = useState<number>(0);
 
   const { addToCart, getCartItem, getAdjustedItemPrice } = useCartState();
@@ -107,6 +110,24 @@ export default function AluminiumProfilesPage() {
 
     loadCategories();
   }, [profileApi]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const handleChange = () => setIsMobile(mediaQuery.matches);
+    handleChange();
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange);
+    } else {
+      mediaQuery.addListener(handleChange);
+    }
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, []);
 
   // Load category data when a category is selected
   useEffect(() => {
@@ -221,6 +242,10 @@ export default function AluminiumProfilesPage() {
   };
 
   const productsToDisplay = getFilteredProducts();
+  const visibleProducts = isAuthenticated
+    ? productsToDisplay
+    : productsToDisplay.slice(0, 3);
+  const showViewMore = !isAuthenticated && productsToDisplay.length > 3;
 
   if (loading) {
     return (
@@ -405,7 +430,7 @@ export default function AluminiumProfilesPage() {
                 </div>
               ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {productsToDisplay.map((product) => {
+                {visibleProducts.map((product) => {
                   const cartQuantity = getCartQuantityForProduct(product);
                   const localQuantity = quantities[product._id] || 0;
                   const displayQuantity = cartQuantity + localQuantity;
@@ -476,6 +501,17 @@ export default function AluminiumProfilesPage() {
                 })}
               </div>
             )}
+            {showViewMore && (
+              <div className="mt-6 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="px-6 py-2 bg-[#EE1C25] text-white"
+                >
+                  View more
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -503,6 +539,10 @@ export default function AluminiumProfilesPage() {
           </div>
         </div>
       )}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
     </div>
   );
 }
