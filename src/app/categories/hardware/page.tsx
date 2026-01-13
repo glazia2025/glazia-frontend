@@ -230,10 +230,30 @@ export default function HardwarePage() {
         </div>
       </div>
 
+
+       <div className="block md:hidden flex flex-row flex-wrap items-start gap-2 p-4">
+        {HARDWARE_CATEGORIES.map((category) => (
+          <button
+            key={category}
+            onClick={() => {
+              setActiveCategory(category);
+              console.log('🎯 Selected category:', category);
+            }}
+            className={`text-[14px] px-3 py-1 border border-1 rounded-lg border-[#2F3A4F] font-[500] ${
+              activeCategory === category
+                ? 'text-[#FFFFFF] bg-[#2F3A4F]'
+                : 'text-[#1F2933]'
+            }`}
+          >
+            <div className="font-medium">{category}</div>
+          </button>
+        ))}
+      </div>
+
       {/* Main Content */}
       <div className="flex flex-col lg:flex-row justify-between items-start border-[3px] border-[#D6DADE] bg-white mx-4 my-6 sm:my-8">
         <div className="bg-white w-full lg:w-[20%] rounded-lg p-4 sm:p-6">
-          <div className="flex flex-col items-start gap-4">
+          <div className="hidden md:block flex flex-col items-start gap-4">
             {HARDWARE_CATEGORIES.map((category) => (
               <button
                 key={category}

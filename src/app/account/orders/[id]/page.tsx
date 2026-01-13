@@ -23,8 +23,6 @@ import {
 } from 'lucide-react';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
-import Navigation from '@/components/Navigation';
-import { Order } from '@/contexts/AppContext';
 
 interface OrderProduct {
   productId: string;
@@ -299,7 +297,6 @@ export default function OrderDetailsPage() {
       <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="pt-[120px]">
-          <Navigation />
           <div className="container mx-auto px-4 py-8">
             <div className="bg-white rounded-lg shadow-sm p-12 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#124657] mx-auto mb-4"></div>
@@ -316,7 +313,6 @@ export default function OrderDetailsPage() {
       <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="pt-[120px]">
-          <Navigation />
           <div className="container mx-auto px-4 py-8">
             <div className="bg-white rounded-lg shadow-sm p-12 text-center">
               <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -342,24 +338,22 @@ export default function OrderDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="pt-[120px]">
-        <Navigation />
+      <div>
 
-        {/* Page Header */}
-        <div className="bg-white border-b">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+        <div className="bg-[#D6DADE]">
+          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:space-x-4">
                 <Link
                   href="/account/orders"
-                  className="flex items-center text-[#124657] hover:text-blue-700"
+                  className="flex items-center text-[#124657] hover:text-[#EE1C25]"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   Back to Orders
                 </Link>
-                <div className="h-6 w-px bg-gray-300"></div>
+                <div className="hidden sm:block h-6 w-px bg-gray-300"></div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Order Details</h1>
+                  <h1 className="text-2xl font-[500] text-gray-900">Order Details</h1>
                   <p className="text-gray-600">Order #{order._id}</p>
                 </div>
               </div>
@@ -373,6 +367,7 @@ export default function OrderDetailsPage() {
           </div>
         </div>
 
+
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
@@ -383,22 +378,22 @@ export default function OrderDetailsPage() {
                   <h2 className="text-lg font-semibold text-gray-900">Order Summary</h2>
                 </div>
                 <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="flex items-center space-x-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="flex items-start sm:items-center space-x-3">
                       <Calendar className="w-5 h-5 text-gray-400" />
                       <div>
                         <p className="text-sm text-gray-600">Order Date</p>
                         <p className="font-medium text-gray-900">{formatDate(order.createdAt)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-start sm:items-center space-x-3">
                       <CreditCard className="w-5 h-5 text-gray-400" />
                       <div>
                         <p className="text-sm text-gray-600">Total Amount</p>
                         <p className="font-medium text-gray-900">₹{order.totalAmount}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-start sm:items-center space-x-3">
                       <Truck className="w-5 h-5 text-gray-400" />
                       <div>
                         <p className="text-sm text-gray-600">Delivery Type</p>
@@ -417,9 +412,9 @@ export default function OrderDetailsPage() {
                 <div className="p-6">
                   <div className="space-y-4">
                     {order?.products?.map((product, index) => (
-                      <div key={product._id} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-b-0">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <div key={product._id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-gray-100 last:border-b-0">
+                        <div className="flex items-start sm:items-center space-x-4">
+                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
                             <Package className="w-8 h-8 text-gray-400" />
                           </div>
                           <div>
@@ -429,7 +424,7 @@ export default function OrderDetailsPage() {
                             <p className="text-sm text-gray-600">Brand: Glazia</p>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <p className="font-semibold text-gray-900">₹{product.amount.toLocaleString()}</p>
                           <p className="text-sm text-gray-600">₹{(product.amount / product.quantity).toFixed(2)} per unit</p>
                         </div>
@@ -493,15 +488,15 @@ export default function OrderDetailsPage() {
                   <div className="space-y-4">
                     {order?.payments?.map((payment, index) => (
                       <div key={payment._id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
                           <span className="font-medium text-gray-900">Payment Cycle {payment.cycle}</span>
                           <div className="flex items-center space-x-2">
                             <IndianRupee className="w-4 h-4 text-gray-600" />
                             <span className="font-semibold text-gray-900">₹{payment.amount.toLocaleString()}</span>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                               payment.isApproved
                                 ? 'bg-green-100 text-green-800'
@@ -538,7 +533,7 @@ export default function OrderDetailsPage() {
                             <button
                               onClick={() => handleUploadProofClick(nextPayment)}
                               disabled={uploadingProof}
-                              className="inline-flex items-center px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                              className="inline-flex items-center px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto justify-center"
                             >
                               <Upload className="w-4 h-4 mr-2" />
                               {uploadingProof ? 'Uploading...' : 'Upload Payment Proof'}

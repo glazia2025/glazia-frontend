@@ -198,11 +198,39 @@ export default function RailingsPage() {
             </div>
           </div>
         </div>
+
+        <div className="block md:hidden flex flex-col items-start gap-4">
+          {categoryData && (
+                <div className="m-3 pl-3">
+                  {loadingCategoryData ? (
+                    <div className="space-y-3">
+                      <div className="text-center text-sm text-gray-600">Loading sub category...</div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-start gap-4">
+                      {categoryData.sizes.map((sizeData) => sizeData.size.enabled && (
+                        <div
+                          key={sizeData.size._id}
+                          onClick={() => setSelectedSize(sizeData.size.label)}
+                          className={`text-[14px] px-3 py-1 border border-1 rounded-lg border-[#2F3A4F] font-[500] ${
+                            selectedSize === sizeData.size.label
+                              ? 'text-[#FFFFFF] bg-[#2F3A4F]'
+                              : 'text-[#1F2933]'
+                          }`}
+                        >
+                          <div className="font-medium">{sizeData.size.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+        </div>
   
         <div className="flex flex-col lg:flex-row justify-between items-start border-[3px] border-[#D6DADE] bg-white mx-4 my-6 sm:my-8">
           {/* Category Selection */}
           <div className="bg-white w-full lg:w-[20%] rounded-lg p-4 sm:p-6">
-            <div className="flex flex-col items-start gap-4">
+            <div className="hidden md:block flex flex-col items-start gap-4">
               {categoryData && (
                     <div className="m-3 pl-3">
                       {loadingCategoryData ? (
@@ -230,34 +258,7 @@ export default function RailingsPage() {
                   )}
             </div>
           </div>
-  
-          {/* Search */}
-          {/* {selectedSize && (
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex items-center space-x-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  />
-                </div>
-                {searchQuery && (
-                  <button
-                    onClick={handleClearSearch}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
-            </div>
-          )} */}
-  
-          {/* Products */}
+
           {(selectedSize || loadingCategoryData) && (
             <div className="bg-white w-full p-4 sm:p-6 border-t-[3px] border-[#D6DADE] lg:border-t-0 lg:border-l-[3px]">
               <h2 className="text-xl font-semibold mb-4">

@@ -253,9 +253,52 @@ export default function AluminiumProfilesPage() {
         </div>
       </div>
 
+      <div className="block md:hidden bg-white w-full lg:w-[20%] rounded-lg p-4 sm:p-6">
+          <div className="flex flex-row items-start gap-2">
+            {categories.map((category) => (category.name === 'Railings' || category.enabled === false) ? null : (
+              <div
+                key={category._id}
+                onClick={() => setSelectedCategory(category)}
+                className={`text-[14px] px-3 py-1 border border-1 rounded-lg border-[#2F3A4F] font-[500] ${
+                  selectedCategory?._id === category._id
+                    ? 'text-[#FFFFFF] bg-[#2F3A4F]'
+                    : 'text-[#1F2933]'
+                }`}
+              >
+                <div className="font-medium">{category.name}</div>
+              </div>
+            ))}
+          </div>
+          {categoryData && (
+            <div className="mt-3">
+              {loadingCategoryData ? (
+                <div className="space-y-3">
+                  <div className="text-center text-sm text-gray-600">Loading sub category...</div>
+                </div>
+              ) : (
+                <div className="flex flex-row items-start gap-2">
+                  {categoryData.sizes.map((sizeData) => sizeData.size.enabled && (
+                    <div
+                      key={sizeData.size._id}
+                      onClick={() => setSelectedSize(sizeData.size.label)}
+                      className={`text-[10px] text-[#444E61] font-[500] px-3 py-1 border border-1 rounded-lg ${
+                        selectedSize === sizeData.size.label
+                          ? 'bg-[#B2B2B2]'
+                          : 'bg-[#FFFFFF]'
+                      }`}
+                    >
+                      <div className="font-medium">{sizeData.size.label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
       <div className="flex flex-col lg:flex-row justify-between items-start border-[3px] border-[#D6DADE] bg-white mx-4 my-6 sm:my-8">
         {/* Category Selection */}
-        <div className="bg-white w-full lg:w-[20%] rounded-lg p-4 sm:p-6">
+        <div className="hidden md:block bg-white w-full lg:w-[20%] rounded-lg p-4 sm:p-6">
           <div className="flex flex-col items-start gap-4">
             {categories.map((category) => (category.name === 'Railings' || category.enabled === false) ? null : (
               <div
@@ -297,6 +340,7 @@ export default function AluminiumProfilesPage() {
             ))}
           </div>
         </div>
+        
 
         {/* Search */}
         {/* {selectedSize && (

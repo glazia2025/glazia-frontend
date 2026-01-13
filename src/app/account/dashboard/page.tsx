@@ -27,7 +27,6 @@ import {
 import { useAuth, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
-import Navigation from '@/components/Navigation';
 
 // Component to handle search params with Suspense
 function WelcomeBanner({ onClose }: { onClose: () => void }) {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar } from "lucide-react";
+import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, File, HandCoins } from "lucide-react";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import PDFViewerModal from "@/components/PDFViewerModal";
 
@@ -205,15 +205,15 @@ export default function QuotationsPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex flex-row items-center justify-between gap-2">
             <nav className="text-sm font-medium text-gray-600">
-              <Link href="/" className="hover:text-[#124657] transition-colors">
+              <Link href="/" className="text-[#EE1C25]">
                 Back to Home
               </Link>
             </nav>
             <Link
               href="/quotations/settings"
-              className="text-sm font-medium text-[#124657] hover:underline"
+              className="text-sm font-medium text-[#EE1C25] hover:underline"
             >
               Quotation Settings
             </Link>
@@ -234,12 +234,12 @@ export default function QuotationsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Quotations</h1>
+            <h1 className="text-3xl font-[500] text-gray-900">Quotations</h1>
             <p className="text-gray-600 mt-2">Manage your quotations and proposals</p>
           </div>
           <Link
             href="/quotations/create"
-            className="mt-4 sm:mt-0 flex items-center space-x-2 px-6 py-3 bg-[#124657] text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="mt-4 sm:mt-0 flex items-center space-x-2 px-6 py-3 bg-[#EE1C25] text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
             <span>Create Quotation</span>
@@ -262,10 +262,8 @@ export default function QuotationsPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Filter className="w-4 h-4 text-gray-500" />
-                <select
+            <div className="flex flex-col lg:flex-row gap-4 items-stretch md:items-center">
+              <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
@@ -274,7 +272,6 @@ export default function QuotationsPage() {
                   <option value="valid">Valid</option>
                   <option value="expired">Expired</option>
                 </select>
-              </div>
 
               <select
                 value={sortBy}
@@ -295,11 +292,9 @@ export default function QuotationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Quotations</p>
-                <p className="text-2xl font-bold text-gray-900">{quotations.length}</p>
+                <p className="text-2xl font-[500] text-gray-900">{quotations.length}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span className="text-blue-600 text-xl">📄</span>
-              </div>
+              <File size={56} color="#080808" absoluteStrokeWidth />
             </div>
           </div>
 
@@ -307,13 +302,11 @@ export default function QuotationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Value</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-[500] text-gray-900">
                   ₹{quotations.reduce((sum, q) => sum + q.breakdown.totalAmount, 0).toLocaleString('en-IN')}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <span className="text-green-600 text-xl">💰</span>
-              </div>
+              <HandCoins size={56} color="#080808" absoluteStrokeWidth />
             </div>
           </div>
 
@@ -329,9 +322,7 @@ export default function QuotationsPage() {
                   }).length}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-purple-600" />
-              </div>
+              <Calendar  size={56} color="#080808" absoluteStrokeWidth />
             </div>
           </div>
         </div>

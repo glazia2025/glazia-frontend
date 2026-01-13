@@ -6,7 +6,6 @@ import { Package, Truck, CheckCircle, Clock, Eye, Download } from 'lucide-react'
 import { useAuth, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
-import Navigation from '@/components/Navigation';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -106,23 +105,15 @@ export default function OrdersPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Main Site Header */}
       <Header />
-      <div className="pt-[120px]">
-        <Navigation />
+      <div>
 
-        {/* Page Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-[#D6DADE]">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Orders</h1>
+              <h1 className="text-2xl sm:text-3xl font-[500] text-gray-900 mb-1 sm:mb-2">My Orders</h1>
               <p className="text-gray-600">Track and manage your windoors orders</p>
             </div>
-            <Link
-              href="/account/dashboard"
-              className="text-[#124657} hover:underline"
-            >
-              Back to Dashboard
-            </Link>
           </div>
         </div>
       </div>
@@ -143,15 +134,15 @@ export default function OrdersPage() {
             <div key={order._id} className="bg-white rounded-lg shadow-sm border border-gray-200">
               {/* Order Header */}
               <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start sm:items-center space-x-4">
                     {getStatusIcon(getOrderStatus(order))}
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">Order #{order._id}</h3>
                       <p className="text-sm text-gray-600">Ordered on {formatDate(order.createdAt)}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <p className="text-lg font-semibold text-gray-900">₹{order.totalAmount.toLocaleString()}</p>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(getOrderStatus(order))}`}>
                       {getOrderStatusText(order)}
@@ -181,9 +172,9 @@ export default function OrdersPage() {
                 <h4 className="font-medium text-gray-900 mb-4">Order Items</h4>
                 <div className="space-y-3">
                   {order.products?.map((product: any, index: number) => (
-                    <div key={product._id || index} className="flex items-center justify-between py-2">
-                      <div className="flex items-center">
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
+                    <div key={product._id || index} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2">
+                      <div className="flex items-start sm:items-center">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mr-4 shrink-0">
                           <Package className="w-6 h-6 text-gray-600" />
                         </div>
                         <div>
@@ -192,15 +183,15 @@ export default function OrdersPage() {
                           <p className="text-sm text-gray-600">Product ID: {product.productId}</p>
                         </div>
                       </div>
-                      <p className="font-semibold text-gray-900">₹{product.amount.toLocaleString()}</p>
+                      <p className="font-semibold text-gray-900 sm:text-right">₹{product.amount.toLocaleString()}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Order Actions */}
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-                <div className="flex items-center space-x-4">
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-3">
                   {getOrderStatus(order) === 'shipped' && (
                     <button className="flex items-center text-[#124657} hover:text-blue-700 text-sm font-medium">
                       <Truck className="w-4 h-4 mr-1" />
@@ -215,7 +206,7 @@ export default function OrdersPage() {
                     View Details
                   </Link>
                 </div>
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-wrap items-center gap-3">
                   <button className="flex items-center text-gray-600 hover:text-gray-700 text-sm font-medium">
                     <Download className="w-4 h-4 mr-1" />
                     Download Invoice
@@ -250,7 +241,7 @@ export default function OrdersPage() {
         {/* Pagination */}
         {orders.length > 0 && (
           <div className="mt-8 flex justify-center">
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Previous</button>
               <button className="px-3 py-2 bg-[#124657} text-white rounded-lg">1</button>
               <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>

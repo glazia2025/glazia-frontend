@@ -225,6 +225,7 @@ export default function Header() {
         onClose={() => setIsLoginModalOpen(false)}
       />
     </div>
+    <div className="md:hidden mt-20" />
     <div style={{alignItems: 'center'}} className="bg-white px-[140px] py-[24px] mt-20 hidden md:flex gap-12 flex-row items-center justify-center">
       <Link className="text-center" href="/categories/aluminium-profiles" hrefLang="">
         <Image className="shadow-md hover:shadow-xl transition-all duration-300 hover-primary-border" width={120} height={120} src="/new-ui/alpr.svg" alt="Aluminium Profiles" />

@@ -18,7 +18,7 @@ export default function AboutPage() {
         <div className="relative h-64 overflow-hidden">
           <img src="/new-ui/hero.png" alt="Contact Us" className="w-full h-auto" />
           <div className="absolute inset-0 bg-black/50"></div>
-          <div className="absolute left-24 top-[50%] transform -translate-y-1/2 mx-auto px-4">
+          <div className="absolute left-4 md:left-24 top-[50%] transform -translate-y-1/2 mx-auto px-4">
             <div className="max-w-4xl mx-auto text-left">
               <h1 className="text-3xl md:text-5xl font-[500] mb-6">
                 About Us
@@ -54,8 +54,8 @@ Together, they&apos;re not just building a company, they&apos;re building the fu
 
               </p>
             </div>
-            <div className="bg-gray-100 rounded-lg h-96 flex items-center justify-center">
-              <span className="text-gray-500 text-lg">Company Image</span>
+            <div className="rounded-lg h-96 md:h-132 flex items-center overflow-hidden justify-center">
+              <img src="/new-ui/about.jpeg" alt="About Us" className="w-full h-full" />
             </div>
           </div>
         </div>
