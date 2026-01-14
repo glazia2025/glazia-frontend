@@ -1,5 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
+import { useEffect, useState } from "react";
 import {
   useDescriptionsQuery,
   useOptionsQuery,
@@ -209,6 +210,7 @@ function QuotationSubItemRow({
   removeItem: (id: string) => void;
   canRemove: boolean;
 }) {
+  const [imageError, setImageError] = useState(false);
   const systemsQuery = useSystemsQuery();
   const seriesQuery = useSeriesQuery(item.systemType);
   const descriptionsQuery = useDescriptionsQuery(item.systemType, item.series);
@@ -267,6 +269,10 @@ function QuotationSubItemRow({
     next.amount = next.quantity * next.rate;
     onChange(next);
   };
+
+  useEffect(() => {
+    setImageError(false);
+  }, [item.refImage]);
 
   return (
     <tr className="bg-white">
@@ -481,15 +487,12 @@ function QuotationSubItemRow({
       </td>
       <td className="border border-gray-200 px-2 py-2">
         <div className="flex items-center justify-center h-16 w-20 bg-gray-50 rounded border border-gray-200">
-          {item.refImage ? (
+          {item.refImage && !imageError ? (
             <img
               src={item.refImage}
               alt={item.description || "Product"}
               className="max-h-full max-w-full object-contain rounded"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-              }}
+              onError={() => setImageError(true)}
             />
           ) : (
             <div className="text-xs text-gray-400 text-center">No Image</div>
@@ -521,6 +524,7 @@ function QuotationSubItemRow({
 }
 
 export function QuotationItemRow({ item, index, onChange, removeItem, canRemove }: Props) {
+  const [imageError, setImageError] = useState(false);
   const isCombination = item.systemType === COMBINATION_SYSTEM;
   const querySystemType = isCombination ? "" : item.systemType;
   const subLabel = isCombination && item.subItems?.length
@@ -627,6 +631,10 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
     next.amount = next.quantity * next.rate;
     onChange(next);
   };
+
+  useEffect(() => {
+    setImageError(false);
+  }, [item.refImage]);
 
   return (
     <>
@@ -861,15 +869,12 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
               <div className="text-sm font-semibold tracking-wide text-gray-700">
                 {subLabel}
               </div>
-            ) : item.refImage ? (
+            ) : item.refImage && !imageError ? (
               <img
                 src={item.refImage}
                 alt={item.description || "Product"}
                 className="max-h-full max-w-full object-contain rounded shadow-sm"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                }}
+                onError={() => setImageError(true)}
               />
             ) : (
               <div className="text-sm text-gray-400 text-center">No Image</div>
