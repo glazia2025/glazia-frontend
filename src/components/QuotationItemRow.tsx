@@ -266,7 +266,7 @@ function QuotationSubItemRow({
     next.baseRate = baseRate;
     next.areaSlabIndex = areaSlabIndex;
     next.handleCount = handleCount;
-    next.amount = next.quantity * next.rate;
+    next.amount = next.quantity * next.rate * next.area;
     onChange(next);
   };
 
@@ -628,7 +628,7 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
     next.baseRate = baseRate;
     next.areaSlabIndex = areaSlabIndex;
     next.handleCount = handleCount;
-    next.amount = next.quantity * next.rate;
+    next.amount = next.quantity * next.rate * next.area;
     onChange(next);
   };
 
