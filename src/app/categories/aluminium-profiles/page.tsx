@@ -454,9 +454,14 @@ export default function AluminiumProfilesPage() {
                         )}
                       </div>
 
-                    <div className='bg-[#B2B2B2] p-3'>
-                      <h3 className="font-[18px] text-[#1F2933] mb-4">{product.description}</h3>
-                      <div className='grid grid-cols-2 text-[#606060] text-[13px]'>
+                    <div className='bg-[#D6DADE] p-3'>
+                      <h3 className="font-[18px] flex flex-row justify-between font-[600] text-[#1a1e22] mb-4">
+                        <div>{product.description}</div>
+                        <div className='text-[10px] text-[#EE1C25] font-[500]'>
+                          {cartQuantity > 0 && `${cartQuantity} Item already added to cart`}
+                        </div>
+                      </h3>
+                      <div className='grid grid-cols-2 text-[#1a1e22] text-[13px]'>
                         <div className="">Kg/m</div>
                         <div className="text-right">{product.kgm || '40.0'}</div>
                         <div className="">Length(mm)</div>

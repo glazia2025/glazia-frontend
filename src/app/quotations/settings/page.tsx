@@ -144,7 +144,7 @@ export default function QuotationSettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Installation
+                Installation (₹/sqft)
               </label>
               <input
                 type="number"
@@ -163,7 +163,7 @@ export default function QuotationSettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Transport
+                Transport (₹)
               </label>
               <input
                 type="number"
@@ -182,7 +182,7 @@ export default function QuotationSettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Loading &amp; Unloading
+                Loading &amp; Unloading (₹)
               </label>
               <input
                 type="number"

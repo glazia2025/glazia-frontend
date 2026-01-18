@@ -465,19 +465,7 @@ function CreateQuotationContent() {
                     </button>
                   </div>
                 )}
-                <input
-                  type="text"
-                  value={globalConfig.logo || ""}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({
-                      ...prev,
-                      logo: e.target.value,
-                      logoUrl: e.target.value,
-                    }))
-                  }
-                  placeholder="Paste logo URL"
-                  className="mb-3 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
+                
                 <input
                   type="file"
                   accept="image/*"
@@ -515,7 +503,7 @@ function CreateQuotationContent() {
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Installation
+                  Installation (₹/sqft)
                 </label>
                 <input
                   type="number"
@@ -534,7 +522,7 @@ function CreateQuotationContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transport
+                  Transport (₹)
                 </label>
                 <input
                   type="number"
@@ -553,7 +541,7 @@ function CreateQuotationContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Loading &amp; Unloading
+                  Loading &amp; Unloading (₹)
                 </label>
                 <input
                   type="number"

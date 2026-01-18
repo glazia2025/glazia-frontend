@@ -466,8 +466,13 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
           display: grid;
           grid-template-columns: 1fr 1fr;
           font-size: 9px;
-          padding: 4px 0;
+          padding-top: 4px;
+          padding-bottom: 12px; 
           border-bottom: 1px solid #000; 
+        }
+        .total-row span {
+          display: block;
+          line-height: 1.5;
         }
         .total-row strong {
           font-size: 10px;
@@ -626,10 +631,10 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
             <div class="total-row"><span>No. of Components</span><span class="text-right">${totalQty}</span></div>
             <div class="total-row"><span>Total Area</span><span class="text-right">${totalArea.toFixed(2)}</span></div>
             <div class="total-row"><span><strong>Basic Value</strong></span><span class="text-right"><strong>${baseTotal.toLocaleString("en-IN")}</strong></span></div>
-            <div class="total-row"><span>Transport</span><span class="text-right">${transport.toLocaleString("en-IN")}</span></div>
-            <div class="total-row"><span>Installation</span><span class="text-right">${installation.toLocaleString("en-IN")}</span></div>
-            <div class="total-row"><span>Loading & Unloading</span><span class="text-right">${loadingUnloading.toLocaleString("en-IN")}</span></div>
-            <div class="total-row"><span>Discount</span><span class="text-right">${discount.toLocaleString("en-IN")}</span></div>
+            ${transport > 0 ? `<div class="total-row"><span>Transport</span><span class="text-right">${transport.toLocaleString("en-IN")}</span></div>` : "" }
+            ${installation > 0 ? `<div class="total-row"><span>Installation</span><span class="text-right">${installation.toLocaleString("en-IN")}</span></div>` : "" }
+            ${loadingUnloading > 0 ? `<div class="total-row"><span>Loading & Unloading</span><span class="text-right">${loadingUnloading.toLocaleString("en-IN")}</span></div>` : "" }
+            ${discount > 0 ? `<div class="total-row"><span>Discount</span><span class="text-right">${discount.toLocaleString("en-IN")}</span></div>` : "" }
             <div class="total-row"><span>Total Project Cost</span><span class="text-right">${totalProjectCost.toLocaleString("en-IN")}</span></div>
             <div class="total-row"><span>GST 18%</span><span class="text-right">${gstValue.toLocaleString("en-IN")}</span></div>
             <div class="total-row"><span><strong>Grand Total</strong></span><span class="text-right"><strong>${grandTotal.toLocaleString("en-IN")}</strong></span></div>

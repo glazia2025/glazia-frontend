@@ -36,13 +36,13 @@ export default function Home() {
 
       <div className="overflow-hidden whitespace-nowrap bg-[#2F3A4F]">
         <div className="inline-block animate-marquee text-white">
-          Free Shipping on Aluminum Orders Above ₹10,00,000
+          Free Shipping on Aluminum Orders Above ₹10,00,000<sup>*</sup>
           <span className="mx-6">•</span>
-          Free Shipping on Aluminum Orders Above ₹10,00,000
+          Free Shipping on Aluminum Orders Above ₹10,00,000<sup>*</sup>
           <span className="mx-6">•</span>
-          Free Shipping on Aluminum Orders Above ₹10,00,000
+          Free Shipping on Aluminum Orders Above ₹10,00,000<sup>*</sup>
           <span className="mx-6">•</span>
-          Free Shipping on Aluminum Orders Above ₹10,00,000
+          Free Shipping on Aluminum Orders Above ₹10,00,000<sup>*</sup>
         </div>
       </div>
 

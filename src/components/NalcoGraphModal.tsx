@@ -128,7 +128,7 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
           {/* Price line */}
           <polyline
             fill="none"
-            stroke="#124657"
+            stroke="#EE1C25"
             strokeWidth="2"
             points={filteredData.map((point, index) => {
               const x = (index / (filteredData.length - 1)) * 800;
@@ -147,7 +147,7 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
                 cx={x}
                 cy={y}
                 r="3"
-                fill="#124657"
+                fill="#EE1C25"
                 className="hover:r-5 transition-all cursor-pointer"
                 onMouseEnter={() => setHoveredPoint({ point, x, y })}
                 onMouseMove={() => setHoveredPoint({ point, x, y })}
@@ -203,14 +203,14 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <BarChart3 className="w-6 h-6 text-[#124657]" />
+            <BarChart3 className="w-6 h-6 text-[#EE1C25]" />
             <h2 className="text-xl font-semibold text-gray-900">NALCO Price Chart</h2>
           </div>
           <div className="flex items-center space-x-2">
             <button
               onClick={fetchGraphData}
               disabled={loading}
-              className="p-2 text-gray-500 hover:text-[#124657] transition-colors"
+              className="p-2 text-gray-500 hover:text-[#EE1C25] transition-colors"
               title="Refresh data"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -229,7 +229,7 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <RefreshCw className="w-8 h-8 text-[#124657] animate-spin mx-auto mb-2" />
+                <RefreshCw className="w-8 h-8 text-[#EE1C25] animate-spin mx-auto mb-2" />
                 <p className="text-gray-600">Loading NALCO nalcoPrice data...</p>
               </div>
             </div>
@@ -239,7 +239,7 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
                 <p className="text-red-600 mb-2">{error}</p>
                 <button
                   onClick={fetchGraphData}
-                  className="px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-[#0f3a4a] transition-colors"
+                  className="px-4 py-2 bg-[#EE1C25] text-white rounded-lg hover:bg-[#0f3a4a] transition-colors"
                 >
                   Try Again
                 </button>
@@ -261,7 +261,7 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
                       onClick={() => setSelectedPeriod(period.key as any)}
                       className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                         selectedPeriod === period.key
-                          ? 'bg-[#124657] text-white'
+                          ? 'bg-[#EE1C25] text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >

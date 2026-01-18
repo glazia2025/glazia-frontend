@@ -224,7 +224,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
         <button
           onClick={() => setStep('upload')}
           className="w-full text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-primary-bg-dark"
-          style={{ backgroundColor: '#124657' }}
+          style={{ backgroundColor: '#EE1C25' }}
         >
           I&apos;ve Made the Payment
         </button>
@@ -330,7 +330,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
   const renderProcessingStep = () => (
     <div className="text-center space-y-6">
       <div className="flex justify-center">
-        <Loader2 className="w-16 h-16 animate-spin text-[#124657}" />
+        <Loader2 className="w-16 h-16 animate-spin text-[#EE1C25}" />
       </div>
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Processing Your Order</h3>

@@ -230,7 +230,7 @@ export default function HardwarePage() {
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-8">
-            <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-[#124657]"></div>
+            <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-[#EE1C25]"></div>
             <div className="text-lg">Loading hardware data...</div>
             <div className="text-sm text-gray-500 mt-2">Fetching hardware options and products</div>
           </div>
@@ -365,9 +365,14 @@ export default function HardwarePage() {
                         )}
                       </div>
 
-                    <div className='bg-[#B2B2B2] p-3'>
-                      <h3 className="h-12 font-[18px] text-[#1F2933] mb-4">{product.perticular || product.description || 'Hardware Item'}</h3>
-                      <div className='grid grid-cols-[1fr_2fr] text-[#606060] text-[13px]'>
+                    <div className='bg-[#D6DADE] p-3'>
+                      <h3 className="font-[18px] flex flex-row justify-between font-[600] text-[#1a1e22] mb-4">
+                        <div>{product.perticular || product.description || 'Hardware Item'}</div>
+                        <div className='text-[10px] text-[#EE1C25] font-[500]'>
+                          {cartQuantity > 0 && `${cartQuantity} Item already added to cart`}
+                        </div>
+                      </h3>
+                      <div className='grid grid-cols-[1fr_2fr] text-[#1a1e22] text-[13px]'>
                         <div className="">System</div>
                         <div className="text-right">{product.system || '-'}</div>
                         <div className="">MOQ</div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { User, ChevronDown, Menu, Search, X } from "lucide-react";
 import { useCartState, useAuth } from "@/contexts/AppContext";
 import { API_CONFIG } from "@/services";
@@ -55,6 +55,7 @@ export default function Header() {
   const { cart, toggleCart, addToCart } = useCartState();
   const { isAuthenticated, clearUser } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
@@ -171,6 +172,19 @@ export default function Header() {
     setSelectedSearchItem(item);
     setIsSearchModalOpen(true);
     setIsSearchDropdownOpen(false);
+  };
+
+  const currentPageChecker = (type: string) => {
+    switch (type) {
+      case "aluminum":
+        return pathname === "/categories/aluminium-profiles";
+      case "hardware":
+        return pathname === "/categories/hardware";
+      case "railings":
+        return pathname === "/categories/railings";
+      default:
+        return false;
+    }
   };
 
   const handleSearchAddToCart = (item: SearchItem) => {
@@ -376,16 +390,16 @@ export default function Header() {
       />
     </div>
     <div className="md:hidden mt-20" />
-    <div style={{alignItems: 'center'}} className="bg-white px-[140px] py-[24px] mt-20 hidden md:flex gap-12 flex-row items-center justify-center">
-      <Link className="text-center" href="/categories/aluminium-profiles" hrefLang="">
+    <div style={{alignItems: 'center'}} className="bg-white px-[140px] py-[24px] mt-20 md:flex gap-12 flex-row items-center justify-center">
+      <Link style={{border: currentPageChecker('aluminum') ? '1px solid #4a4b4dff': 'none'}} className="text-center p-1 rounded-[10px] flex flex-col items-center gap-2" href="/categories/aluminium-profiles" hrefLang="">
         <Image className="shadow-md hover:shadow-xl transition-all duration-300 hover-primary-border" width={120} height={120} src="/new-ui/alpr.svg" alt="Aluminium Profiles" />
         <div>Aluminium Profiles</div>
       </Link>
-      <Link className="text-center" href="/categories/hardware" hrefLang="">
+      <Link style={{border: currentPageChecker('hardware') ? '1px solid #4a4b4dff': 'none'}} className="text-center p-1 rounded-[10px] flex flex-col items-center gap-2" href="/categories/hardware" hrefLang="">
         <Image className="shadow-md hover:shadow-xl transition-all duration-300 hover-primary-border" width={120} height={120} src="/new-ui/hardware.svg" alt="Aluminium Profiles" />
         <div>Hardware</div>
       </Link>
-      <Link className="text-center" href="/categories/railings" hrefLang="">
+      <Link style={{border: currentPageChecker('railings') ? '1px solid #4a4b4dff': 'none'}} className="text-center p-1 rounded-[10px] flex flex-col items-center gap-2" href="/categories/railings" hrefLang="">
         <Image className="shadow-md hover:shadow-xl transition-all duration-300 hover-primary-border" width={120} height={120} src="/new-ui/railing.svg" alt="Aluminium Profiles" />
         <div>Railings</div>
       </Link>
