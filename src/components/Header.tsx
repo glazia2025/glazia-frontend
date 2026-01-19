@@ -390,7 +390,7 @@ export default function Header() {
       />
     </div>
     <div className="md:hidden mt-20" />
-    <div style={{alignItems: 'center'}} className="bg-white px-[140px] py-[24px] mt-20 md:flex gap-12 flex-row items-center justify-center">
+    <div style={{alignItems: 'center'}} className="bg-white px-10 md:px-[140px] py-[24px] mt-20 flex gap-12 flex-row items-center justify-center">
       <Link style={{border: currentPageChecker('aluminum') ? '1px solid #4a4b4dff': 'none'}} className="text-center p-1 rounded-[10px] flex flex-col items-center gap-2" href="/categories/aluminium-profiles" hrefLang="">
         <Image className="shadow-md hover:shadow-xl transition-all duration-300 hover-primary-border" width={120} height={120} src="/new-ui/alpr.svg" alt="Aluminium Profiles" />
         <div>Aluminium Profiles</div>
