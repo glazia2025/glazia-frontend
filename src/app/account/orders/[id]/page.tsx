@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
+import { API_BASE_URL } from '@/services/api';
 
 interface OrderProduct {
   productId: string;
@@ -74,6 +75,7 @@ export default function OrderDetailsPage() {
   const [currentPaymentCycle, setCurrentPaymentCycle] = useState<OrderPayment | null>(null);
 
   const orderId = params.id as string;
+  const isPdfDataUrl = (value: string) => value.startsWith('data:application/pdf');
 
   // Helper functions to work with the new data structure
   const getOrderStatus = (order: OrderDetails) => {
@@ -177,7 +179,7 @@ export default function OrderDetailsPage() {
       }, 200);
 
       const token = localStorage.getItem('authToken');
-      const response = await fetch('https://api.glazia.in/api/user/upload-payment-proof', {
+      const response = await fetch(`${API_BASE_URL}/api/user/upload-payment-proof`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -715,11 +717,27 @@ export default function OrderDetailsPage() {
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0">
-                      <img 
-                        src={selectedFile} 
-                        alt="Payment proof" 
-                        className="max-w-full h-32 object-contain mx-auto rounded"
-                      />
+                      {isPdfDataUrl(selectedFile) ? (
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                          <span className="inline-flex items-center px-2 py-1 rounded bg-white border border-gray-200">
+                            PDF
+                          </span>
+                          <a
+                            href={selectedFile}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#124657] hover:underline"
+                          >
+                            View uploaded PDF
+                          </a>
+                        </div>
+                      ) : (
+                        <img
+                          src={selectedFile}
+                          alt="Payment proof"
+                          className="max-w-full h-32 object-contain mx-auto rounded"
+                        />
+                      )}
                     </div>
                   </div>
                 </div>

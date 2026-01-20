@@ -1,5 +1,5 @@
 // Admin API Service for managing orders, products, and admin operations
-import { apiClient, API_ENDPOINTS, ProfileProduct, HardwareProduct, ProfileOptions, HardwareOptions } from './api';
+import { apiClient, API_BASE_URL, API_ENDPOINTS, ProfileProduct, HardwareProduct, ProfileOptions, HardwareOptions } from './api';
 import { profileApi } from './profileApi';
 import { hardwareApi } from './hardwareApi';
 
@@ -78,7 +78,7 @@ export interface AdminSubCategory {
 }
 
 class AdminApiService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.glazia.in';
+  private baseUrl = process.env.NEXT_PUBLIC_API_URL || API_BASE_URL;
 
   private getAuthHeaders() {
     const token = localStorage.getItem('adminToken');

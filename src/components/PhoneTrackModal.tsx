@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { trackPhone } from "@/services/trackPhoneApi";
 import axios from "axios";
+import { API_BASE_URL } from "@/services/api";
 
 interface PhoneTrackModalProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ export default function PhoneTrackModal({
 
     console.log(phone, reason, "<<<<<phone reason");
 
-    await axios.post("https://api.glazia.in/api/user/track-phone", { phone, reason })
+    await axios.post(`${API_BASE_URL}/api/user/track-phone`, { phone, reason })
       .then(data => {
         console.log(data, "<<<<<response");
         onSuccess();

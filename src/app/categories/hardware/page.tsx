@@ -22,7 +22,7 @@ const HARDWARE_CATEGORIES = [
 ];
 
 export default function HardwarePage() {
-  const { addToCart, getCartItem, updateCartQuantity } = useCartState();
+  const { addToCart, getCartItem, updateCartQuantity, getAdjustedItemPrice } = useCartState();
 
   // State management
   const [loading, setLoading] = useState(false);
@@ -346,6 +346,13 @@ export default function HardwarePage() {
                 const localQuantity = quantities[productId] || 0;
                 const cartQuantity = getCartQuantityForProduct(product);
                 const displayQuantity = cartQuantity + localQuantity;
+                const adjustedRate = isAuthenticated
+                  ? (Number(product.rate || 0) + getAdjustedItemPrice({
+                      category: 'Hardware',
+                      subCategory: activeCategory,
+                      name: product.perticular || product.description || 'Hardware Item',
+                    }))
+                  : 0;
 
                 return (
                   <div key={productId || index} className="bg-white border border-1 border-[#D6DADE] overflow-hidden hover:shadow-md transition-shadow">
@@ -380,7 +387,7 @@ export default function HardwarePage() {
                         <p className="">SAP Code</p>
                         <div className="text-right">{product.sapCode}</div>
                         <p className="">Rate</p>
-                        <div className="text-right">{isAuthenticated ? `₹${product.rate}` : 'Login to view rate'}</div>
+                        <div className="text-right">{isAuthenticated ? `₹${adjustedRate}` : 'Login to view rate'}</div>
                       </div>
                     </div>
 

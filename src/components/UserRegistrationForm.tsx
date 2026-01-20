@@ -6,6 +6,7 @@ import { User, Mail, MapPin, Building, FileText, Download, Briefcase, X, Image a
 import axios from 'axios';
 import PartnerAgreement from '@/components/PartnerAgreement/PartnerAgreement';
 import { supabase } from '@/utils/supabase';
+import { API_BASE_URL } from '@/services/api';
 
 interface UserRegistrationFormProps {
   phoneNumber: string;
@@ -104,7 +105,7 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
           registrationData.append('paPdf', paFile);
         }
 
-        const response = await axios.post('https://api.glazia.in/api/user/register', registrationData, {
+        const response = await axios.post(`${API_BASE_URL}/api/user/register`, registrationData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
 

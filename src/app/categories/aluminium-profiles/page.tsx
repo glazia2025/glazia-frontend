@@ -241,6 +241,14 @@ export default function AluminiumProfilesPage() {
     setSearchQuery('');
   };
 
+  const rateAdjustment = selectedCategory && selectedSize
+    ? getAdjustedItemPrice({
+        category: `${selectedCategory.name} - ${selectedSize}`,
+        subCategory: selectedCategory.name,
+        name: selectedCategory.name,
+      })
+    : 0;
+
   const productsToDisplay = getFilteredProducts();
   const visibleProducts = isAuthenticated
     ? productsToDisplay
@@ -400,7 +408,7 @@ export default function AluminiumProfilesPage() {
               Products - {selectedCategory?.name} {selectedSize ? `(${selectedSize})` : ''} 
             </h2>
             <h3 style={{marginBottom: '12px'}}>
-              Rate: {isAuthenticated  ? `₹${((nalcoPrice / 1000) + 75 + getAdjustedItemPrice({category: selectedCategory?.name, subCategory: selectedSize})).toFixed(2)} /Kg` : 'Login to view rate'}
+              Rate: {isAuthenticated  ? `₹${((nalcoPrice / 1000) + 75 + rateAdjustment).toFixed(2)} /Kg` : 'Login to view rate'}
             </h3>
 
             {loadingCategoryData ? (

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, File, HandCoins } from "lucide-react";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import PDFViewerModal from "@/components/PDFViewerModal";
+import { API_BASE_URL } from "@/services/api";
 
 interface QuotationItem {
   id?: string;
@@ -76,7 +77,7 @@ export default function QuotationsPage() {
         return;
       }
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations`, {
+        const response = await fetch(`${API_BASE_URL}/api/quotations`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -153,7 +154,7 @@ export default function QuotationsPage() {
   const fetchQuotationDetails = async (quotationId: string) => {
     const token = localStorage.getItem("authToken");
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations/${quotationId}`,
+      `${API_BASE_URL}/api/quotations/${quotationId}`,
       token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
     );
     if (!response.ok) {

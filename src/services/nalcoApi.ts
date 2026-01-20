@@ -1,4 +1,5 @@
 // NALCO API service for fetching pricing data
+import { API_BASE_URL } from '@/services/api';
 
 export interface NalcoDataPoint {
   id: number;
@@ -27,7 +28,7 @@ export interface NalcoCurrentResponse {
 }
 
 class NalcoApiService {
-  private baseUrl = 'https://api.glazia.in/api/admin';
+  private baseUrl = `${API_BASE_URL}/api/admin`;
 
   /**
    * Fetch all NALCO graph data

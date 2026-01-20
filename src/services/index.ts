@@ -1,3 +1,5 @@
+import { API_BASE_URL, API_VERSION } from './api';
+
 // Export all API services and types
 export * from './api';
 export * from './productApi';
@@ -127,8 +129,8 @@ export const cachedApiCall = async <T>(
 
 // Environment configuration
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.glazia.in',
-  VERSION: process.env.NEXT_PUBLIC_API_VERSION || 'v1',
+  BASE_URL: API_BASE_URL,
+  VERSION: API_VERSION,
   TIMEOUT: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '30000'),
   RETRY_ATTEMPTS: parseInt(process.env.NEXT_PUBLIC_API_RETRY_ATTEMPTS || '3'),
   CACHE_TTL: parseInt(process.env.NEXT_PUBLIC_API_CACHE_TTL || '300000'), // 5 minutes

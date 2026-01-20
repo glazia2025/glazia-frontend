@@ -9,6 +9,7 @@ import axios from "axios";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import { QuotationItemRow, QuotationItem } from "@/components/QuotationItemRow";
 import { loadGlobalConfig } from "@/utils/globalConfig";
+import { API_BASE_URL } from "@/services/api";
 
 interface CustomerDetails {
   name: string;
@@ -250,7 +251,7 @@ function CreateQuotationContent() {
 
     axios
       .post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations`,
+        `${API_BASE_URL}/api/quotations`,
         payload,
         {
           headers: {

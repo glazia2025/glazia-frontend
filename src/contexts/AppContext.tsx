@@ -94,6 +94,11 @@ export interface CartItem {
   kgm: number;
 }
 
+export interface PricingLookupItem {
+  category?: string;
+  subCategory?: string;
+  name?: string;
+}
 
 
 export interface Order {
@@ -217,7 +222,7 @@ const initialState: AppState = {
 // ============================================================================
 
 // Helper function to get dynamic pricing adjustment for an item
-const getDynamicPricingAdjustment = (item: CartItem): number => {
+const getDynamicPricingAdjustment = (item: PricingLookupItem): number => {
   console.log('🔍 getDynamicPricingAdjustment called for item:', item.name, 'category:', item.category, 'subCategory:', item.subCategory);
 
   if (typeof window === 'undefined') {
@@ -246,36 +251,49 @@ const getDynamicPricingAdjustment = (item: CartItem): number => {
     // Default adjustment value when specific pricing is not found
     const DEFAULT_ADJUSTMENT = 30;
 
+    const hasNumberValue = (value: unknown): value is number =>
+      typeof value === 'number' && !Number.isNaN(value);
+    const hasKey = (record: Record<string, number> | undefined, key?: string | null): key is string =>
+      !!record && !!key && Object.prototype.hasOwnProperty.call(record, key);
+
     // Check if it's a hardware item
     if (item.category?.toLowerCase().includes("hardware")) {
       // For hardware items, use the subCategory to match against hardware pricing keys
-      if (item.subCategory) {
-        const adjustment = dynamicPricing.hardware?.[item.subCategory];
-        if (adjustment !== undefined && typeof adjustment === 'number' && adjustment != 0) {
-          console.log(`🎯 Dynamic pricing applied for hardware "${item.subCategory}": +${adjustment}`);
-          return adjustment;
-        } else {
-          const reason = adjustment == 0 ? 'adjustment is 0' : 'subcategory not found in pricing';
-          console.log(`🎯 Default pricing applied for hardware "${item.subCategory}": +${DEFAULT_ADJUSTMENT} (${reason})`);
-          return DEFAULT_ADJUSTMENT;
-        }
+      const hardwarePricing = dynamicPricing.hardware || {};
+      if (item.subCategory && hasKey(hardwarePricing, item.subCategory) && hasNumberValue(hardwarePricing[item.subCategory])) {
+        console.log(`🎯 Dynamic pricing applied for hardware "${item.subCategory}": +${hardwarePricing[item.subCategory]}`);
+        return hardwarePricing[item.subCategory];
       }
-    } else {
-      // For profile items, use the subCategory to match against profile pricing keys
-      if (item.subCategory) {
-        const adjustment = dynamicPricing.profiles?.[item.subCategory];
-        if (adjustment !== undefined && typeof adjustment === 'number' && adjustment != 0) {
-          console.log(`🎯 Dynamic pricing applied for profile "${item.subCategory}": +${adjustment}`);
-          return adjustment;
-        } else {
-          const reason = adjustment == 0 ? 'adjustment is 0' : 'subcategory not found in pricing';
-          console.log(`🎯 Default pricing applied for profile "${item.subCategory}": +${DEFAULT_ADJUSTMENT} (${reason})`);
-          return DEFAULT_ADJUSTMENT;
-        }
-      }
+
+      console.log(`🎯 Default pricing applied for hardware "${item.subCategory || 'unknown'}": +${DEFAULT_ADJUSTMENT} (subcategory not found in pricing)`);
+      return DEFAULT_ADJUSTMENT;
     }
 
-    return 0;
+    // For profile/railings items, prefer subcategory-level pricing then category-level
+    const profilePricing = dynamicPricing.profiles || {};
+    const categoryParts = item.category?.split(' - ') ?? [];
+    const categoryName = (item.subCategory || categoryParts[0] || '').trim();
+    const subCategoryName = categoryParts.length > 1 ? categoryParts.slice(1).join(' - ').trim() : '';
+    const subCategoryKey = categoryName && subCategoryName ? `${categoryName}-${subCategoryName}` : '';
+    const subCategoryKeySpaced = categoryName && subCategoryName ? `${categoryName} - ${subCategoryName}` : '';
+
+    if (hasKey(profilePricing, subCategoryKeySpaced) && hasNumberValue(profilePricing[subCategoryKeySpaced])) {
+      console.log(`🎯 Dynamic pricing applied for profile "${subCategoryKeySpaced}": +${profilePricing[subCategoryKeySpaced]}`);
+      return profilePricing[subCategoryKeySpaced];
+    }
+
+    if (hasKey(profilePricing, subCategoryKey) && hasNumberValue(profilePricing[subCategoryKey])) {
+      console.log(`🎯 Dynamic pricing applied for profile "${subCategoryKey}": +${profilePricing[subCategoryKey]}`);
+      return profilePricing[subCategoryKey];
+    }
+
+    if (hasKey(profilePricing, categoryName) && hasNumberValue(profilePricing[categoryName])) {
+      console.log(`🎯 Dynamic pricing applied for profile "${categoryName}": +${profilePricing[categoryName]}`);
+      return profilePricing[categoryName];
+    }
+
+    console.log(`🎯 Default pricing applied for profile "${categoryName || 'unknown'}": +${DEFAULT_ADJUSTMENT} (subcategory/category not found in pricing)`);
+    return DEFAULT_ADJUSTMENT;
   } catch (error) {
     console.error('Error getting dynamic pricing:', error);
     return 0;
@@ -330,7 +348,7 @@ const calculateCartItemCount = (items: CartItem[]): number => {
 };
 
 // Helper function to get the adjusted price for display purposes
-const getAdjustedItemPrice = (item: CartItem): number => {
+const getAdjustedItemPrice = (item: PricingLookupItem): number => {
   console.log('💲 getAdjustedItemPrice called for item:', item.name);
   const dynamicAdjustment = getDynamicPricingAdjustment(item);
   console.log('💲 Dynamic adjustment received:', dynamicAdjustment);
@@ -576,7 +594,7 @@ interface AppContextType {
   getFilteredProducts: () => Product[];
   getCartItem: (id: string) => CartItem | undefined;
   getProductById: (id: string) => Product | undefined;
-  getAdjustedItemPrice: (item: CartItem) => number;
+  getAdjustedItemPrice: (item: PricingLookupItem) => number;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -762,7 +780,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return state.products.find(product => product.id === id);
   }, [state.products]);
 
-  const getAdjustedItemPriceCallback = useCallback((item: CartItem): number => {
+  const getAdjustedItemPriceCallback = useCallback((item: PricingLookupItem): number => {
     return getAdjustedItemPrice(item);
   }, []);
 
@@ -891,5 +909,3 @@ export const useOrders = () => {
     setLoadingOrders,
   };
 };
-
-

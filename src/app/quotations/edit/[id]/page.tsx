@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { QuotationItemRow, QuotationItem } from "@/components/QuotationItemRow";
 import axios from "axios";
 import { loadGlobalConfig } from "@/utils/globalConfig";
+import { API_BASE_URL } from "@/services/api";
 
 
 interface CustomerDetails {
@@ -119,7 +120,7 @@ export default function EditQuotationPage() {
         setError(null);
         const token = localStorage.getItem("authToken");
         const response = await axios.get<BackendQuotation>(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations/${quotationId}`,
+          `${API_BASE_URL}/api/quotations/${quotationId}`,
           token
             ? { headers: { Authorization: `Bearer ${token}` } }
             : undefined
@@ -410,7 +411,7 @@ export default function EditQuotationPage() {
     try {
       const token = localStorage.getItem("authToken");
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in"}/api/quotations/${quotationId}`,
+        `${API_BASE_URL}/api/quotations/${quotationId}`,
         payload,
         token
           ? { headers: { Authorization: `Bearer ${token}` } }

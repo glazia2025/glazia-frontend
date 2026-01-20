@@ -5,9 +5,9 @@ import {
   SeriesResponse,
   SystemsResponse,
 } from "./types";
+import { API_BASE_URL } from "@/services/api";
 
-const apiBaseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.glazia.in";
+const apiBaseURL = API_BASE_URL;
 
 const apiClient = axios.create({
   baseURL: apiBaseURL,

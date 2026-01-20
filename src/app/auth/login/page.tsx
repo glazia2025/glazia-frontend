@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Phone, ArrowLeft, Shield, Clock } from 'lucide-react';
 import axios from 'axios';
 import UserRegistrationForm from '@/components/UserRegistrationForm';
+import { API_BASE_URL } from '@/services/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function LoginPage() {
     
     // Simulate API call to send OTP
     try {
-      const response = await axios.post("https://api.glazia.in/api/auth/send-otp", { phoneNumber });
+      const response = await axios.post(`${API_BASE_URL}/api/auth/send-otp`, { phoneNumber });
       setStep('otp');
       setCountdown(30);
       startCountdown();
@@ -78,7 +79,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post("https://api.glazia.in/api/auth/verify-otp", { phoneNumber, otp: otpValue });
+      const response = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, { phoneNumber, otp: otpValue });
       const { userExists, token, existingUser } = response.data;
 
       console.log('🔐 Verify OTP Response:', response.data);

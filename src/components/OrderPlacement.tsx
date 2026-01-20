@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { QrCode, Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useCartState, useAuth } from '@/contexts/AppContext';
 import { generateGlaziaPaymentQR, formatAmount } from '@/utils/qrCodeGenerator';
+import { API_BASE_URL } from '@/services/api';
 
 interface OrderPlacementProps {
   onOrderSuccess: () => void;
@@ -47,8 +48,10 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file');
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf';
+    if (!isImage && !isPdf) {
+      setError('Please upload an image or PDF file');
       return;
     }
 
@@ -125,7 +128,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
       console.log('🔑 Using auth token:', authToken.substring(0, 20) + '...');
 
       // Make API call
-      const response = await fetch('https://api.glazia.in/api/user/pi-generate', {
+      const response = await fetch(`${API_BASE_URL}/api/user/pi-generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -244,7 +247,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
         <Upload className="w-16 h-16 mx-auto mb-4 text-green-600" />
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload Payment Proof</h3>
         <p className="text-gray-600">
-          Please upload a screenshot of your payment confirmation
+          Please upload a screenshot or PDF of your payment confirmation
         </p>
       </div>
 
@@ -259,7 +262,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,application/pdf"
           onChange={handleFileUpload}
           className="hidden"
         />
@@ -271,11 +274,27 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
                 <CheckCircle className="w-5 h-5 text-green-600" />
                 <span className="text-green-700 font-medium">Payment proof uploaded</span>
               </div>
-              <img 
-                src={paymentProof} 
-                alt="Payment proof" 
-                className="max-w-full h-32 object-contain mx-auto rounded"
-              />
+              {paymentProof.startsWith('data:application/pdf') ? (
+                <div className="flex items-center justify-center gap-2 text-sm text-gray-700">
+                  <span className="inline-flex items-center px-2 py-1 rounded bg-white border border-gray-200">
+                    PDF
+                  </span>
+                  <a
+                    href={paymentProof}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#124657] hover:underline"
+                  >
+                    View uploaded PDF
+                  </a>
+                </div>
+              ) : (
+                <img
+                  src={paymentProof}
+                  alt="Payment proof"
+                  className="max-w-full h-32 object-contain mx-auto rounded"
+                />
+              )}
             </div>
             
             <div className="space-y-2">
@@ -292,7 +311,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
                 }}
                 className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors"
               >
-                Upload Different Image
+                Upload Different File
               </button>
             </div>
           </div>
@@ -310,8 +329,8 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
             ) : (
               <div>
                 <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                <p className="text-gray-600">Click to upload payment screenshot</p>
-                <p className="text-sm text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+                <p className="text-gray-600">Click to upload payment proof</p>
+                <p className="text-sm text-gray-500 mt-1">PNG, JPG, PDF up to 5MB</p>
               </div>
             )}
           </button>

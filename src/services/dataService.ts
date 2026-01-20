@@ -1,4 +1,5 @@
 import { Product, User, Order } from '@/contexts/AppContext';
+import { API_BASE_URL } from '@/services/api';
 
 // ============================================================================
 // MOCK PRODUCT DATA
@@ -351,7 +352,7 @@ export class DataService {
     }
 
     try {
-      const response = await fetch('https://api.glazia.in/api/user/getOrders?limit=10&page=1&sortOrder=desc&sortKey=createdAt', {
+      const response = await fetch(`${API_BASE_URL}/api/user/getOrders?limit=10&page=1&sortOrder=desc&sortKey=createdAt`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

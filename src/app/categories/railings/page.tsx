@@ -201,6 +201,14 @@ export default function RailingsPage() {
     setSearchQuery('');
   };
 
+  const rateAdjustment = selectedSize
+    ? getAdjustedItemPrice({
+        category: `Railings - ${selectedSize}`,
+        subCategory: 'Railings',
+        name: 'Railings',
+      })
+    : 0;
+
   const productsToDisplay = getFilteredProducts();
   const visibleProducts = isAuthenticated
     ? productsToDisplay
@@ -290,7 +298,7 @@ export default function RailingsPage() {
                 Products - Railings {selectedSize ? `(${selectedSize})` : ''} 
               </h2>
               <h3 style={{marginBottom: '12px'}}>
-                Rate: {isAuthenticated  ? `₹${((nalcoPrice / 1000) + 75 + getAdjustedItemPrice({category: 'Railings', subCategory: selectedSize})).toFixed(2)} /Kg` : 'Login to view rate'}
+                Rate: {isAuthenticated  ? `₹${((nalcoPrice / 1000) + 75 + rateAdjustment).toFixed(2)} /Kg` : 'Login to view rate'}
               </h3>
   
               {loadingCategoryData ? (
