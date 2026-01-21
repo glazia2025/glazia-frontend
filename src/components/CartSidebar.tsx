@@ -194,7 +194,7 @@ const CartSidebar: React.FC = () => {
     }
   }, [showOrderPlacement]);
 
-  // Generate Performa Invoice
+  // Generate Proforma Invoice
   const generatePerformaInvoice = async () => {
     if (!isAuthenticated || !user) {
       setShowLoginModal(true);
@@ -220,7 +220,7 @@ const CartSidebar: React.FC = () => {
     const selectedProducts = cart.items.map((item, index) => {
       const adjustedRate = getAdjustedItemPrice(item);
       const isHardware = item.category?.toLowerCase().includes('hardware');
-      const baseProfilePrice = (nalcoPrice / 1000) + 75 + adjustedRate;
+      const baseProfilePrice = (nalcoPrice / 1000) + adjustedRate;
       const basePrice = Number(item.price) || 0;
       const quantity = Number(item.quantity) || 0;
       const lengthInMeters = (parseFloat(String(item.length)) || 0) / 1000;
@@ -322,7 +322,7 @@ const CartSidebar: React.FC = () => {
           <div class="container">
             <div class="top-row">
               <div class="logo">GLAZIA</div>
-              <div class="title">PERFORMA INVOICE</div>
+              <div class="title">PROFORMA INVOICE</div>
             </div>
 
             <div class="divider"></div>
@@ -508,7 +508,7 @@ const CartSidebar: React.FC = () => {
 
     const opt = {
       margin: [0.3, 0.3, 0.3, 0.3] as [number, number, number, number],
-      filename: `Glazia_Performa_Invoice_${(user.name || 'Customer').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+      filename: `Glazia_Proforma_Invoice_${(user.name || 'Customer').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -660,7 +660,7 @@ const CartSidebar: React.FC = () => {
                           {
                             item.category?.toLowerCase().includes("hardware") ? (
                               `₹${(parseFloat(item.price) + getAdjustedItemPrice(item)).toFixed(2)}`
-                            ) : (`₹${((nalcoPrice / 1000) + 75 + getAdjustedItemPrice(item)).toFixed(2)}`)
+                            ) : (`₹${((nalcoPrice / 1000) + getAdjustedItemPrice(item)).toFixed(2)}`)
                           }
                         </span>
                       </div>
@@ -698,8 +698,8 @@ const CartSidebar: React.FC = () => {
                             const adjustedPrice = parseFloat(item.price) + getAdjustedItemPrice(item);
                             return (adjustedPrice * item.quantity).toLocaleString();
                           } else {
-                            // Profiles: ((nalcoPrice/1000 + 75) + dynamic adjustment) × quantity × (length/1000) × kgm
-                            const basePrice = (nalcoPrice / 1000) + 75;
+                            // Profiles: ((nalcoPrice/1000) + dynamic adjustment) × quantity × (length/1000) × kgm
+                            const basePrice = (nalcoPrice / 1000);
                             const dynamicAdjustment = getAdjustedItemPrice(item);
                             const adjustedPrice = basePrice + dynamicAdjustment;
                             const total = adjustedPrice * item.quantity * (parseFloat(item.length) / 1000) * item.kgm;
@@ -741,13 +741,13 @@ const CartSidebar: React.FC = () => {
                   </div>
                 )}
 
-                {/* Performa Invoice Button */}
+                {/* Proforma Invoice Button */}
                 <button
                   onClick={generatePerformaInvoice}
                   className="w-full bg-white hover:bg-[#EE1C25] text-black hover:text-white border border-black font-medium py-3 px-4 transition-colors flex items-center justify-center space-x-2 mb-3"
                 >
                   <FileText className="w-4 h-4" />
-                  <span>{isAuthenticated ? 'Generate Performa Invoice' : 'Login to Generate Invoice'}</span>
+                  <span>{isAuthenticated ? 'Generate Proforma Invoice' : 'Login to Generate Invoice'}</span>
                 </button>
 
                 {isAuthenticated ? (
