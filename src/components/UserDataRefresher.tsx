@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { useApp } from '@/contexts/AppContext';
+import { useApp, useAuth } from '@/contexts/AppContext';
 import { useUserDataRefresh } from '@/hooks/useUserDataRefresh';
 
 /**
@@ -13,6 +13,12 @@ export default function UserDataRefresher() {
   const pathname = usePathname();
   const { state } = useApp();
   const { refreshUserData } = useUserDataRefresh();
+  const { clearUser } = useAuth();
+
+  const handleLogout = () => {
+    clearUser();
+    window.location.pathname="/";
+  };
 
   // Enhanced refresh function with better logging
   const handleRefreshUserData = async (trigger: string) => {
@@ -25,6 +31,7 @@ export default function UserDataRefresher() {
       console.log(`✅ UserDataRefresher: Successfully refreshed user data via ${trigger}`);
     } else {
       console.log(`⚠️ UserDataRefresher: Failed to refresh user data via ${trigger}:`, result.error);
+      handleLogout();
 
       if (result.tokenExpired) {
         console.log('🔐 UserDataRefresher: User logged out due to token expiration');

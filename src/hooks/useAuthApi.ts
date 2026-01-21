@@ -267,6 +267,9 @@ export const useUserApi = () => {
         immediate,
         onSuccess: (data) => {
           setUser(data);
+        },
+        onError: (error) => {
+          console.log(error, '<<<<<This is the error');
         }
       }
     );
