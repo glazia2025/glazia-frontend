@@ -326,7 +326,7 @@ const calculateCartTotal = (items: CartItem[]): number => {
       // Other categories → ((nalcoPrice/1000 + 75) + dynamic adjustment) × quantity × (length/1000) × kgm
       const itemLength = parseFloat(item.length) || 1000; // Default to 1000 if invalid
       const itemKgm = item.kgm || 1; // Default to 1 if invalid
-      const basePrice = (nalcoPrice / 1000) + 75;
+      const basePrice = (nalcoPrice / 1000);
       const adjustedPrice = basePrice + dynamicAdjustment;
       const itemTotal = adjustedPrice * item.quantity * (itemLength / 1000) * itemKgm;
       total = total + itemTotal;

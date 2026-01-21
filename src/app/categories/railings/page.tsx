@@ -298,7 +298,7 @@ export default function RailingsPage() {
                 Products - Railings {selectedSize ? `(${selectedSize})` : ''} 
               </h2>
               <h3 style={{marginBottom: '12px'}}>
-                Rate: {isAuthenticated  ? `₹${((nalcoPrice / 1000) + 75 + rateAdjustment).toFixed(2)} /Kg` : 'Login to view rate'}
+                Rate: {isAuthenticated  ? `₹${((nalcoPrice / 1000) + rateAdjustment).toFixed(2)} /Kg` : 'Login to view rate'}
               </h3>
   
               {loadingCategoryData ? (
