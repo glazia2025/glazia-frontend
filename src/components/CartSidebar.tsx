@@ -218,6 +218,7 @@ const CartSidebar: React.FC = () => {
 
     // Prepare cart items for invoice with pricing aligned to cart logic
     const selectedProducts = cart.items.map((item, index) => {
+      console.log(item, 'ITEM<<>>')
       const adjustedRate = getAdjustedItemPrice(item);
       const isHardware = item.category?.toLowerCase().includes('hardware');
       const baseProfilePrice = (nalcoPrice / 1000) + adjustedRate;
@@ -234,10 +235,10 @@ const CartSidebar: React.FC = () => {
       return {
         description: item.name || 'Item',
         series: item.category || 'Series',
-        sapCode: item.id || `SAP${String(index + 1).padStart(3, '0')}`,
+        sapCode: item.id,
         quantity: item.quantity,
         rate,
-        per: 'Piece',
+        per: isHardware ? 'Piece' : 'Kg',
         amount
       };
     });
@@ -248,6 +249,8 @@ const CartSidebar: React.FC = () => {
     const net = subtotal + gstTotal;
     const roundedNet = Math.round(net);
     const totalQuantity = selectedProducts.reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+
+    console.log(selectedProducts, 'selectedProducts');
 
     const rows = selectedProducts.map((p, i) => `
         <tr>
@@ -313,7 +316,7 @@ const CartSidebar: React.FC = () => {
             .section-title { font-weight: 700; font-size: 12px; margin-bottom: 6px; }
             .payment-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; }
             .signature-row { display: flex; justify-content: space-between; margin-top: 18px; }
-            .payment-info { margin-top: 18px; }
+            .payment-info { margin-top: 24px; }
             .qr-img { width: 105px; height: 105px; border: 1px solid #cfcfcf; border-radius: 6px; object-fit: contain; background: #f7f7f7; padding: 6px; }
             .terms { font-size: 12px; line-height: 1.6; color: #2a2a2a; }
           </style>
@@ -321,7 +324,7 @@ const CartSidebar: React.FC = () => {
         <body>
           <div class="container">
             <div class="top-row">
-              <div class="logo">GLAZIA</div>
+              <img src="/Logo.svg" alt="Glazia Logo">
               <div class="title">PROFORMA INVOICE</div>
             </div>
 
@@ -337,7 +340,7 @@ const CartSidebar: React.FC = () => {
                 </td>
                 <td style="text-align: right;">
                   <div class="label">Contact</div>
-                  <div class="muted">www.glazia.in<br/>+91-9958035708<br/>sales@glazia.com</div>
+                  <div class="muted">www.glazia.in<br/>+91-9958053708<br/>sales@glazia.com</div>
                 </td>
               </tr>
             </table>
@@ -415,7 +418,7 @@ const CartSidebar: React.FC = () => {
             <div class="payment-grid">
               <div>
                 <div class="label">Payment Method</div>
-                <div class="muted">${user.paymentMethod || 'Cash'}</div>
+                <div class="muted">${user.paymentMethod || 'Bank Transfer'}</div>
 
                 <div style="margin-top: 10px;">
                   <div class="label">Rounded Off Amount</div>
@@ -449,31 +452,20 @@ const CartSidebar: React.FC = () => {
               </div>
             </div>
 
-            <div class="signature-row">
-              <div>
-                <div class="label">Accepted By</div>
-                <div class="muted">Glazia Windoors Pvt. Ltd.</div>
-              </div>
-              <div style="text-align: right;">
-                <div class="label">Signature</div>
-                <div class="muted">Glazia Windoors Pvt. Ltd.</div>
-              </div>
-            </div>
-
             <div class="payment-info">
               <div class="label">Payment Info</div>
               <div class="divider" style="margin: 10px 0 12px;"></div>
               <table class="info-table" style="margin-bottom: 0;">
                 <tr>
                   <td style="width: 60%; vertical-align: top;">
-                    <div class="muted"><span class="label">Account No: </span>Glazia Windoors Pvt. Ltd.</div>
-                    <div class="muted"><span class="label">Account Name: </span>Account Name:</div>
-                    <div class="muted"><span class="label">IFSC Code: </span>IFSC Code:</div>
+                    <div class="muted"><span class="label">Account No: </span>50200084871361</div>
+                    <div class="muted"><span class="label">Account Name: </span>AGlazia Windoors Pvt. Ltd.</div>
+                    <div class="muted"><span class="label">IFSC Code: </span>HDFC0004809</div>
                     <div class="muted"><span class="label">Bank: </span>HDFC Bank</div>
                   </td>
                   <td style="text-align: right; vertical-align: top;">
                     <div style="display: inline-flex; gap: 12px; align-items: flex-start;">
-                      <img src="/glazia_qr.png" alt="Glazia UPI QR" class="qr-img" />
+                      <img src="/upi.jpeg" alt="Glazia UPI QR" class="qr-img" />
                       <div>
                         <div class="muted"><span class="label">Name: </span>${user.name || 'Glazia Windoors Pvt. Ltd.'}</div>
                         <div class="muted"><span class="label">UPI: </span>glazia@okhdfcbank</div>
@@ -521,6 +513,10 @@ const CartSidebar: React.FC = () => {
         format: 'a4',
         orientation: 'portrait' as const,
         compress: true
+      },
+      pagebreak: {
+        mode: ['avoid-all', 'css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
+        avoid: ['img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', '.avoid-break']
       }
     };
 

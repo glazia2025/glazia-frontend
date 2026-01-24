@@ -144,6 +144,25 @@ function CreateQuotationContent() {
     setItems((prev) => prev.map((it) => (it.id === nextItem.id ? nextItem : it)));
   };
 
+  const duplicateItem = (id: string) => {
+    setItems((prev) => {
+      const sourceIndex = prev.findIndex((it) => it.id === id);
+      if (sourceIndex === -1) return prev;
+      const source = prev[sourceIndex];
+      const cloned: QuotationItem = {
+        ...source,
+        id: crypto.randomUUID(),
+        subItems: source.subItems?.map((sub) => ({
+          ...sub,
+          id: crypto.randomUUID(),
+        })),
+      };
+      const next = [...prev];
+      next.splice(sourceIndex + 1, 0, cloned);
+      return next;
+    });
+  };
+
   const addItem = () => {
     setItems((prev) => [
       ...prev,
@@ -215,7 +234,7 @@ function CreateQuotationContent() {
 
   const logoPreview = globalConfig.logoUrl || globalConfig.logo || "";
 
-  const handleSave = () => {
+  const handleSave = (pushBack: boolean = true) => {
 
     const totalAmount = calculateFinalTotal().toFixed(2);
 
@@ -249,7 +268,7 @@ function CreateQuotationContent() {
 
     console.log("Saving quotation", payload);
 
-    axios
+    return axios
       .post(
         `${API_BASE_URL}/api/quotations`,
         payload,
@@ -259,9 +278,12 @@ function CreateQuotationContent() {
           },
         }
       )
-      .then(() => {
+      .then(res => {
         alert("Quotation saved successfully!");
-        router.push("/quotations");
+        if (pushBack) {
+          router.push("/quotations");
+        }
+        return res.data.quotation;
       })
       .catch((err) => {
         console.error("Error saving quotation", err);
@@ -270,11 +292,14 @@ function CreateQuotationContent() {
   };
 
   const handleDownloadPDF = async () => {
+    const savedData = await handleSave(false);
+    console.log(savedData, 'savedData');
     const finalQuotationNumber = quotationDetails.quotationNumber || getNextQuotationNumber();
     const quotation = {
       id: Date.now().toString(),
       ...quotationDetails,
       quotationNumber: finalQuotationNumber,
+      generatedId: savedData.generatedId,
       customerDetails,
       items,
       globalConfig,
@@ -283,11 +308,15 @@ function CreateQuotationContent() {
       createdAt: new Date().toISOString(),
     };
 
+    console.log(quotation);
+
     try {
       await generateQuotationPDF(quotation);
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Error generating PDF. Please try again.");
+    } finally {
+      router.push("/quotations");
     }
   };
 
@@ -609,13 +638,16 @@ function CreateQuotationContent() {
               <div className="text-center">
                 <div className="text-sm font-medium text-gray-600">Profit %</div>
                 <input
-                  type="text"
-                  value={profitPercentage}
+                  type="number"
+                  value={profitPercentage === 0 ? "" : profitPercentage.toString()}
+                  placeholder="0"
                   onChange={(e) => {
-                    const sanitizedValue = e.target.value
-                      .replace(/[^0-9]/g, "")
-                      .toUpperCase();
-                    setProfitPercentage(parseFloat(sanitizedValue) || 0)
+                    const val = e.target.value;
+                    if (val === "") {
+                      setProfitPercentage(0);
+                    } else {
+                      setProfitPercentage(Number(val));
+                    }
                   }}
                   className="mt-1 w-20 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
@@ -668,6 +700,7 @@ function CreateQuotationContent() {
                       index={index}
                       onChange={handleItemChange}
                       removeItem={removeItem}
+                      duplicateItem={duplicateItem}
                       canRemove={items.length > 1}
                     />
                   ))}

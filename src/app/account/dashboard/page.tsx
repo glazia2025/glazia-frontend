@@ -122,7 +122,7 @@ function DashboardContent() {
 
         // Get recent 3 orders
         const recent = orders.slice(0, 3).map(order => ({
-          id: order._id,
+          id: order.orderId || 'NA',
           date: order.createdAt,
           items: order.products.length,
           total: order.totalAmount,
@@ -262,7 +262,7 @@ function DashboardContent() {
                             <Package className="w-5 h-5 text-gray-600" />
                           </div>
                           <div className="ml-4">
-                            <h3 className="font-medium text-gray-900">{order.id}</h3>
+                            <h3 className="font-medium text-gray-900">Order ID: {order.id}</h3>
                             <p className="text-sm text-gray-600">{order.items} items • {order.date}</p>
                           </div>
                         </div>

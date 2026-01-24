@@ -387,7 +387,11 @@ const PartnerAgreement: React.FC<PartnerAgreementProps> = ({
         filename: 'document.pdf',
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const }
+        jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const },
+        pagebreak: {
+          mode: ['avoid-all', 'css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
+          avoid: ['img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', '.avoid-break']
+        }
       };
 
       const { body, cleanup, doc } = await createPdfFrame(htmlStr);

@@ -117,6 +117,10 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
           format: "a4",
           orientation: "landscape",
         },
+        pagebreak: {
+          mode: ["avoid-all", "css", "legacy"] as Array<"avoid-all" | "css" | "legacy">,
+          avoid: ["img", "p", "h1", "h2", "h3", "h4", "h5", "h6", "table", "tr", ".avoid-break"],
+        },
       };
 
       // FIX: Proper PDF Worker
@@ -148,7 +152,7 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
-            PDF Preview – {quotation?.quotationNumber}
+            PDF Preview – {quotation?.generatedId}
           </h3>
           <div className="flex items-center space-x-2">
             <button

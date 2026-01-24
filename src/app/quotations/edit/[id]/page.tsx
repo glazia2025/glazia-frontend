@@ -45,6 +45,7 @@ interface BackendQuotation {
     terms?: string;
     notes?: string;
     validUntil?: string;
+    generatedId?: string;
   };
   customerDetails?: CustomerDetails;
   items?: Array<
@@ -138,7 +139,9 @@ export default function EditQuotationPage() {
           terms: qbDetails.terms || quotationDetails.terms,
           notes: qbDetails.notes || "",
           opportunity: qbDetails.opportunity || "",
+          generatedId: data.generatedId || "",
         });
+        setProfitPercentage(data.breakdown?.profitPercentage || 0);
         setCustomerDetails({
           name: data.customerDetails?.name || "",
           company: data.customerDetails?.company || "",
@@ -280,6 +283,25 @@ export default function EditQuotationPage() {
     setItems((prev) => prev.map((item) => (item.id === nextItem.id ? nextItem : item)));
   };
 
+  const duplicateItem = (id: string) => {
+    setItems((prev) => {
+      const sourceIndex = prev.findIndex((it) => it.id === id);
+      if (sourceIndex === -1) return prev;
+      const source = prev[sourceIndex];
+      const cloned: QuotationItem = {
+        ...source,
+        id: crypto.randomUUID(),
+        subItems: source.subItems?.map((sub) => ({
+          ...sub,
+          id: crypto.randomUUID(),
+        })),
+      };
+      const next = [...prev];
+      next.splice(sourceIndex + 1, 0, cloned);
+      return next;
+    });
+  };
+
   // Add item function
   const addItem = () => {
     const newItem: QuotationItem = {
@@ -348,6 +370,7 @@ export default function EditQuotationPage() {
   const calculateTotalWithProfit = () => {
     const baseTotal = calculateTotal();
     const profitAmount = (baseTotal * profitPercentage) / 100;
+    console.log(baseTotal, profitAmount, "Base total and profit amount");
     return baseTotal + profitAmount;
   };
 
@@ -360,7 +383,7 @@ export default function EditQuotationPage() {
       getAdditionalCost("transport") +
       getAdditionalCost("installation") +
       getAdditionalCost("loadingUnloading");
-    const discount = (getAdditionalCost("discountPercent") / 100) * totalWithProfit;
+    const discount = (getAdditionalCost("discountPercent") / 100) * (totalWithProfit + additionalCosts);
     return totalWithProfit + additionalCosts - discount;
   };
 
@@ -440,6 +463,7 @@ export default function EditQuotationPage() {
     };
 
     try {
+      await handleUpdate();
       await generateQuotationPDF(quotation);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -496,7 +520,7 @@ export default function EditQuotationPage() {
                 <div className="h-6 w-px bg-gray-300"></div>
                 <div>
                   <h1 className="text-xl font-bold text-[#124657]">Edit Quotation</h1>
-                  <p className="text-sm text-gray-600">#{quotationId}</p>
+                  <p className="text-sm text-gray-600">#{quotationDetails.generatedId}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -820,18 +844,17 @@ export default function EditQuotationPage() {
                 <div className="text-sm font-medium text-gray-600 mb-1">Profit %</div>
                 <input
                   type="number"
-                  value={profitPercentage}
-                   onChange={(e) => {
-                    const sanitizedValue = e.target.value
-                      .replace(/[^0-9]/g, "")
-                      .toUpperCase();
-                    setProfitPercentage(parseFloat(sanitizedValue) || 0)
-                  }}
-                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] text-center"
+                  value={profitPercentage === 0 ? "" : profitPercentage.toString()}
                   placeholder="0"
-                  min="0"
-                  max="100"
-                  step="0.1"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "") {
+                      setProfitPercentage(0);
+                    } else {
+                      setProfitPercentage(Number(val));
+                    }
+                  }}
+                  className="mt-1 w-20 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>
               <div className="text-center">
@@ -887,6 +910,7 @@ export default function EditQuotationPage() {
                       index={index}
                       onChange={updateItem}
                       removeItem={removeItem}
+                      duplicateItem={duplicateItem}
                       canRemove={items.length > 1}
                     />
                   ))}

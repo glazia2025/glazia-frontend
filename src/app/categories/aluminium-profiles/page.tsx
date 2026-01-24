@@ -212,7 +212,7 @@ export default function AluminiumProfilesPage() {
     const rate = categoryData?.sizes.find(s => s.size.label === selectedSize)?.size.rate || 0;
 
     const cartItem = {
-      id: `${product.sapCode}-${selectedCategory?.name}-${selectedSize}`,
+      id: product.sapCode,
       name: product.description,
       brand: 'Glazia',
       price: rate.toString(),

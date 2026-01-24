@@ -13,7 +13,7 @@ import {
   OptionWithRate,
   OptionsResponse,
 } from "@/lib/quotations/types";
-import { Trash2 } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 
 interface QuotationItemBase {
   id: string;
@@ -52,6 +52,7 @@ interface Props {
   index: number;
   onChange: (nextItem: QuotationItem) => void;
   removeItem: (id: string) => void;
+  duplicateItem: (id: string) => void;
   canRemove: boolean;
 }
 
@@ -158,6 +159,20 @@ const calculateRateForItem = (
   };
 };
 
+const RATE_RECALC_FIELDS: Array<keyof QuotationItemBase> = [
+  "systemType",
+  "series",
+  "description",
+  "colorFinish",
+  "glassSpec",
+  "handleType",
+  "handleColor",
+  "meshPresent",
+  "meshType",
+  "width",
+  "height",
+];
+
 const syncCombinationValues = (next: QuotationItem): QuotationItem => {
   const subItems = next.subItems ?? [];
   if (subItems.length === 0) {
@@ -202,12 +217,14 @@ function QuotationSubItemRow({
   index,
   onChange,
   removeItem,
+  duplicateItem,
   canRemove,
 }: {
   item: QuotationSubItem;
   index: number;
   onChange: (nextItem: QuotationSubItem) => void;
   removeItem: (id: string) => void;
+  duplicateItem: (id: string) => void;
   canRemove: boolean;
 }) {
   const [imageError, setImageError] = useState(false);
@@ -257,15 +274,21 @@ function QuotationSubItemRow({
       next.meshType = "";
     }
 
-    const { rate, baseRate, areaSlabIndex, handleCount } = calculateRateForItem(
-      next,
-      descriptionsQuery.data?.descriptions,
-      optionsQuery.data
-    );
-    next.rate = rate;
-    next.baseRate = baseRate;
-    next.areaSlabIndex = areaSlabIndex;
-    next.handleCount = handleCount;
+    const shouldRecalcRate = field !== "rate" && RATE_RECALC_FIELDS.includes(field);
+    if (shouldRecalcRate) {
+      const { rate, baseRate, areaSlabIndex, handleCount } = calculateRateForItem(
+        next,
+        descriptionsQuery.data?.descriptions,
+        optionsQuery.data
+      );
+      next.rate = rate;
+      next.baseRate = baseRate;
+      next.areaSlabIndex = areaSlabIndex;
+      next.handleCount = handleCount;
+    }
+    if (field === "rate") {
+      next.rate = Number(raw);
+    }
     next.amount = next.quantity * next.rate * next.area;
     onChange(next);
   };
@@ -460,13 +483,10 @@ function QuotationSubItemRow({
       </td>
       <td className="border border-gray-200 px-2 py-2">
         <input
-          type="text"
+          type="number"
           value={item.rate.toFixed(2)}
           onChange={(e) => {
-            const sanitizedValue = e.target.value
-              .replace(/[^0-9]/g, "")
-              .toUpperCase();
-            handleFieldChange("rate", parseFloat(sanitizedValue) || 0)
+            handleFieldChange("rate", parseFloat(e.target.value) || 0)
           }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-gray-50 text-gray-600"
         />
@@ -509,6 +529,13 @@ function QuotationSubItemRow({
         />
       </td>
       <td className="border border-gray-200 px-2 py-2 text-center">
+        <button
+          onClick={() => duplicateItem(item.id)}
+          className="text-gray-600 hover:text-gray-800 transition-colors p-1 rounded hover:bg-gray-100"
+          title="Duplicate Sub Item"
+        >
+          <Copy className="w-4 h-4" />
+        </button>
         {canRemove && (
           <button
             onClick={() => removeItem(item.id)}
@@ -523,7 +550,14 @@ function QuotationSubItemRow({
   );
 }
 
-export function QuotationItemRow({ item, index, onChange, removeItem, canRemove }: Props) {
+export function QuotationItemRow({
+  item,
+  index,
+  onChange,
+  removeItem,
+  duplicateItem,
+  canRemove,
+}: Props) {
   const [imageError, setImageError] = useState(false);
   const isCombination = item.systemType === COMBINATION_SYSTEM;
   const querySystemType = isCombination ? "" : item.systemType;
@@ -560,6 +594,22 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
       (item.subItems || []).filter((sub) => sub.id !== id)
     );
     const nextItem = syncCombinationValues({ ...item, subItems });
+    onChange(nextItem);
+  };
+
+  const duplicateSubItem = (id: string) => {
+    const subItems = item.subItems || [];
+    const sourceIndex = subItems.findIndex((sub) => sub.id === id);
+    if (sourceIndex === -1) return;
+    const source = subItems[sourceIndex];
+    const cloned: QuotationSubItem = { ...source, id: crypto.randomUUID() };
+    const nextSubItems = [
+      ...subItems.slice(0, sourceIndex + 1),
+      cloned,
+      ...subItems.slice(sourceIndex + 1),
+    ];
+    const updatedSubItems = applySubRefCodes(item.refCode, nextSubItems);
+    const nextItem = syncCombinationValues({ ...item, subItems: updatedSubItems });
     onChange(nextItem);
   };
 
@@ -614,20 +664,30 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
       next.meshType = "";
     }
 
+    if (field === "remarks") {
+      next.remarks = value.toString();
+    }
+
     if (next.systemType === COMBINATION_SYSTEM) {
       onChange(syncCombinationValues(next));
       return;
     }
 
-    const { rate, baseRate, areaSlabIndex, handleCount } = calculateRateForItem(
-      next,
-      descriptionsQuery.data?.descriptions,
-      optionsQuery.data
-    );
-    next.rate = rate;
-    next.baseRate = baseRate;
-    next.areaSlabIndex = areaSlabIndex;
-    next.handleCount = handleCount;
+    const shouldRecalcRate = field !== "rate" && RATE_RECALC_FIELDS.includes(field);
+    if (shouldRecalcRate) {
+      const { rate, baseRate, areaSlabIndex, handleCount } = calculateRateForItem(
+        next,
+        descriptionsQuery.data?.descriptions,
+        optionsQuery.data
+      );
+      next.rate = rate;
+      next.baseRate = baseRate;
+      next.areaSlabIndex = areaSlabIndex;
+      next.handleCount = handleCount;
+    }
+    if (field === "rate") {
+      next.rate = Number(raw);
+    }
     next.amount = next.quantity * next.rate * next.area;
     onChange(next);
   };
@@ -836,13 +896,11 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
 
         <td className="border border-gray-300 px-2 py-2">
           <input
-            type="text"
+            type="number"
             value={item.rate.toFixed(2)}
             onChange={(e) => {
-              const sanitizedValue = e.target.value
-                .replace(/[^0-9]/g, "")
-                .toUpperCase();
-              handleFieldChange("rate", parseFloat(sanitizedValue) || 0)
+              
+              handleFieldChange("rate", parseFloat(e.target.value) || 0)
             }}
             className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-gray-50 text-gray-600"
             disabled={isCombination}
@@ -891,6 +949,13 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
           />
         </td>
         <td className="border border-gray-300 px-2 py-2 text-center">
+          <button
+            onClick={() => duplicateItem(item.id)}
+            className="text-gray-600 hover:text-gray-800 transition-colors p-2 rounded-lg hover:bg-gray-100"
+            title="Duplicate Item"
+          >
+            <Copy className="w-5 h-5" />
+          </button>
           {canRemove && (
             <button
               onClick={() => removeItem(item.id)}
@@ -947,6 +1012,7 @@ export function QuotationItemRow({ item, index, onChange, removeItem, canRemove 
                       index={subIndex}
                       onChange={handleSubItemChange}
                       removeItem={removeSubItem}
+                      duplicateItem={duplicateSubItem}
                       canRemove={(item.subItems || []).length > 1}
                     />
                   ))}

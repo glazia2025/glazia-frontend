@@ -656,7 +656,11 @@ const ParterAgreement = ({userName, completeAddress, gstNumber, pincode, city, s
             filename:     'document.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+            pagebreak:    {
+                mode: ['avoid-all', 'css', 'legacy'],
+                avoid: ['img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', '.avoid-break']
+            }
         };
 
         const pdfBlob = await html2pdf().set(opt).from(htmlStr).outputPdf('blob');

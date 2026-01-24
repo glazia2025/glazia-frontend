@@ -80,6 +80,7 @@ interface QuotationItem extends QuotationItemBase {
 interface QuotationData {
   id: string;
   quotationNumber?: string;
+  generatedId?: string;
   createdAt?: string;
   globalConfig?: {
     logo?: string;
@@ -552,7 +553,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
             <div class="info-line">India</div>
           </div>
           <div class="meta-card">
-            <div class="meta-label">Quotation no.:</div><div class="meta-value">${quotation.id}</div>
+            <div class="meta-label">Quotation no.:</div><div class="meta-value">${quotation.generatedId}</div>
             <div class="meta-label">Quote Generated on:</div><div class="meta-value">${new Date(quotationDate).toLocaleDateString("en-IN")}</div>
           </div>
         </div>
@@ -600,7 +601,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
                   <td>${item.series || "-"}</td>
                   <td>${item.width || "-"}</td>
                   <td>${item.height || "-"}</td>
-                  <td>${item.area?.toFixed(1) || "-"}</td>
+                  <td>${item.area?.toFixed(2) || "-"}</td>
                   <td>${item.colorFinish || "-"}</td>
                   <td>${item.location || "-"}</td>
                   <td>${item.description || "-"}</td>
@@ -611,7 +612,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
                   <td>${item.meshType || "-"}</td>
                   <td>${item.rate.toLocaleString("en-IN")}</td>
                   <td>${item.quantity}</td>
-                  <td>${(item.rate * item.quantity).toLocaleString("en-IN")}</td>
+                  <td>${(item.rate * item.quantity * item.area).toLocaleString("en-IN")}</td>
                   <td>
                     ${item.__subLabel
                       ? `<span class="combo-label">${item.__subLabel}</span>`
@@ -693,10 +694,12 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
   const html = await createQuotationHTML(quotationWithImages);
   const { body, cleanup, doc } = await createPdfFrame(html);
 
+  console.log(quotation);
+
   // Configure html2pdf options
   const options = {
     margin: [1, 1, 1, 1] as [number, number, number, number],
-    filename: `${quotation._id}.pdf`,
+    filename: `${quotation.generatedId}_${quotation.customerDetails?.name}.pdf`,
     image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {
       scale: 2,
@@ -713,7 +716,10 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
         }
       }
     },
-    pagebreak: { mode: ['css', 'legacy'] as Array<'css' | 'legacy'> },
+    pagebreak: {
+      mode: ['avoid-all', 'css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
+      avoid: ['img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', '.avoid-break']
+    },
     jsPDF: {
       unit: 'mm',
       format: 'a3',

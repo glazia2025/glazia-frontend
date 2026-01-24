@@ -172,7 +172,7 @@ export default function RailingsPage() {
     const rate = categoryData?.sizes.find(s => s.size.label === selectedSize)?.size.rate || 0;
 
     const cartItem = {
-      id: `${product.sapCode}-Railings-${selectedSize}`,
+      id: product.sapCode,
       name: product.description,
       brand: 'Glazia',
       price: rate.toString(),

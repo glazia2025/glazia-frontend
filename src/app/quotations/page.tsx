@@ -52,6 +52,7 @@ interface Quotation {
   breakdown?: {
     baseRate?: number;
     areaSlabIndex?: number;
+    totalAmount?:number;
   };
   validUntil?: string;
   totalAmount?: number;
@@ -100,8 +101,7 @@ export default function QuotationsPage() {
 
   const enrichedQuotations = useMemo(() => {
     return quotations.map((q) => {
-      const items = q.items ?? [];
-      const totalAmount = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+      const totalAmount = q.breakdown.totalAmount;
       const validUntil = q.validUntil || "";
       const quotationNumber = q.quotationNumber || q.quotationDetails?.id || (q as { _id?: string })._id || "";
       const date = q.quotationDetails?.date || (q as { date?: string }).date || q.createdAt || "";

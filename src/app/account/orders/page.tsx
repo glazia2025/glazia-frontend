@@ -138,7 +138,7 @@ export default function OrdersPage() {
                   <div className="flex items-start sm:items-center space-x-4">
                     {getStatusIcon(getOrderStatus(order))}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Order #{order._id}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">Order ID: {order.orderId || 'NA'}</h3>
                       <p className="text-sm text-gray-600">Ordered on {formatDate(order.createdAt)}</p>
                     </div>
                   </div>
@@ -148,44 +148,6 @@ export default function OrdersPage() {
                       {getOrderStatusText(order)}
                     </span>
                   </div>
-                </div>
-
-                {/* Customer Information */}
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Customer</p>
-                    <p className="font-medium text-gray-900">{order.user?.name || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">City</p>
-                    <p className="font-medium text-gray-900">{order.user?.city || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Delivery Type</p>
-                    <p className="font-medium text-gray-900">{order.deliveryType || 'N/A'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Order Items */}
-              <div className="p-6">
-                <h4 className="font-medium text-gray-900 mb-4">Order Items</h4>
-                <div className="space-y-3">
-                  {order.products?.map((product: any, index: number) => (
-                    <div key={product._id || index} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2">
-                      <div className="flex items-start sm:items-center">
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mr-4 shrink-0">
-                          <Package className="w-6 h-6 text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{product.description}</p>
-                          <p className="text-sm text-gray-600">Quantity: {product.quantity}</p>
-                          <p className="text-sm text-gray-600">Product ID: {product.productId}</p>
-                        </div>
-                      </div>
-                      <p className="font-semibold text-gray-900 sm:text-right">₹{product.amount.toLocaleString()}</p>
-                    </div>
-                  ))}
                 </div>
               </div>
 
@@ -235,19 +197,6 @@ export default function OrdersPage() {
                 </Link>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {orders.length > 0 && (
-          <div className="mt-8 flex justify-center">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Previous</button>
-              <button className="px-3 py-2 bg-[#124657} text-white rounded-lg">1</button>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">3</button>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Next</button>
-            </div>
           </div>
         )}
       </div>
