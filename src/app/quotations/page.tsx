@@ -191,16 +191,6 @@ export default function QuotationsPage() {
     setSelectedQuotation(null);
   };
 
-  const getStatusBadge = (quotation: Quotation) => {
-    const today = new Date();
-    const validUntil = new Date(quotation.validUntil);
-    const isExpired = validUntil < today;
-
-    if (isExpired) {
-      return <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Expired</span>;
-    }
-    return <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Valid</span>;
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -362,13 +352,10 @@ export default function QuotationsPage() {
                       Date
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Valid Until
+                      Profit
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Amount
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -402,13 +389,10 @@ export default function QuotationsPage() {
                         {quotation.date ? new Date(quotation.date).toLocaleDateString('en-IN') : "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString('en-IN') : 'N/A'}
+                        {quotation?.breakdown?.profitPercentage}%
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         ₹{(quotation.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(quotation)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">

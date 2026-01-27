@@ -92,6 +92,10 @@ interface QuotationData {
       transport?: number;
       loadingUnloading?: number;
       discountPercent?: number;
+      showInstallation?: boolean;
+      showTransport?: boolean;
+      showLoadingUnloading?: boolean;
+      showDiscount?: boolean;
     };
   };
   quotationDetails?: {
@@ -156,10 +160,15 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     return str.replace(/\n/g, "<br>");
   };
 
+  const roundToTwo = (value: number) => Number(value.toFixed(2));
+  const formatCurrency = (value: number) =>
+    value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   const profitMultiplier =
     (quotation as unknown as { profitPercentage?: number })?.profitPercentage
       ? 1 + ((quotation as unknown as { profitPercentage?: number }).profitPercentage || 0) / 100
       : 1;
+
 
   const COMBINATION_SYSTEM = "Combination";
   const indexToAlpha = (index: number): string => {
@@ -174,11 +183,57 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
   const buildSubLabel = (count: number): string =>
     Array.from({ length: count }, (_, i) => indexToAlpha(i)).join("+");
 
-  const applyProfit = <T extends QuotationItemBase>(item: T): T => ({
-    ...item,
-    rate: (item.rate || 0) * profitMultiplier,
-    amount: (item.amount || 0) * profitMultiplier,
-  });
+  const applyProfit = <T extends QuotationItemBase>(item: T): T => {
+    const quantity = item.quantity || 0;
+    const area = item.area || 0;
+    const rate = roundToTwo((item.rate || 0) * profitMultiplier);
+    const amount = roundToTwo(rate * quantity * area);
+    return {
+      ...item,
+      rate,
+      amount,
+    };
+  };
+
+  const syncCombinationValues = (item: QuotationItem, subItems: QuotationSubItem[]): QuotationItem => {
+    if (subItems.length === 0) {
+      return {
+        ...item,
+        width: 0,
+        height: 0,
+        area: 0,
+        rate: 0,
+        amount: 0,
+        quantity: 0,
+        subItems,
+      };
+    }
+
+    const totals = subItems.reduce(
+      (acc, sub) => {
+        acc.width += sub.width || 0;
+        acc.height += sub.height || 0;
+        acc.area += (sub.area || 0) * (sub.quantity || 0);
+        acc.amount += sub.amount || 0;
+        acc.quantity += sub.quantity || 0;
+        return acc;
+      },
+      { width: 0, height: 0, area: 0, amount: 0, quantity: 0 }
+    );
+
+    const rate = totals.area ? totals.amount / totals.area : 0;
+
+    return {
+      ...item,
+      width: totals.width,
+      height: totals.height,
+      area: totals.area,
+      rate: roundToTwo(rate),
+      amount: roundToTwo(totals.amount),
+      quantity: totals.quantity,
+      subItems,
+    };
+  };
 
   type DisplayItem = QuotationItemBase & {
     __isSubRow?: boolean;
@@ -186,14 +241,99 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     __subLabel?: string;
   };
 
-  const effectiveItems = (quotation.items || []).flatMap((item) => {
+  let itemsWithProfit: QuotationItem[] = (quotation.items || []).map((item) => {
     if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
-      return item.subItems;
+      const subItems = item.subItems.map(applyProfit);
+      return syncCombinationValues(item, subItems);
     }
-    return [item];
+    return applyProfit(item);
   });
 
-  const displayItems: DisplayItem[] = (quotation.items || []).flatMap((item) => {
+  const getEffectiveItems = (items: QuotationItem[]) =>
+    items.flatMap((item) => {
+      if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
+        return item.subItems;
+      }
+      return [item];
+    });
+
+  let effectiveItems = getEffectiveItems(itemsWithProfit);
+
+  const totalArea = effectiveItems.reduce(
+    (sum, item) => sum + (item.area || 0) * (item.quantity || 1),
+    0
+  );
+
+  const rawTotal =
+    quotation.totalAmount ??
+    effectiveItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+  let baseTotal = roundToTwo(rawTotal);
+  const additionalCosts = globalConfig?.additionalCosts || {};
+  const transport = additionalCosts.transport || 0;
+  const installation = (additionalCosts.installation || 0) * totalArea;
+  const loadingUnloading = additionalCosts.loadingUnloading || 0;
+  const discount =
+    ((additionalCosts.discountPercent || 0) / 100) *
+    (baseTotal + transport + installation + loadingUnloading);
+
+  const showTransport = additionalCosts.showTransport ?? true;
+  const showInstallation = additionalCosts.showInstallation ?? true;
+  const showLoadingUnloading = additionalCosts.showLoadingUnloading ?? true;
+  const showDiscount = additionalCosts.showDiscount ?? true;
+
+  const hiddenCostTotal =
+    (showTransport ? 0 : transport) +
+    (showInstallation ? 0 : installation) +
+    (showLoadingUnloading ? 0 : loadingUnloading) -
+    (showDiscount ? 0 : discount);
+
+  if (hiddenCostTotal !== 0 && effectiveItems.length > 0) {
+    const totalWeight = effectiveItems.reduce(
+      (sum, item) => sum + (item.area || 0) * (item.quantity || 1),
+      0
+    );
+    const useEqualWeight = totalWeight === 0;
+    const perItemShare = useEqualWeight ? hiddenCostTotal / effectiveItems.length : 0;
+
+    effectiveItems.forEach((item) => {
+      const weight = useEqualWeight ? 1 : (item.area || 0) * (item.quantity || 1);
+      const share = useEqualWeight ? perItemShare : (hiddenCostTotal * weight) / totalWeight;
+      const nextAmount = roundToTwo((item.amount || 0) + share);
+      item.amount = nextAmount;
+      const denom = (item.area || 0) * (item.quantity || 1);
+      if (denom > 0) {
+        item.rate = roundToTwo(nextAmount / denom);
+      }
+    });
+
+    itemsWithProfit = itemsWithProfit.map((item) => {
+      if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
+        return syncCombinationValues(item, item.subItems);
+      }
+      return item;
+    });
+    effectiveItems = getEffectiveItems(itemsWithProfit);
+    baseTotal = roundToTwo(
+      effectiveItems.reduce((sum, item) => sum + (item.amount || 0), 0)
+    );
+  }
+
+  const visibleTransport = showTransport ? transport : 0;
+  const visibleInstallation = showInstallation ? installation : 0;
+  const visibleLoadingUnloading = showLoadingUnloading ? loadingUnloading : 0;
+  const visibleDiscount = showDiscount ? discount : 0;
+
+  const totalProjectCost =
+    baseTotal + visibleTransport + visibleInstallation + visibleLoadingUnloading - visibleDiscount;
+  const gstValue = totalProjectCost * 0.18;
+  const grandTotal = totalProjectCost + gstValue;
+  
+  const totalQty = effectiveItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const avgWithoutGst = totalArea ? totalProjectCost / totalArea : 0;
+  const avgWithGst = totalArea ? avgWithoutGst * 1.18 : 0;
+
+  let rowCounter = 0;
+  const displayItems: DisplayItem[] = itemsWithProfit.flatMap((item) => {
     if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
       return [
         { ...item, __isSubRow: false, __subLabel: buildSubLabel(item.subItems.length) },
@@ -203,33 +343,10 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     return [{ ...item, __isSubRow: false }];
   });
 
-  let rowCounter = 0;
-  const numberedDisplayItems = displayItems.map((item) => ({
+  const adjustedDisplayItems = displayItems.map((item) => ({
     ...item,
     __rowNumber: item.__isSubRow ? "" : ++rowCounter,
   }));
-
-  const adjustedEffectiveItems = effectiveItems.map(applyProfit);
-  const adjustedDisplayItems = numberedDisplayItems.map(applyProfit);
-
-  const rawTotal =
-    quotation.totalAmount ??
-    adjustedEffectiveItems.reduce((sum, item) => sum + (item.amount || 0), 0);
-  const baseTotal = rawTotal;
-  const transport = globalConfig?.additionalCosts?.transport || 0;
-  const installation = globalConfig?.additionalCosts?.installation || 0;
-  const loadingUnloading = globalConfig?.additionalCosts?.loadingUnloading || 0;
-  const discount = ((globalConfig?.additionalCosts?.discountPercent || 0) / 100) * (baseTotal + transport + installation + loadingUnloading);
-  const totalProjectCost = baseTotal + transport + installation + loadingUnloading - discount;
-  const gstValue = totalProjectCost * 0.18;
-  const grandTotal = totalProjectCost + gstValue;
-  const totalArea = effectiveItems.reduce(
-    (sum, item) => sum + (item.area || 0) * (item.quantity || 1),
-    0
-  );
-  const totalQty = effectiveItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const avgWithoutGst = totalArea ? totalProjectCost / totalArea : 0;
-  const avgWithGst = totalArea ? avgWithoutGst * 1.18 : 0;
 
   console.log(quotation, 'quotation>>>>');
 
@@ -610,9 +727,9 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
                   <td>${item.handleColor || "-"}</td>
                   <td>${item.meshPresent || "-"}</td>
                   <td>${item.meshType || "-"}</td>
-                  <td>${item.rate.toLocaleString("en-IN")}</td>
+                  <td>${formatCurrency(item.rate || 0)}</td>
                   <td>${item.quantity}</td>
-                  <td>${(item.rate * item.quantity * item.area).toLocaleString("en-IN")}</td>
+                  <td>${formatCurrency(item.amount || 0)}</td>
                   <td>
                     ${item.__subLabel
                       ? `<span class="combo-label">${item.__subLabel}</span>`
@@ -630,17 +747,17 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
           <div class="total-card">
             <div class="total-heading">Quote Total</div>
             <div class="total-row"><span>No. of Components</span><span class="text-right">${totalQty}</span></div>
-            <div class="total-row"><span>Total Area</span><span class="text-right">${totalArea.toFixed(2)}</span></div>
-            <div class="total-row"><span><strong>Basic Value</strong></span><span class="text-right"><strong>${baseTotal.toLocaleString("en-IN")}</strong></span></div>
-            ${transport > 0 ? `<div class="total-row"><span>Transport</span><span class="text-right">${transport.toLocaleString("en-IN")}</span></div>` : "" }
-            ${installation > 0 ? `<div class="total-row"><span>Installation</span><span class="text-right">${installation.toLocaleString("en-IN")}</span></div>` : "" }
-            ${loadingUnloading > 0 ? `<div class="total-row"><span>Loading & Unloading</span><span class="text-right">${loadingUnloading.toLocaleString("en-IN")}</span></div>` : "" }
-            ${discount > 0 ? `<div class="total-row"><span>Discount</span><span class="text-right">${discount.toLocaleString("en-IN")}</span></div>` : "" }
-            <div class="total-row"><span>Total Project Cost</span><span class="text-right">${totalProjectCost.toLocaleString("en-IN")}</span></div>
-            <div class="total-row"><span>GST 18%</span><span class="text-right">${gstValue.toLocaleString("en-IN")}</span></div>
-            <div class="total-row"><span><strong>Grand Total</strong></span><span class="text-right"><strong>${grandTotal.toLocaleString("en-IN")}</strong></span></div>
-            <div class="total-row"><span>Avg. Price Per Sq. Ft. Without GST</span><span class="text-right">${avgWithoutGst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-            <div class="total-row"><span>Avg. Price Per Sq. Ft.</span><span class="text-right">${avgWithGst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+            <div class="total-row"><span>Total Area(sqft)</span><span class="text-right">${totalArea.toFixed(2)}</span></div>
+            <div class="total-row"><span><strong>Basic Value(₹)</strong></span><span class="text-right"><strong>${formatCurrency(baseTotal)}</strong></span></div>
+            ${showTransport && transport > 0 ? `<div class="total-row"><span>Transport(₹)</span><span class="text-right">${formatCurrency(transport)}</span></div>` : "" }
+            ${showInstallation && installation > 0 ? `<div class="total-row"><span>Installation(₹/sqft)</span><span class="text-right">${formatCurrency(installation)}</span></div>` : "" }
+            ${showLoadingUnloading && loadingUnloading > 0 ? `<div class="total-row"><span>Loading & Unloading(₹)</span><span class="text-right">${formatCurrency(loadingUnloading)}</span></div>` : "" }
+            ${showDiscount && discount > 0 ? `<div class="total-row"><span>Discount(%)</span><span class="text-right">${formatCurrency(discount)}</span></div>` : "" }
+            <div class="total-row"><span>Total Project Cost(₹)</span><span class="text-right">${formatCurrency(totalProjectCost)}</span></div>
+            <div class="total-row"><span>GST 18%(₹)</span><span class="text-right">${formatCurrency(gstValue)}</span></div>
+            <div class="total-row"><span><strong>Grand Total(₹)</strong></span><span class="text-right"><strong>${formatCurrency(grandTotal)}</strong></span></div>
+            <div class="total-row"><span>Avg. Price Per Sq. Ft. Without GST</span><span class="text-right">${formatCurrency(avgWithoutGst)}</span></div>
+            <div class="total-row"><span>Avg. Price Per Sq. Ft.</span><span class="text-right">${formatCurrency(avgWithGst)}</span></div>
           </div>
         </div>
 

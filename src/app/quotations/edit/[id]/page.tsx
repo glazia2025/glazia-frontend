@@ -33,6 +33,10 @@ interface GlobalConfig {
     transport: number;
     loadingUnloading: number;
     discountPercent: number;
+    showInstallation?: boolean;
+    showTransport?: boolean;
+    showLoadingUnloading?: boolean;
+    showDiscount?: boolean;
   };
 }
 
@@ -74,6 +78,10 @@ const initialGlobalConfig: GlobalConfig = {
     transport: 0,
     loadingUnloading: 0,
     discountPercent: 0,
+    showInstallation: true,
+    showTransport: true,
+    showLoadingUnloading: true,
+    showDiscount: true,
   },
 };
 
@@ -337,7 +345,6 @@ export default function EditQuotationPage() {
     }
   };
 
-  // Calculate total
   const getItemTotals = (item: QuotationItem) => {
     if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
       return item.subItems.reduce(
@@ -367,23 +374,17 @@ export default function EditQuotationPage() {
   const calculateTotalQuantity = () =>
     items.reduce((total, item) => total + getItemTotals(item).quantity, 0);
 
-  const calculateTotalWithProfit = () => {
-    const baseTotal = calculateTotal();
-    const profitAmount = (baseTotal * profitPercentage) / 100;
-    console.log(baseTotal, profitAmount, "Base total and profit amount");
-    return baseTotal + profitAmount;
-  };
-
   const getAdditionalCost = (key: keyof GlobalConfig["additionalCosts"]) =>
     Number(globalConfig.additionalCosts?.[key] || 0);
 
   const calculateFinalTotal = () => {
-    const totalWithProfit = calculateTotalWithProfit();
+    const totalWithProfit = calculateTotal() + calculateTotal() * (profitPercentage / 100);
     const additionalCosts =
       getAdditionalCost("transport") +
-      getAdditionalCost("installation") +
+      (getAdditionalCost("installation") * calculateTotalArea()) +
       getAdditionalCost("loadingUnloading");
-    const discount = (getAdditionalCost("discountPercent") / 100) * (totalWithProfit + additionalCosts);
+    const discount =
+      (getAdditionalCost("discountPercent") / 100) * (totalWithProfit + additionalCosts);
     return totalWithProfit + additionalCosts - discount;
   };
 
@@ -456,8 +457,8 @@ export default function EditQuotationPage() {
       customerDetails,
       items,
       globalConfig,
-      total: calculateTotalWithProfit(), // Use total with profit for PDF
-      baseTotal: calculateTotal(), // Include base total
+      total: calculateTotal(), // Use total with per-row profit for PDF
+      baseTotal: calculateTotal(), // Include total with per-row profit
       profitPercentage, // Include profit percentage
       createdAt: new Date().toISOString(),
     };
@@ -738,6 +739,23 @@ export default function EditQuotationPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Installation (₹/sqft)
                 </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={globalConfig.additionalCosts.showInstallation ?? true}
+                    onChange={(e) =>
+                      setGlobalConfig((prev) => ({
+                        ...prev,
+                        additionalCosts: {
+                          ...prev.additionalCosts,
+                          showInstallation: e.target.checked,
+                        },
+                      }))
+                    }
+                    className="h-4 w-4"
+                  />
+                  <span>Show in PDF</span>
+                </label>
                 <input
                   type="number"
                   value={globalConfig.additionalCosts.installation}
@@ -756,6 +774,23 @@ export default function EditQuotationPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Transport (₹)
+                </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={globalConfig.additionalCosts.showTransport ?? true}
+                    onChange={(e) =>
+                      setGlobalConfig((prev) => ({
+                        ...prev,
+                        additionalCosts: {
+                          ...prev.additionalCosts,
+                          showTransport: e.target.checked,
+                        },
+                      }))
+                    }
+                    className="h-4 w-4"
+                  />
+                  <span>Show in PDF</span>
                 </label>
                 <input
                   type="number"
@@ -776,6 +811,23 @@ export default function EditQuotationPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Loading &amp; Unloading (₹)
                 </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={globalConfig.additionalCosts.showLoadingUnloading ?? true}
+                    onChange={(e) =>
+                      setGlobalConfig((prev) => ({
+                        ...prev,
+                        additionalCosts: {
+                          ...prev.additionalCosts,
+                          showLoadingUnloading: e.target.checked,
+                        },
+                      }))
+                    }
+                    className="h-4 w-4"
+                  />
+                  <span>Show in PDF</span>
+                </label>
                 <input
                   type="number"
                   value={globalConfig.additionalCosts.loadingUnloading}
@@ -794,6 +846,23 @@ export default function EditQuotationPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Discount (%)
+                </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={globalConfig.additionalCosts.showDiscount ?? true}
+                    onChange={(e) =>
+                      setGlobalConfig((prev) => ({
+                        ...prev,
+                        additionalCosts: {
+                          ...prev.additionalCosts,
+                          showDiscount: e.target.checked,
+                        },
+                      }))
+                    }
+                    className="h-4 w-4"
+                  />
+                  <span>Show in PDF</span>
                 </label>
                 <input
                   type="number"
@@ -837,10 +906,6 @@ export default function EditQuotationPage() {
                 <div className="text-lg font-bold text-gray-900">{calculateTotalArea().toFixed(2)} sq ft</div>
               </div>
               <div className="text-center">
-                <div className="text-sm font-medium text-gray-600">Base Amount</div>
-                <div className="text-lg font-bold text-gray-900">₹{calculateTotal().toLocaleString('en-IN')}</div>
-              </div>
-              <div className="text-center">
                 <div className="text-sm font-medium text-gray-600 mb-1">Profit %</div>
                 <input
                   type="number"
@@ -858,16 +923,25 @@ export default function EditQuotationPage() {
                 />
               </div>
               <div className="text-center">
+                <div className="text-sm font-medium text-gray-600">Total Amount</div>
+                <div className="text-lg font-bold text-[#124657]">
+                  ₹
+                  {(calculateTotal() + calculateTotal() * (profitPercentage / 100)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div className="text-center">
                 <div className="text-sm font-medium text-gray-600">Final Amount</div>
                 <div className="text-lg font-bold text-[#124657]">
                   ₹
-                  {calculateFinalTotal().toLocaleString("en-IN")}
+                  {calculateFinalTotal().toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
-                {profitPercentage > 0 && (
-                  <div className="text-xs text-green-600 mt-1">
-                    +₹{((calculateTotal() * profitPercentage) / 100).toLocaleString('en-IN')} profit
-                  </div>
-                )}
+              </div>
+              <div className="text-center">
+                <div className="text-sm font-medium text-gray-600">Final Amount with GST</div>
+                <div className="text-lg font-bold text-[#124657]">
+                  ₹
+                  {(calculateFinalTotal() + (calculateFinalTotal() * 0.18)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
               </div>
             </div>
 
@@ -912,6 +986,7 @@ export default function EditQuotationPage() {
                       removeItem={removeItem}
                       duplicateItem={duplicateItem}
                       canRemove={items.length > 1}
+                      profitPercentage={profitPercentage}
                     />
                   ))}
                 </tbody>

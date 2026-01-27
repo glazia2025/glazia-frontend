@@ -54,6 +54,7 @@ interface Props {
   removeItem: (id: string) => void;
   duplicateItem: (id: string) => void;
   canRemove: boolean;
+  profitPercentage: number;
 }
 
 const AREA_SLABS = [
@@ -173,6 +174,10 @@ const RATE_RECALC_FIELDS: Array<keyof QuotationItemBase> = [
   "height",
 ];
 
+const roundToTwo = (value: number) => Number(value.toFixed(2));
+const applyProfitToRate = (rate: number, profitPercentage: number) =>
+  profitPercentage > 0 ? roundToTwo(rate + (rate * profitPercentage / 100)) : rate;
+
 const syncCombinationValues = (next: QuotationItem): QuotationItem => {
   const subItems = next.subItems ?? [];
   if (subItems.length === 0) {
@@ -206,8 +211,8 @@ const syncCombinationValues = (next: QuotationItem): QuotationItem => {
     width: totals.width,
     height: totals.height,
     area: totals.area,
-    rate,
-    amount: totals.amount,
+    rate: roundToTwo(rate),
+    amount: roundToTwo(totals.amount),
     quantity: totals.quantity,
   };
 };
@@ -219,6 +224,7 @@ function QuotationSubItemRow({
   removeItem,
   duplicateItem,
   canRemove,
+  profitPercentage,
 }: {
   item: QuotationSubItem;
   index: number;
@@ -226,6 +232,7 @@ function QuotationSubItemRow({
   removeItem: (id: string) => void;
   duplicateItem: (id: string) => void;
   canRemove: boolean;
+  profitPercentage: number;
 }) {
   const [imageError, setImageError] = useState(false);
   const systemsQuery = useSystemsQuery();
@@ -281,15 +288,15 @@ function QuotationSubItemRow({
         descriptionsQuery.data?.descriptions,
         optionsQuery.data
       );
-      next.rate = rate;
+      next.rate = applyProfitToRate(rate, profitPercentage);
       next.baseRate = baseRate;
       next.areaSlabIndex = areaSlabIndex;
       next.handleCount = handleCount;
     }
     if (field === "rate") {
-      next.rate = Number(raw);
+      next.rate = applyProfitToRate(Number(raw), profitPercentage);
     }
-    next.amount = next.quantity * next.rate * next.area;
+    next.amount = roundToTwo(next.quantity * next.rate * next.area);
     onChange(next);
   };
 
@@ -484,9 +491,9 @@ function QuotationSubItemRow({
       <td className="border border-gray-200 px-2 py-2">
         <input
           type="number"
-          value={item.rate.toFixed(2)}
+          value={item.rate}
           onChange={(e) => {
-            handleFieldChange("rate", parseFloat(e.target.value) || 0)
+            handleFieldChange("rate", parseInt(e.target.value) || 0)
           }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-gray-50 text-gray-600"
         />
@@ -557,10 +564,12 @@ export function QuotationItemRow({
   removeItem,
   duplicateItem,
   canRemove,
+  profitPercentage
 }: Props) {
   const [imageError, setImageError] = useState(false);
   const isCombination = item.systemType === COMBINATION_SYSTEM;
   const querySystemType = isCombination ? "" : item.systemType;
+  const [profit, setProfit] = useState(profitPercentage);
   const subLabel = isCombination && item.subItems?.length
     ? buildSubLabel(item.subItems.length)
     : "";
@@ -680,15 +689,15 @@ export function QuotationItemRow({
         descriptionsQuery.data?.descriptions,
         optionsQuery.data
       );
-      next.rate = rate;
+      next.rate = applyProfitToRate(rate, profitPercentage);
       next.baseRate = baseRate;
       next.areaSlabIndex = areaSlabIndex;
       next.handleCount = handleCount;
     }
     if (field === "rate") {
-      next.rate = Number(raw);
+      next.rate = applyProfitToRate(Number(raw), profitPercentage);
     }
-    next.amount = next.quantity * next.rate * next.area;
+    next.amount = roundToTwo(next.quantity * next.rate * next.area);
     onChange(next);
   };
 
@@ -897,10 +906,17 @@ export function QuotationItemRow({
         <td className="border border-gray-300 px-2 py-2">
           <input
             type="number"
-            value={item.rate.toFixed(2)}
+            value={item.rate === 0 ? "" : item.rate}
             onChange={(e) => {
+              const val = e.target.value;
+              if (val === "") {
+                handleFieldChange("rate", 0);
+                return;
+              } else {
+                handleFieldChange("rate", parseInt(val) || 0)
+              }
               
-              handleFieldChange("rate", parseFloat(e.target.value) || 0)
+             
             }}
             className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-gray-50 text-gray-600"
             disabled={isCombination}
@@ -1014,6 +1030,7 @@ export function QuotationItemRow({
                       removeItem={removeSubItem}
                       duplicateItem={duplicateSubItem}
                       canRemove={(item.subItems || []).length > 1}
+                      profitPercentage={profitPercentage}
                     />
                   ))}
                 </tbody>

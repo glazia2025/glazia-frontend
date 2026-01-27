@@ -32,6 +32,10 @@ interface GlobalConfig {
     transport: number;
     loadingUnloading: number;
     discountPercent: number;
+    showInstallation?: boolean;
+    showTransport?: boolean;
+    showLoadingUnloading?: boolean;
+    showDiscount?: boolean;
   };
 }
 
@@ -72,6 +76,10 @@ const initialGlobalConfig: GlobalConfig = {
     transport: 0,
     loadingUnloading: 0,
     discountPercent: 0,
+    showInstallation: true,
+    showTransport: true,
+    showLoadingUnloading: true,
+    showDiscount: true,
   },
 };
 
@@ -203,24 +211,22 @@ function CreateQuotationContent() {
     items.reduce((total, item) => total + getItemTotals(item).area, 0);
   const calculateTotalQuantity = () =>
     items.reduce((total, item) => total + getItemTotals(item).quantity, 0);
-  const calculateTotalWithProfit = () => {
-    const baseTotal = calculateTotal();
-    const profitAmount = (baseTotal * profitPercentage) / 100;
-    return baseTotal + profitAmount;
-  };
 
   const getAdditionalCost = (key: keyof GlobalConfig["additionalCosts"]) =>
     Number(globalConfig.additionalCosts?.[key] || 0);
 
   const calculateFinalTotal = () => {
-    const totalWithProfit = calculateTotalWithProfit();
+    const totalWithProfit = calculateTotal() + (calculateTotal() * (profitPercentage / 100));
     const additionalCosts =
       getAdditionalCost("transport") +
-      getAdditionalCost("installation") +
+      (getAdditionalCost("installation") * calculateTotalArea()) +
       getAdditionalCost("loadingUnloading");
-    const discount = (getAdditionalCost("discountPercent") / 100) * totalWithProfit;
+    const discount =
+      (getAdditionalCost("discountPercent") / 100) * (totalWithProfit + additionalCosts);
     return totalWithProfit + additionalCosts - discount;
   };
+
+
 
   const handleLogoUpload = (file: File | null) => {
     if (!file) return;
@@ -535,6 +541,23 @@ function CreateQuotationContent() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Installation (₹/sqft)
                 </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={globalConfig.additionalCosts.showInstallation ?? true}
+                    onChange={(e) =>
+                      setGlobalConfig((prev) => ({
+                        ...prev,
+                        additionalCosts: {
+                          ...prev.additionalCosts,
+                          showInstallation: e.target.checked,
+                        },
+                      }))
+                    }
+                    className="h-4 w-4"
+                  />
+                  <span>Show in PDF</span>
+                </label>
                 <input
                   type="number"
                   value={globalConfig.additionalCosts.installation}
@@ -553,6 +576,23 @@ function CreateQuotationContent() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Transport (₹)
+                </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={globalConfig.additionalCosts.showTransport ?? true}
+                    onChange={(e) =>
+                      setGlobalConfig((prev) => ({
+                        ...prev,
+                        additionalCosts: {
+                          ...prev.additionalCosts,
+                          showTransport: e.target.checked,
+                        },
+                      }))
+                    }
+                    className="h-4 w-4"
+                  />
+                  <span>Show in PDF</span>
                 </label>
                 <input
                   type="number"
@@ -573,6 +613,23 @@ function CreateQuotationContent() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Loading &amp; Unloading (₹)
                 </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={globalConfig.additionalCosts.showLoadingUnloading ?? true}
+                    onChange={(e) =>
+                      setGlobalConfig((prev) => ({
+                        ...prev,
+                        additionalCosts: {
+                          ...prev.additionalCosts,
+                          showLoadingUnloading: e.target.checked,
+                        },
+                      }))
+                    }
+                    className="h-4 w-4"
+                  />
+                  <span>Show in PDF</span>
+                </label>
                 <input
                   type="number"
                   value={globalConfig.additionalCosts.loadingUnloading}
@@ -591,6 +648,23 @@ function CreateQuotationContent() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Discount (%)
+                </label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={globalConfig.additionalCosts.showDiscount ?? true}
+                    onChange={(e) =>
+                      setGlobalConfig((prev) => ({
+                        ...prev,
+                        additionalCosts: {
+                          ...prev.additionalCosts,
+                          showDiscount: e.target.checked,
+                        },
+                      }))
+                    }
+                    className="h-4 w-4"
+                  />
+                  <span>Show in PDF</span>
                 </label>
                 <input
                   type="number"
@@ -632,10 +706,6 @@ function CreateQuotationContent() {
                 <div className="text-lg font-bold text-gray-900">{calculateTotalArea().toFixed(2)}</div>
               </div>
               <div className="text-center">
-                <div className="text-sm font-medium text-gray-600">Base Total</div>
-                <div className="text-lg font-bold text-gray-900">₹ {calculateTotal().toFixed(2)}</div>
-              </div>
-              <div className="text-center">
                 <div className="text-sm font-medium text-gray-600">Profit %</div>
                 <input
                   type="number"
@@ -652,11 +722,25 @@ function CreateQuotationContent() {
                   className="mt-1 w-20 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-600">Total with Profit</div>
+             <div className="text-center">
+                <div className="text-sm font-medium text-gray-600">Total Amount</div>
                 <div className="text-lg font-bold text-[#124657]">
                   ₹
-                  {calculateFinalTotal().toLocaleString("en-IN")}
+                  {(calculateTotal() + calculateTotal() * (profitPercentage / 100)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-sm font-medium text-gray-600">Final Amount</div>
+                <div className="text-lg font-bold text-[#124657]">
+                  ₹
+                  {calculateFinalTotal().toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-sm font-medium text-gray-600">Final Amount with GST</div>
+                <div className="text-lg font-bold text-[#124657]">
+                  ₹
+                  {(calculateFinalTotal() + (calculateFinalTotal() * 0.18)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
             </div>
@@ -702,6 +786,7 @@ function CreateQuotationContent() {
                       removeItem={removeItem}
                       duplicateItem={duplicateItem}
                       canRemove={items.length > 1}
+                      profitPercentage={profitPercentage}
                     />
                   ))}
                 </tbody>
