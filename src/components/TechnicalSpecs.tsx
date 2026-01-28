@@ -160,24 +160,17 @@ export default function TechnicalSpecs() {
                 ))}
               </div>
               <p className="mt-6 font-light tracking-tight text-slate-900">
-                Website design did exactly what you said it does. Just what I was looking for.
-                Nice work on your website design.
+                In this industry, consistency matters more than promises. With Glazia, what is committed is exactly what is delivered. The aluminium profiles, finishes, and overall system quality have helped us reduce rework on site and improve customer satisfaction. Their team understands a fabricator’s challenges and works like a true partner rather than just a supplier.
               </p>
               <div className="mt-8 flex items-center gap-4">
-                <Image
-                  src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=120&q=80"
-                  alt="Armando McClure"
-                  width={56}
-                  height={56}
-                  className="rounded-full object-cover"
-                />
+                
 
                 <div className="leading-tight">
                   <div className="text-lg font-extrabold text-slate-900">
-                    Armando McClure
+                    Sunil Vashisht
                   </div>
                   <div className="text-sm text-slate-500">
-                    Senior Markets Architect
+                    Ex Windoors, Rohtak
                   </div>
                 </div>
               </div>
@@ -193,24 +186,17 @@ export default function TechnicalSpecs() {
                 ))}
               </div>
               <p className="mt-6 font-light tracking-tight text-slate-900">
-                Website design did exactly what you said it does. Just what I was looking for.
-                Nice work on your website design.
+                What stood out for us with Glazia is their structured approach. From product selection to pricing transparency and timely material availability, everything is streamlined. It has helped us quote faster, execute projects smoothly, and maintain better margins. Glazia is building something very relevant for serious fabricators who want to scale professionally.
               </p>
               <div className="mt-8 flex items-center gap-4">
-                <Image
-                  src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=120&q=80"
-                  alt="Armando McClure"
-                  width={56}
-                  height={56}
-                  className="rounded-full object-cover"
-                />
+                
 
                 <div className="leading-tight">
                   <div className="text-lg font-extrabold text-slate-900">
-                    Armando McClure
+                    Saurabh Passi
                   </div>
                   <div className="text-sm text-slate-500">
-                    Senior Markets Architect
+                    Pinakin Systems, Ludhiana
                   </div>
                 </div>
               </div>
@@ -226,24 +212,16 @@ export default function TechnicalSpecs() {
                 ))}
               </div>
               <p className="mt-6 font-light tracking-tight text-slate-900">
-                Website design did exactly what you said it does. Just what I was looking for.
-                Nice work on your website design.
+                Good systems are rare in the aluminium window business. Glazia brings clarity—standardised profiles, dependable quality, and responsive support. Since working with them, our execution timelines have improved and client confidence has gone up. It feels like the industry is finally moving towards organized, long-term solutions.
               </p>
               <div className="mt-8 flex items-center gap-4">
-                <Image
-                  src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=120&q=80"
-                  alt="Armando McClure"
-                  width={56}
-                  height={56}
-                  className="rounded-full object-cover"
-                />
 
                 <div className="leading-tight">
                   <div className="text-lg font-extrabold text-slate-900">
-                    Armando McClure
+                    Brajanrayan Mishara
                   </div>
                   <div className="text-sm text-slate-500">
-                    Senior Markets Architect
+                    Vachi Frames, Cuttack
                   </div>
                 </div>
               </div>
