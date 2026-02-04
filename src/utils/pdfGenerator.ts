@@ -82,9 +82,11 @@ interface QuotationData {
   quotationNumber?: string;
   generatedId?: string;
   createdAt?: string;
+  contactPhone?: string;
   globalConfig?: {
     logo?: string;
     logoUrl?: string;
+    website?: string;
     prerequisites?: string;
     terms?: string;
     additionalCosts?: {
@@ -104,12 +106,17 @@ interface QuotationData {
     opportunity?: string;
     terms?: string;
     notes?: string;
+    contactPhone?: string;
   };
   customerDetails?: {
     name?: string;
     company?: string;
     email?: string;
     phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
   };
   items?: QuotationItem[];
   breakdown?: {
@@ -147,13 +154,20 @@ export function getInitials(name?: string): string {
 
 export const createQuotationHTML = async (quotation: QuotationData): Promise<string> => {
   const user = window.localStorage.getItem('glazia-user');
-  let userData: { name?: string; email?: string; phone?: string } = {};
+  let userData: { name?: string; email?: string; phone?: string; gstNumber?: string } = {};
 
   if (user) {
     userData = JSON.parse(user);
   }
 
   const globalConfig = quotation.globalConfig || (await loadGlobalConfig());
+  const contactPhone =
+    quotation.quotationDetails?.contactPhone ||
+    quotation.contactPhone ||
+    userData.phone ||
+    "";
+  const website = globalConfig?.website || "";
+  const gstNumber = userData.gstNumber || "";
 
   const nl2br = (str: string) => {
     if (!str) return "";
@@ -668,6 +682,9 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
             <div class="info-line">${userData.completeAddress}</div>
             <div class="info-line">${userData.city}, ${userData.state} - ${userData.pincode}</div>
             <div class="info-line">India</div>
+            <div class="info-line">Phone: ${contactPhone || "-"}</div>
+            <div class="info-line">GST: ${gstNumber || "-"}</div>
+            ${website ? `<div class="info-line">Website: ${website}</div>` : ""}
           </div>
           <div class="meta-card">
             <div class="meta-label">Quotation no.:</div><div class="meta-value">${quotation.generatedId}</div>
@@ -675,7 +692,6 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
           </div>
         </div>
 
-        <div>Contact: ${userData.phone} | ${userData.email}</div>
         <div style="font-size: 10px; font-weight: 600;">We are pleased to submit our quotation of price of products as following :-</div>
 
         </div>
@@ -701,6 +717,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
                 <th rowspan="2">Qty</th>
                 <th rowspan="2">Amount\n(₹)</th>
                 <th rowspan="2">Image</th>
+                <th rowspan="2">Remarks</th>
               </tr>
               <tr class="head-sub">
                 <th>Type</th>
@@ -737,6 +754,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
                         ? `<img class="${item.__isSubRow ? "sub-row-image" : "ref-image"}" src="${item.refImage}" alt="Reference image">`
                         : `<span class="no-image">No image</span>`}
                   </td>
+                  <td>{item.remarks || "-"}</td>
                 </tr>
               `).join("")}
             </tbody>

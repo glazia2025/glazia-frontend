@@ -25,6 +25,7 @@ interface CustomerDetails {
 interface GlobalConfig {
   logo?: string;
   logoUrl?: string;
+  website?: string;
   prerequisites?: string;
   terms?: string;
   additionalCosts: {
@@ -69,6 +70,7 @@ const COMBINATION_SYSTEM = "Combination";
 const initialGlobalConfig: GlobalConfig = {
   logo: "",
   logoUrl: "",
+  website: "",
   prerequisites: "",
   terms: "",
   additionalCosts: {
@@ -106,6 +108,7 @@ function CreateQuotationContent() {
     terms:
       "1. Prices are valid for 30 days from the date of quotation.\n2. Payment terms: 50% advance, 50% on delivery.\n3. Delivery time: 15-20 working days.",
     notes: "",
+    contactPhone: "",
   });
 
   const [profitPercentage, setProfitPercentage] = useState<number>(0);
@@ -146,6 +149,22 @@ function CreateQuotationContent() {
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("glazia-user");
+    if (!savedUser) return;
+    try {
+      const userData = JSON.parse(savedUser);
+      if (userData?.phone) {
+        setQuotationDetails((prev) => ({
+          ...prev,
+          contactPhone: prev.contactPhone || userData.phone,
+        }));
+      }
+    } catch (error) {
+      console.error("Error reading user data from localStorage:", error);
+    }
   }, []);
 
   const handleItemChange = (nextItem: QuotationItem) => {
@@ -253,6 +272,7 @@ function CreateQuotationContent() {
         terms: quotationDetails.terms,
         notes: quotationDetails.notes,
         validUntil: quotationDetails.validUntil,
+        contactPhone: quotationDetails.contactPhone,
       },
       customerDetails,
       items: items.map((item) => ({
@@ -306,6 +326,7 @@ function CreateQuotationContent() {
       ...quotationDetails,
       quotationNumber: finalQuotationNumber,
       generatedId: savedData.generatedId,
+      contactPhone: quotationDetails.contactPhone,
       customerDetails,
       items,
       globalConfig,
@@ -393,6 +414,17 @@ function CreateQuotationContent() {
                     <option value="Order Lost">Order Lost</option>
                   </select>
                 </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contact Phone (for PDF)
+                </label>
+                <input
+                  type="tel"
+                  value={quotationDetails.contactPhone}
+                  onChange={(e) => setQuotationDetails({ ...quotationDetails, contactPhone: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                />
+              </div>
             </div>
           </div>
 
@@ -400,7 +432,7 @@ function CreateQuotationContent() {
             <h2 className="text-xl font-bold text-gray-900 mb-6">Customer Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Customer Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
                 <input
                   type="text"
                   value={customerDetails.name}
@@ -410,7 +442,7 @@ function CreateQuotationContent() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                 <input
                   type="email"
                   value={customerDetails.email}
@@ -420,7 +452,7 @@ function CreateQuotationContent() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                 <input
                   type="tel"
                   value={customerDetails.phone}
@@ -519,6 +551,20 @@ function CreateQuotationContent() {
                     setGlobalConfig((prev) => ({ ...prev, prerequisites: e.target.value }))
                   }
                   rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Website
+                </label>
+                <input
+                  type="text"
+                  value={globalConfig.website || ""}
+                  onChange={(e) =>
+                    setGlobalConfig((prev) => ({ ...prev, website: e.target.value }))
+                  }
+                  placeholder="www.example.com"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>

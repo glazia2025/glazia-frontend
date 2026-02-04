@@ -63,6 +63,7 @@ const AREA_SLABS = [
   { max: Infinity, index: 2 },
 ];
 const COMBINATION_SYSTEM = "Combination";
+const OTHER_OPTION = "Other";
 
 const indexToAlpha = (index: number): string => {
   let n = index;
@@ -85,6 +86,14 @@ const applySubRefCodes = (
     ...sub,
     refCode: parentRef ? `${parentRef}-${indexToAlpha(idx)}` : "",
   }));
+
+const isOtherValue = (value?: string) =>
+  !!value && (value === OTHER_OPTION || value.startsWith(`${OTHER_OPTION}:`));
+
+const getOtherText = (value?: string) =>
+  value && value.startsWith(`${OTHER_OPTION}:`) ? value.slice(OTHER_OPTION.length + 1).trim() : "";
+
+const buildOtherValue = (text: string) => (text ? `${OTHER_OPTION}: ${text}` : OTHER_OPTION);
 
 function getImagePath(description: string): string {
   if (!description) return "";
@@ -402,65 +411,113 @@ function QuotationSubItemRow({
         </select>
       </td>
       <td className="border border-gray-200 px-2 py-2">
-        <select
-          value={item.colorFinish}
-          onChange={(e) => handleFieldChange("colorFinish", e.target.value)}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-        >
-          <option value="">Select Color Finish</option>
-          {optionsQuery.data?.colorFinishes.map((c: OptionWithRate) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <select
-          value={item.glassSpec}
-          onChange={(e) => handleFieldChange("glassSpec", e.target.value)}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-        >
-          <option value="">Select Glass Spec</option>
-          {optionsQuery.data?.glassSpecs.map((c: OptionWithRate) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <select
-          value={item.handleType}
-          onChange={(e) => handleFieldChange("handleType", e.target.value)}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-        >
-          <option value="">Select Handle</option>
-          {optionsQuery.data?.handleOptions.map((c: HandleOption) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <select
-          value={item.handleColor}
-          onChange={(e) => handleFieldChange("handleColor", e.target.value)}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-        >
-          <option value="">Select Color</option>
-          {handleOption?.colors.map((c: OptionWithRate) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-            </option>
-          )) || (
-            <>
-              <option value="Black">Black</option>
-              <option value="Silver">Silver</option>
-            </>
+        <div className="flex items-center gap-2">
+          <select
+            value={isOtherValue(item.colorFinish) ? OTHER_OPTION : item.colorFinish}
+            onChange={(e) => handleFieldChange("colorFinish", e.target.value)}
+            className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
+          >
+            <option value="">Select Color Finish</option>
+            {optionsQuery.data?.colorFinishes.map((c: OptionWithRate) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+            <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
+          </select>
+          {isOtherValue(item.colorFinish) && (
+            <input
+              type="text"
+              value={getOtherText(item.colorFinish)}
+              onChange={(e) => handleFieldChange("colorFinish", buildOtherValue(e.target.value))}
+              className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
+              placeholder="Enter custom color"
+            />
           )}
-        </select>
+        </div>
+      </td>
+      <td className="border border-gray-200 px-2 py-2">
+        <div className="flex items-center gap-2">
+          <select
+            value={isOtherValue(item.glassSpec) ? OTHER_OPTION : item.glassSpec}
+            onChange={(e) => handleFieldChange("glassSpec", e.target.value)}
+            className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
+          >
+            <option value="">Select Glass Spec</option>
+            {optionsQuery.data?.glassSpecs.map((c: OptionWithRate) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+            <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
+          </select>
+          {isOtherValue(item.glassSpec) && (
+            <input
+              type="text"
+              value={getOtherText(item.glassSpec)}
+              onChange={(e) => handleFieldChange("glassSpec", buildOtherValue(e.target.value))}
+              className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
+              placeholder="Enter custom glass spec"
+            />
+          )}
+        </div>
+      </td>
+      <td className="border border-gray-200 px-2 py-2">
+        <div className="flex items-center gap-2">
+          <select
+            value={isOtherValue(item.handleType) ? OTHER_OPTION : item.handleType}
+            onChange={(e) => handleFieldChange("handleType", e.target.value)}
+            className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
+          >
+            <option value="">Select Handle</option>
+            {optionsQuery.data?.handleOptions.map((c: HandleOption) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+            <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
+          </select>
+          {isOtherValue(item.handleType) && (
+            <input
+              type="text"
+              value={getOtherText(item.handleType)}
+              onChange={(e) => handleFieldChange("handleType", buildOtherValue(e.target.value))}
+              className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
+              placeholder="Enter custom handle type"
+            />
+          )}
+        </div>
+      </td>
+      <td className="border border-gray-200 px-2 py-2">
+        <div className="flex items-center gap-2">
+          <select
+            value={isOtherValue(item.handleColor) ? OTHER_OPTION : item.handleColor}
+            onChange={(e) => handleFieldChange("handleColor", e.target.value)}
+            className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
+          >
+            <option value="">Select Color</option>
+            {handleOption?.colors.map((c: OptionWithRate) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            )) || (
+              <>
+                <option value="Black">Black</option>
+                <option value="Silver">Silver</option>
+              </>
+            )}
+            <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
+          </select>
+          {isOtherValue(item.handleColor) && (
+            <input
+              type="text"
+              value={getOtherText(item.handleColor)}
+              onChange={(e) => handleFieldChange("handleColor", buildOtherValue(e.target.value))}
+              className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
+              placeholder="Enter custom handle color"
+            />
+          )}
+        </div>
       </td>
       <td className="border border-gray-200 px-2 py-2">
         <select
@@ -809,71 +866,119 @@ export function QuotationItemRow({
           </select>
         </td>
 
-        <td className="border border-gray-300 px-2 py-2">
-          <select
-            value={item.colorFinish}
-            onChange={(e) => handleFieldChange("colorFinish", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            disabled={isCombination}
-          >
-            <option value="">Select Color Finish</option>
-            {optionsQuery.data?.colorFinishes.map((c: OptionWithRate) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+      <td className="border border-gray-300 px-2 py-2">
+          <div className="flex items-center gap-2">
+            <select
+              value={isOtherValue(item.colorFinish) ? OTHER_OPTION : item.colorFinish}
+              onChange={(e) => handleFieldChange("colorFinish", e.target.value)}
+              className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
+              disabled={isCombination}
+            >
+              <option value="">Select Color Finish</option>
+              {optionsQuery.data?.colorFinishes.map((c: OptionWithRate) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+              <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
+            </select>
+            {isOtherValue(item.colorFinish) && !isCombination && (
+              <input
+                type="text"
+                value={getOtherText(item.colorFinish)}
+                onChange={(e) => handleFieldChange("colorFinish", buildOtherValue(e.target.value))}
+                className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
+                placeholder="Enter custom color"
+              />
+            )}
+          </div>
         </td>
         <td className="border border-gray-300 px-2 py-2">
-          <select
-            value={item.glassSpec}
-            onChange={(e) => handleFieldChange("glassSpec", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            disabled={isCombination}
-          >
-            <option value="">Select Glass Spec</option>
-            {optionsQuery.data?.glassSpecs.map((c: OptionWithRate) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={isOtherValue(item.glassSpec) ? OTHER_OPTION : item.glassSpec}
+              onChange={(e) => handleFieldChange("glassSpec", e.target.value)}
+              className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
+              disabled={isCombination}
+            >
+              <option value="">Select Glass Spec</option>
+              {optionsQuery.data?.glassSpecs.map((c: OptionWithRate) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+              <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
+            </select>
+            {isOtherValue(item.glassSpec) && !isCombination && (
+              <input
+                type="text"
+                value={getOtherText(item.glassSpec)}
+                onChange={(e) => handleFieldChange("glassSpec", buildOtherValue(e.target.value))}
+                className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
+                placeholder="Enter custom glass spec"
+              />
+            )}
+          </div>
         </td>
         <td className="border border-gray-300 px-2 py-2">
-          <select
-            value={item.handleType}
-            onChange={(e) => handleFieldChange("handleType", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            disabled={isCombination}
-          >
-            <option value="">Select Handle</option>
-            {optionsQuery.data?.handleOptions.map((c: HandleOption) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={isOtherValue(item.handleType) ? OTHER_OPTION : item.handleType}
+              onChange={(e) => handleFieldChange("handleType", e.target.value)}
+              className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
+              disabled={isCombination}
+            >
+              <option value="">Select Handle</option>
+              {optionsQuery.data?.handleOptions.map((c: HandleOption) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+              <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
+            </select>
+            {isOtherValue(item.handleType) && !isCombination && (
+              <input
+                type="text"
+                value={getOtherText(item.handleType)}
+                onChange={(e) => handleFieldChange("handleType", buildOtherValue(e.target.value))}
+                className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
+                placeholder="Enter custom handle type"
+              />
+            )}
+          </div>
         </td>
 
         <td className="border border-gray-300 px-2 py-2">
-          <select
-            value={item.handleColor}
-            onChange={(e) => handleFieldChange("handleColor", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            disabled={isCombination}
-          >
-            <option value="">Select Color</option>
-            {handleOption?.colors.map((c: OptionWithRate) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            )) || (
-              <>
-                <option value="Black">Black</option>
-                <option value="Silver">Silver</option>
-              </>
+          <div className="flex items-center gap-2">
+            <select
+              value={isOtherValue(item.handleColor) ? OTHER_OPTION : item.handleColor}
+              onChange={(e) => handleFieldChange("handleColor", e.target.value)}
+              className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
+              disabled={isCombination}
+            >
+              <option value="">Select Color</option>
+              {handleOption?.colors.map((c: OptionWithRate) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              )) || (
+                <>
+                  <option value="Black">Black</option>
+                  <option value="Silver">Silver</option>
+                </>
+              )}
+              <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
+            </select>
+            {isOtherValue(item.handleColor) && !isCombination && (
+              <input
+                type="text"
+                value={getOtherText(item.handleColor)}
+                onChange={(e) => handleFieldChange("handleColor", buildOtherValue(e.target.value))}
+                className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
+                placeholder="Enter custom handle color"
+              />
             )}
-          </select>
+          </div>
         </td>
         <td className="border border-gray-300 px-2 py-2">
           <select

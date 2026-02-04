@@ -66,6 +66,33 @@ const CartSidebar: React.FC = () => {
   const [showOrderPlacement, setShowOrderPlacement] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [nalcoPrice, setNalcoPrice] = useState<number>(0);
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [pendingProforma, setPendingProforma] = useState<ProformaInvoiceSnapshot | null>(null);
+  const proformaStorageKey = 'glazia-proforma-invoices';
+  const proformaCounterKey = 'glazia-proforma-counter';
+
+  type ProformaInvoiceSnapshot = {
+    id: string;
+    invoiceNumber: string;
+    invoiceDate: string;
+    createdAt: string;
+    totalAmount: number;
+    itemCount: number;
+    items: typeof cart.items;
+    customerName?: string;
+    destination?: string;
+  };
+
+  const saveProformaInvoice = (invoice: ProformaInvoiceSnapshot) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const existing = JSON.parse(localStorage.getItem(proformaStorageKey) || '[]') as ProformaInvoiceSnapshot[];
+      const next = [invoice, ...existing].slice(0, 5);
+      localStorage.setItem(proformaStorageKey, JSON.stringify(next));
+    } catch (error) {
+      console.error('Error saving proforma invoice to localStorage:', error);
+    }
+  };
 
   // State for image modal
   const [imageModal, setImageModal] = useState({
@@ -201,6 +228,14 @@ const CartSidebar: React.FC = () => {
       return;
     }
 
+    const getNextProformaNumber = () => {
+      if (typeof window === 'undefined') return '0001';
+      const current = Number(localStorage.getItem(proformaCounterKey) || '0');
+      const next = current + 1;
+      localStorage.setItem(proformaCounterKey, String(next));
+      return String(next).padStart(4, '0');
+    };
+
     const formatCurrency = (value: number) =>
       `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -211,7 +246,7 @@ const CartSidebar: React.FC = () => {
       year: 'numeric'
     }).split(' ');
     const invoiceDate = `${invoiceDateParts[0]} ${invoiceDateParts[1]}, ${invoiceDateParts[2]}`;
-    const referenceNumber = '0023';
+    const referenceNumber = getNextProformaNumber();
     const invoiceNumber = `GW/${today.getFullYear().toString().slice(-2)}/${String(today.getMonth() + 1).padStart(2, '0')}/PI${referenceNumber}`;
     const dispatchMode = 'By Road';
     const destination = [user.city, user.state].filter(Boolean).join(', ') || 'Destination';
@@ -516,7 +551,7 @@ const CartSidebar: React.FC = () => {
       },
       pagebreak: {
         mode: ['avoid-all', 'css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
-        avoid: ['img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', '.avoid-break']
+        avoid: ['img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', '.avoid-break']
       }
     };
 
@@ -548,6 +583,19 @@ const CartSidebar: React.FC = () => {
     } finally {
       cleanupFrame?.();
     }
+
+    setPendingProforma({
+      id: `pi_${Date.now()}`,
+      invoiceNumber,
+      invoiceDate: today.toISOString(),
+      createdAt: today.toISOString(),
+      totalAmount: roundedNet,
+      itemCount: totalQuantity,
+      items: cart.items,
+      customerName: user.name,
+      destination
+    });
+    setShowSavePrompt(true);
   };
 
   if (!cart.isOpen) return null;
@@ -816,6 +864,46 @@ const CartSidebar: React.FC = () => {
         imageAlt={imageModal.imageAlt}
         productName={imageModal.productName}
       />
+
+      {/* Save Proforma Prompt */}
+      {showSavePrompt && (
+        <>
+          <div
+            className="fixed inset-0 bg-[#00000066] z-[10003]"
+            onClick={() => setShowSavePrompt(false)}
+          />
+          <div className="fixed inset-0 z-[10003] flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-md border border-gray-200 shadow-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Save Proforma Invoice?</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Do you want to save this PI for future reference?
+                <br />
+                Note: Only last 5 saved PI will only be displayed.
+              </p>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setShowSavePrompt(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200"
+                >
+                  No
+                </button>
+                <button
+                  onClick={() => {
+                    if (pendingProforma) {
+                      saveProformaInvoice(pendingProforma);
+                    }
+                    setPendingProforma(null);
+                    setShowSavePrompt(false);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#EE1C25]"
+                >
+                  Yes, Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 };

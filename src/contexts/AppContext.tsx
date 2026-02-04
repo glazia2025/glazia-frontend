@@ -236,7 +236,7 @@ const getDynamicPricingAdjustment = (item: PricingLookupItem): number => {
 
     if (!userData) {
       console.log('❌ No user data in localStorage, returning 0');
-      return 30;
+      return 100;
     }
 
     const user = JSON.parse(userData);
@@ -245,11 +245,11 @@ const getDynamicPricingAdjustment = (item: PricingLookupItem): number => {
 
     if (!dynamicPricing) {
       console.log('❌ No dynamic pricing in user data, returning 0');
-      return 30;
+      return 100;
     }
 
     // Default adjustment value when specific pricing is not found
-    const DEFAULT_ADJUSTMENT = 30;
+    const DEFAULT_ADJUSTMENT = 100;
 
     const hasNumberValue = (value: unknown): value is number =>
       typeof value === 'number' && !Number.isNaN(value);
@@ -262,6 +262,9 @@ const getDynamicPricingAdjustment = (item: PricingLookupItem): number => {
       const hardwarePricing = dynamicPricing.hardware || {};
       if (item.subCategory && hasKey(hardwarePricing, item.subCategory) && hasNumberValue(hardwarePricing[item.subCategory])) {
         console.log(`🎯 Dynamic pricing applied for hardware "${item.subCategory}": +${hardwarePricing[item.subCategory]}`);
+        if (hardwarePricing[item.subCategory] === 0) {
+          return DEFAULT_ADJUSTMENT;
+        }
         return hardwarePricing[item.subCategory];
       }
 
@@ -279,16 +282,25 @@ const getDynamicPricingAdjustment = (item: PricingLookupItem): number => {
 
     if (hasKey(profilePricing, subCategoryKeySpaced) && hasNumberValue(profilePricing[subCategoryKeySpaced])) {
       console.log(`🎯 Dynamic pricing applied for profile "${subCategoryKeySpaced}": +${profilePricing[subCategoryKeySpaced]}`);
+      if (profilePricing[subCategoryKeySpaced] === 0) {
+          return DEFAULT_ADJUSTMENT;
+      }
       return profilePricing[subCategoryKeySpaced];
     }
 
     if (hasKey(profilePricing, subCategoryKey) && hasNumberValue(profilePricing[subCategoryKey])) {
       console.log(`🎯 Dynamic pricing applied for profile "${subCategoryKey}": +${profilePricing[subCategoryKey]}`);
+      if (profilePricing[subCategoryKey] === 0) {
+          return DEFAULT_ADJUSTMENT;
+      }
       return profilePricing[subCategoryKey];
     }
 
     if (hasKey(profilePricing, categoryName) && hasNumberValue(profilePricing[categoryName])) {
       console.log(`🎯 Dynamic pricing applied for profile "${categoryName}": +${profilePricing[categoryName]}`);
+      if (profilePricing[categoryName] === 0) {
+          return DEFAULT_ADJUSTMENT;
+      }
       return profilePricing[categoryName];
     }
 
@@ -575,6 +587,7 @@ interface AppContextType {
   removeFromCart: (id: string) => void;
   updateCartQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
+  loadCart: (items: CartItem[]) => void;
   toggleCart: () => void;
   openCart: () => void;
   closeCart: () => void;
@@ -721,6 +734,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     dispatch({ type: 'CLEAR_CART' });
   }, []);
 
+  const loadCart = useCallback((items: CartItem[]) => {
+    dispatch({ type: 'LOAD_CART', payload: items });
+  }, []);
+
   const toggleCart = useCallback(() => {
     dispatch({ type: 'TOGGLE_CART' });
   }, []);
@@ -809,6 +826,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     removeFromCart,
     updateCartQuantity,
     clearCart,
+    loadCart,
     toggleCart,
     openCart,
     closeCart,
@@ -881,13 +899,14 @@ export const useAuth = () => {
 };
 
 export const useCartState = () => {
-  const { state, addToCart, removeFromCart, updateCartQuantity, clearCart, toggleCart, openCart, closeCart, getCartItem, getAdjustedItemPrice } = useApp();
+  const { state, addToCart, removeFromCart, updateCartQuantity, clearCart, loadCart, toggleCart, openCart, closeCart, getCartItem, getAdjustedItemPrice } = useApp();
   return {
     cart: state.cart,
     addToCart,
     removeFromCart,
     updateCartQuantity,
     clearCart,
+    loadCart,
     toggleCart,
     openCart,
     closeCart,

@@ -24,7 +24,7 @@ import {
   ClipboardList,
   Wallet
 } from 'lucide-react';
-import { useAuth, useOrders } from '@/contexts/AppContext';
+import { useAuth, useCartState, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
 
@@ -74,10 +74,37 @@ function WelcomeBanner({ onClose }: { onClose: () => void }) {
 
 function DashboardContent() {
   const { user: authUser, isAuthenticated } = useAuth();
+  const { loadCart, openCart } = useCartState();
   const [orders, setOrders] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [partnerAgreementUrl, setPartnerAgreementUrl] = useState<string | null>(null);
+  const [recentProformas, setRecentProformas] = useState<ProformaInvoice[]>([]);
+
+  type ProformaInvoice = {
+    id: string;
+    invoiceNumber: string;
+    invoiceDate: string;
+    createdAt: string;
+    totalAmount: number;
+    itemCount: number;
+    items: Array<{
+      id: string;
+      name: string;
+      brand: string;
+      price: string;
+      image: string;
+      quantity: number;
+      inStock: boolean;
+      category: string;
+      subCategory?: string;
+      length: string;
+      per: string;
+      kgm: number;
+    }>;
+    customerName?: string;
+    destination?: string;
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -140,6 +167,24 @@ function DashboardContent() {
 
     loadOrders();
   }, []);
+
+  // Load recent proforma invoices from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = JSON.parse(localStorage.getItem('glazia-proforma-invoices') || '[]') as ProformaInvoice[];
+      setRecentProformas(stored.slice(0, 5));
+    } catch (error) {
+      console.error('Error loading proforma invoices from localStorage:', error);
+      setRecentProformas([]);
+    }
+  }, []);
+
+  const handleOrderFromProforma = (invoice: ProformaInvoice) => {
+    if (!invoice.items || invoice.items.length === 0) return;
+    loadCart(invoice.items);
+    openCart();
+  };
 
   // Use real user data from auth context or fallback
   const user = authUser || {
@@ -296,6 +341,54 @@ function DashboardContent() {
                 )}
               </div>
 
+            </div>
+
+            {/* Recent Proforma Invoices */}
+            <div className="w-full bg-white border border-[3px] border-[#D6DADE] p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 sm:mb-6">
+                <h2 className="text-lg font-semibold text-gray-900">Recent Proforma Invoices</h2>
+                <Link href="/account/orders" className="text-[#EE1C25] hover:underline text-sm">
+                  View Orders
+                </Link>
+              </div>
+
+              {recentProformas.length > 0 ? (
+                <div className="space-y-4">
+                  {recentProformas.map((invoice) => (
+                    <div key={invoice.id} className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-start sm:items-center">
+                        <div className="bg-gray-100 p-3 rounded-lg">
+                          <FileText className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="font-medium text-gray-900">{invoice.invoiceNumber}</h3>
+                          <p className="text-sm text-gray-600">
+                            {invoice.itemCount} item{invoice.itemCount !== 1 ? 's' : ''} • {invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString('en-IN') : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-left lg:text-right">
+                          <p className="font-semibold text-gray-900">₹{Number(invoice.totalAmount || 0).toLocaleString('en-IN')}</p>
+                          <p className="text-xs text-gray-500">{invoice.customerName || 'Customer'}</p>
+                        </div>
+                        <button
+                          onClick={() => handleOrderFromProforma(invoice)}
+                          className="bg-[#EE1C25] text-white px-3 py-2 text-sm font-medium"
+                        >
+                          Place Order
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 mb-2">No proforma invoices yet</p>
+                  <p className="text-sm text-gray-500">Generate a proforma invoice from your cart to see it here.</p>
+                </div>
+              )}
             </div>
 
             {/* Partner Agreement Section */}
