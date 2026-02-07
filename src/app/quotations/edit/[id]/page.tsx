@@ -7,6 +7,7 @@ import Link from "next/link";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { QuotationItemRow, QuotationItem } from "@/components/QuotationItemRow";
+import dynamic from "next/dynamic";
 import axios from "axios";
 import { loadGlobalConfig } from "@/utils/globalConfig";
 import { API_BASE_URL } from "@/services/api";
@@ -124,6 +125,7 @@ export default function EditQuotationPage() {
   const [profitPercentage, setProfitPercentage] = useState<number>(0);
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(initialGlobalConfig);
   const [error, setError] = useState<string | null>(null);
+  const [isConfiguratorOpen, setIsConfiguratorOpen] = useState(false);
 
   // Load existing quotation data
   useEffect(() => {
@@ -333,30 +335,7 @@ export default function EditQuotationPage() {
 
   // Add item function
   const addItem = () => {
-    const newItem: QuotationItem = {
-      id: Date.now().toString(),
-      refCode: "",
-      location: "",
-      width: 0,
-      height: 0,
-      area: 0,
-      systemType: "",
-      series: "",
-      description: "",
-      colorFinish: "",
-      glassSpec: "",
-      handleType: "",
-      handleColor: "",
-      meshPresent: "",
-      meshType: "",
-      rate: 0,
-      quantity: 1,
-      amount: 0,
-      refImage: "",
-      remarks: "",
-      subItems: [],
-    };
-    setItems([...items, newItem]);
+    setIsConfiguratorOpen(true);
   };
 
   // Remove item function
@@ -420,6 +399,116 @@ export default function EditQuotationPage() {
   };
 
   const logoPreview = globalConfig.logoUrl || globalConfig.logo || "";
+
+  const handleAddDesignItem = (payload: {
+    widthMm: number;
+    heightMm: number;
+    areaSqft: number;
+    refImage: string;
+    meta: {
+      productType: "Window" | "Door";
+      systemType: string;
+      series: string;
+      description: string;
+      colorFinish: string;
+      glassSpec: string;
+      handleType: string;
+      handleColor: string;
+      meshPresent: string;
+      meshType: string;
+      location: string;
+      quantity: number;
+    };
+    subItems?: Array<{
+      widthMm: number;
+      heightMm: number;
+      areaSqft: number;
+      systemType: "Casement" | "Sliding" | "Slide N Fold";
+      series: string;
+      description: string;
+      glass: "Yes" | "No";
+      mesh: "Yes" | "No";
+    }>;
+  }) => {
+    if (payload.subItems?.length) {
+      const nextItem: QuotationItem = {
+        id: crypto.randomUUID(),
+        refCode: "",
+        location: payload.meta.location || "",
+        width: payload.widthMm,
+        height: payload.heightMm,
+        area: payload.areaSqft,
+        systemType: "Combination",
+        series: payload.meta.series,
+        description: payload.meta.description || "Combination Design",
+        colorFinish: payload.meta.colorFinish,
+        glassSpec: payload.meta.glassSpec,
+        handleType: payload.meta.handleType,
+        handleColor: payload.meta.handleColor,
+        handleCount: 0,
+        meshPresent: payload.meta.meshPresent,
+        meshType: payload.meta.meshType,
+        rate: 0,
+        quantity: payload.meta.quantity || 1,
+        amount: 0,
+        refImage: payload.refImage,
+        remarks: "",
+        subItems: payload.subItems.map((sub, idx) => ({
+          id: crypto.randomUUID(),
+          refCode: `A-${idx + 1}`,
+          location: payload.meta.location || "",
+          width: sub.widthMm,
+          height: sub.heightMm,
+          area: sub.areaSqft,
+          systemType: sub.systemType,
+          series: sub.series || payload.meta.series,
+          description: sub.description || `${sub.systemType} ${payload.meta.productType}`,
+          colorFinish: payload.meta.colorFinish,
+          glassSpec: sub.glass === "Yes" ? (payload.meta.glassSpec || "Glass") : "",
+          handleType: payload.meta.handleType,
+          handleColor: payload.meta.handleColor,
+          handleCount: 0,
+          meshPresent: sub.mesh,
+          meshType: payload.meta.meshType,
+          rate: 0,
+          quantity: 1,
+          amount: 0,
+          refImage: "",
+          remarks: "",
+        })),
+      };
+      setItems((prev) => [...prev, nextItem]);
+      setIsConfiguratorOpen(false);
+      return;
+    }
+
+    const nextItem: QuotationItem = {
+      id: crypto.randomUUID(),
+      refCode: "",
+      location: payload.meta.location || "",
+      width: payload.widthMm,
+      height: payload.heightMm,
+      area: payload.areaSqft,
+      systemType: payload.meta.systemType || payload.meta.productType,
+      series: payload.meta.series,
+      description: payload.meta.description || `${payload.meta.productType} Design`,
+      colorFinish: payload.meta.colorFinish,
+      glassSpec: payload.meta.glassSpec,
+      handleType: payload.meta.handleType,
+      handleColor: payload.meta.handleColor,
+      handleCount: 0,
+      meshPresent: payload.meta.meshPresent,
+      meshType: payload.meta.meshType,
+      rate: 0,
+      quantity: payload.meta.quantity || 1,
+      amount: 0,
+      refImage: payload.refImage,
+      remarks: "",
+      subItems: [],
+    };
+    setItems((prev) => [...prev, nextItem]);
+    setIsConfiguratorOpen(false);
+  };
 
   // Update quotation (instead of create new)
   const handleUpdate = async () => {
@@ -567,6 +656,29 @@ export default function EditQuotationPage() {
         </div>
 
         <div className="space-y-8">
+          {isConfiguratorOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4 py-6">
+              <div className="h-full w-full overflow-y-auto bg-white p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Window &amp; Door Configurator</h2>
+                    <p className="text-sm text-gray-500">Design and add to quotation.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsConfiguratorOpen(false)}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                </div>
+                <WindowDoorConfigurator
+                  onAddItem={handleAddDesignItem}
+                  onClose={() => setIsConfiguratorOpen(false)}
+                />
+              </div>
+            </div>
+          )}
           {/* Quotation Details */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Quotation Details</h2>
@@ -589,7 +701,6 @@ export default function EditQuotationPage() {
                   <select
                     value={quotationDetails.opportunity}
                     onChange={(e) => setQuotationDetails({...quotationDetails, opportunity: e.target.value})}
-                    defaultValue="Enquiry"
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
                   >
                     <option value="Enquiry">Enquiry</option>
@@ -1047,3 +1158,7 @@ export default function EditQuotationPage() {
     </QueryClientProvider>
   );
 }
+const WindowDoorConfigurator = dynamic(
+  () => import("@/components/WindowDoorConfigurator"),
+  { ssr: false }
+);
