@@ -10,8 +10,10 @@ import {
   RotateCcw,
   Square,
 } from "lucide-react";
-import { useDescriptionsQuery, useSeriesQuery, useSystemsQuery } from "@/lib/quotations/queries";
-import type { Description } from "@/lib/quotations/types";
+import { useDescriptionsQuery, useOptionsQuery, useSeriesQuery, useSystemsQuery } from "@/lib/quotations/queries";
+import { fetchDescriptions, fetchOptions } from "@/lib/quotations/api";
+import type { Description, HandleOption, OptionWithRate, OptionsResponse } from "@/lib/quotations/types";
+import type { QuotationItem, QuotationSubItem } from "@/components/QuotationItemRow";
 
 type SplitDirection = "none" | "vertical" | "horizontal";
 type SystemType = "Casement" | "Sliding" | "Slide N Fold";
@@ -50,24 +52,9 @@ type ProductMeta = {
   meshType: string;
   location: string;
   quantity: number;
-};
-
-type AddItemPayload = {
-  widthMm: number;
-  heightMm: number;
-  areaSqft: number;
-  refImage: string;
-  meta: ProductMeta;
-  subItems?: Array<{
-    widthMm: number;
-    heightMm: number;
-    areaSqft: number;
-    systemType: SystemType;
-    series: string;
-    description: string;
-    glass: "Yes" | "No";
-    mesh: "Yes" | "No";
-  }>;
+  refCode: string;
+  remarks: string;
+  rate: number;
 };
 
 const DEFAULT_META: ProductMeta = {
@@ -83,6 +70,28 @@ const DEFAULT_META: ProductMeta = {
   meshType: "",
   location: "",
   quantity: 1,
+  refCode: "",
+  remarks: "",
+  rate: 0,
+};
+
+const AREA_SLABS = [
+  { max: 20, index: 0 },
+  { max: 40, index: 1 },
+  { max: Infinity, index: 2 },
+];
+const COMBINATION_SYSTEM = "Combination";
+const roundToTwo = (value: number) => Number(value.toFixed(2));
+const applyProfitToRate = (rate: number, profitPercentage: number) =>
+  profitPercentage > 0 ? roundToTwo(rate + (rate * profitPercentage) / 100) : roundToTwo(rate);
+const indexToAlphaLower = (index: number): string => {
+  let n = index;
+  let result = "";
+  while (n >= 0) {
+    result = String.fromCharCode(97 + (n % 26)) + result;
+    n = Math.floor(n / 26) - 1;
+  }
+  return result;
 };
 
 const createRoot = (baseSystem: SystemType): SectionNode => ({
@@ -254,6 +263,139 @@ const mmToSqft = (wMm: number, hMm: number) => {
   const wFt = wMm / 304.8;
   const hFt = hMm / 304.8;
   return Number((wFt * hFt).toFixed(2));
+};
+
+const normalizeSystemType = (value?: string): SystemType => {
+  if (value === "Sliding" || value === "Slide N Fold" || value === "Casement") {
+    return value;
+  }
+  return "Casement";
+};
+
+const yesNoFromValue = (value?: string | boolean): YesNo => {
+  if (value === true || value === "Yes") return "Yes";
+  if (typeof value === "string" && value.trim() !== "" && value !== "No") return "Yes";
+  return "No";
+};
+
+const calculateRateForItem = (
+  next: {
+    area: number;
+    description: string;
+    colorFinish: string;
+    glassSpec: string;
+    handleType: string;
+    handleColor: string;
+    meshPresent: string;
+    meshType: string;
+  },
+  descriptions: Description[] | undefined,
+  options: OptionsResponse | undefined
+) => {
+  const desc = descriptions?.find((d) => d.name === next.description);
+  const baseRates = desc?.baseRates ?? [];
+  const slab = AREA_SLABS.find((s) => next.area <= s.max);
+  const baseRate = baseRates[slab?.index ?? 0] ?? 0;
+  const colorRate = options?.colorFinishes.find((c) => c.name === next.colorFinish)?.rate ?? 0;
+  const meshRate =
+    next.meshPresent === "Yes"
+      ? options?.meshTypes.find((m) => m.name === next.meshType)?.rate ?? 0
+      : 0;
+  const glassRate = options?.glassSpecs.find((g) => g.name === next.glassSpec)?.rate ?? 0;
+  const handleOpt = options?.handleOptions.find((h) => h.name === next.handleType);
+  const handleCount = desc?.defaultHandleCount ?? 0;
+  const handleUnitRate = handleOpt?.colors.find((c) => c.name === next.handleColor)?.rate ?? 0;
+  const handleRate = handleCount > 0 ? (handleCount * handleUnitRate) / (next.area || 1) : 0;
+
+  return {
+    rate: baseRate + colorRate + meshRate + glassRate + handleRate,
+    handleCount,
+    baseRate,
+    areaSlabIndex: slab?.index ?? 0,
+  };
+};
+
+const mapItemToConfiguratorState = (item: QuotationItem) => {
+  const width = Math.max(400, Math.round(item.width || 1500));
+  const height = Math.max(400, Math.round(item.height || 1500));
+  const subItems = item.subItems ?? [];
+  const hasSubItems = item.systemType === COMBINATION_SYSTEM && subItems.length > 1;
+  const sourceSystem = hasSubItems
+    ? normalizeSystemType(subItems[0]?.systemType)
+    : normalizeSystemType(item.systemType);
+
+  const root = createRoot(sourceSystem);
+  root.glass = yesNoFromValue(hasSubItems ? subItems[0]?.glassSpec : item.glassSpec);
+  root.mesh = yesNoFromValue(hasSubItems ? subItems[0]?.meshPresent : item.meshPresent);
+
+  if (hasSubItems) {
+    const totalWidth = subItems.reduce((sum, sub) => sum + (sub.width || 0), 0) || width;
+    let cursor = 0;
+    root.split = "vertical";
+    root.children = subItems.map((sub, idx) => {
+      const frac = (sub.width || width / subItems.length) / totalWidth;
+      const safeFrac = Number.isFinite(frac) && frac > 0 ? frac : 1 / subItems.length;
+      const child = createLeaf(
+        cursor,
+        0,
+        safeFrac,
+        1,
+        sub.systemType === "Sliding" ? (idx % 2 === 0 ? "left" : "right") : "fixed",
+        normalizeSystemType(sub.systemType),
+        yesNoFromValue(sub.glassSpec),
+        yesNoFromValue(sub.meshPresent)
+      );
+      child.series = sub.series || "";
+      child.description = sub.description || "";
+      cursor += safeFrac;
+      return child;
+    });
+    const sum = root.children.reduce((acc, child) => acc + child.w, 0) || 1;
+    let normalizedCursor = 0;
+    root.children.forEach((child, idx) => {
+      const w = child.w / sum;
+      child.w = w;
+      child.x = normalizedCursor;
+      if (idx === root.children!.length - 1) {
+        child.w = 1 - normalizedCursor;
+      }
+      normalizedCursor += child.w;
+    });
+  } else {
+    root.systemType = sourceSystem;
+    root.series = item.series || "";
+    root.description = item.description || "";
+    root.glass = yesNoFromValue(item.glassSpec);
+    root.mesh = yesNoFromValue(item.meshPresent);
+  }
+
+  const meta: ProductMeta = {
+    productType: item.height > 2200 ? "Door" : "Window",
+    systemType: item.systemType || sourceSystem,
+    series: item.series || "",
+    description: item.description || "",
+    colorFinish: item.colorFinish || "",
+    glassSpec: item.glassSpec || "",
+    handleType: item.handleType || "",
+    handleColor: item.handleColor || "",
+    meshPresent: item.meshPresent || "No",
+    meshType: item.meshType || "",
+    location: item.location || "",
+    quantity: item.quantity || 1,
+    refCode: item.refCode || "",
+    remarks: item.remarks || "",
+    rate: item.rate || 0,
+  };
+
+  return {
+    width,
+    height,
+    root,
+    baseSystemType: sourceSystem,
+    baseGlass: root.glass,
+    baseMesh: root.mesh,
+    meta,
+  };
 };
 
 
@@ -1380,11 +1522,15 @@ function resizeChildrenByDivider(parent: SectionNode, direction: "vertical" | "h
 }
 
 export default function WindowDoorConfigurator({
-  onAddItem,
+  onSaveItem,
   onClose,
+  initialItem,
+  profitPercentage,
 }: {
-  onAddItem: (payload: AddItemPayload) => void;
+  onSaveItem: (item: QuotationItem) => void;
   onClose: () => void;
+  initialItem?: QuotationItem | null;
+  profitPercentage: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
@@ -1395,14 +1541,17 @@ export default function WindowDoorConfigurator({
   const [widthMm, setWidthMm] = useState(1500);
   const [heightMm, setHeightMm] = useState(1500);
 
-  const [meta] = useState<ProductMeta>(DEFAULT_META);
+  const [meta, setMeta] = useState<ProductMeta>(DEFAULT_META);
   const [baseSystemType, setBaseSystemType] = useState<SystemType>("Casement");
-  const [showSetup] = useState(false);
 
   const [splitCount, setSplitCount] = useState(2);
   const [splitDirection, setSplitDirection] = useState<SplitDirection>("vertical");
   const [baseGlass, setBaseGlass] = useState<YesNo>("Yes");
   const [baseMesh, setBaseMesh] = useState<YesNo>("No");
+  const [isSaving, setIsSaving] = useState(false);
+  const [hideSelectionForExport, setHideSelectionForExport] = useState(false);
+  const [manualChildRates, setManualChildRates] = useState<Record<string, number>>({});
+  const [autoChildRates, setAutoChildRates] = useState<Record<string, number>>({});
 
   const [stageSize, setStageSize] = useState({ w: 720, h: 520 });
 
@@ -1413,11 +1562,18 @@ export default function WindowDoorConfigurator({
   const root = present;
   const selectedNode = (selectedId ? findNode(root, selectedId) : null) ?? root;
   const systemsQuery = useSystemsQuery();
-  const seriesQuery = useSeriesQuery(selectedNode.systemType);
-  const descriptionsQuery = useDescriptionsQuery(selectedNode.systemType, selectedNode.series);
+  const selectedSeriesQuery = useSeriesQuery(selectedNode.systemType);
+  const selectedDescriptionsQuery = useDescriptionsQuery(selectedNode.systemType, selectedNode.series);
+  const optionsSystemType = selectedNode.systemType || baseSystemType;
+  const metaOptionsQuery = useOptionsQuery(optionsSystemType);
+  const metaHandleOption =
+    metaOptionsQuery.data?.handleOptions.find((option) => option.name === meta.handleType) ?? null;
   const systemOptions = systemsQuery.data?.systems ?? ["Casement", "Sliding", "Slide N Fold"];
-  const seriesOptions = seriesQuery.data?.series ?? [];
-  const descriptionOptions = descriptionsQuery.data?.descriptions ?? [];
+  const selectableSystemOptions = systemOptions.filter(
+    (sys): sys is SystemType => sys === "Casement" || sys === "Sliding" || sys === "Slide N Fold"
+  );
+  const seriesOptions = selectedSeriesQuery.data?.series ?? [];
+  const descriptionOptions = selectedDescriptionsQuery.data?.descriptions ?? [];
 
   const rootDimensions = useMemo(() => {
     const baseW = Math.max(widthMm, 0);
@@ -1699,46 +1855,188 @@ export default function WindowDoorConfigurator({
     return labels;
   }, [heightMm, widthMm, root, view, updateChildDimension, stageSize, updateLeafPanelDimension]);
 
-  const handleAddItem = () => {
-    const dataUrl = stageRef.current?.toDataURL({ pixelRatio: 2 }) ?? "";
-    const areaSqft = mmToSqft(widthMm, heightMm);
+  const handleSaveItem = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      setHideSelectionForExport(true);
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
+      const dataUrl = stageRef.current?.toDataURL({ pixelRatio: 2 }) ?? "";
+      setHideSelectionForExport(false);
+      const areaSqft = mmToSqft(widthMm, heightMm);
+      const leafNodes: SectionNode[] = [];
+      mapLeafNodes(root, (leaf) => leafNodes.push(leaf));
+      const alpha = (idx: number) => String.fromCharCode(97 + idx);
 
-    const leafNodes: SectionNode[] = [];
-    mapLeafNodes(root, (leaf) => leafNodes.push(leaf));
+      const optionsCache = new Map<string, OptionsResponse>();
+      const descriptionsCache = new Map<string, Description[]>();
 
-    const subItems = leafNodes.map((leaf) => ({
-      widthMm: Math.round(leaf.w * widthMm),
-      heightMm: Math.round(leaf.h * heightMm),
-      areaSqft: mmToSqft(leaf.w * widthMm, leaf.h * heightMm),
-      systemType: leaf.systemType,
-      series: leaf.series,
-      description: leaf.description,
-      glass: leaf.glass,
-      mesh: leaf.mesh,
-    }));
+      const getOptions = async (systemType: string) => {
+        if (!systemType) return undefined;
+        if (!optionsCache.has(systemType)) {
+          try {
+            const data = await fetchOptions(systemType);
+            optionsCache.set(systemType, data);
+          } catch {
+            optionsCache.set(systemType, {
+              colorFinishes: [],
+              meshTypes: [],
+              glassSpecs: [],
+              handleOptions: [],
+            });
+          }
+        }
+        return optionsCache.get(systemType);
+      };
 
-    const singleLeaf = leafNodes[0];
-    const anyMesh = subItems.some((item) => item.mesh === "Yes");
-    const anyGlass = subItems.some((item) => item.glass === "Yes");
+      const getDescriptions = async (systemType: string, series: string) => {
+        const key = `${systemType}::${series}`;
+        if (!systemType || !series) return [];
+        if (!descriptionsCache.has(key)) {
+          try {
+            const data = await fetchDescriptions(systemType, series);
+            descriptionsCache.set(key, data.descriptions ?? []);
+          } catch {
+            descriptionsCache.set(key, []);
+          }
+        }
+        return descriptionsCache.get(key) ?? [];
+      };
 
-    onAddItem({
-      widthMm,
-      heightMm,
-      areaSqft,
-      refImage: dataUrl,
-      meta: {
-        ...meta,
-        systemType: subItems.length > 1 ? "Combination" : singleLeaf.systemType,
-        series: subItems.length > 1 ? meta.series : singleLeaf.series,
-        description:
-          subItems.length > 1
-            ? meta.description || `${meta.systemType} ${meta.productType}`
-            : singleLeaf.description || `${singleLeaf.systemType} ${meta.productType}`,
-        glassSpec: meta.glassSpec || (anyGlass ? "Yes" : "No"),
-        meshPresent: anyMesh ? "Yes" : "No",
-      },
-      subItems: subItems.length > 1 ? subItems : undefined,
-    });
+      const buildSubItem = async (leaf: SectionNode, idx: number): Promise<QuotationSubItem> => {
+        const systemType = leaf.systemType;
+        const series = leaf.series || "";
+        const description = leaf.description || `${systemType} ${meta.productType}`;
+        const itemArea = mmToSqft(leaf.w * widthMm, leaf.h * heightMm);
+        const descriptions = await getDescriptions(systemType, series);
+        const options = await getOptions(systemType);
+        const calc = calculateRateForItem(
+          {
+            area: itemArea,
+            description,
+            colorFinish: meta.colorFinish,
+            glassSpec: leaf.glass === "Yes" ? meta.glassSpec : "",
+            handleType: meta.handleType,
+            handleColor: meta.handleColor,
+            meshPresent: leaf.mesh,
+            meshType: leaf.mesh === "Yes" ? meta.meshType : "",
+          },
+          descriptions,
+          options
+        );
+        const computedRate = applyProfitToRate(calc.rate, profitPercentage);
+        const resolvedRate = manualChildRates[leaf.id] ?? autoChildRates[leaf.id] ?? computedRate;
+        const quantity = 1;
+        return {
+          id: crypto.randomUUID(),
+          refCode: meta.refCode ? `${meta.refCode}-${alpha(idx)}` : "",
+          location: meta.location || "",
+          width: Math.round(leaf.w * widthMm),
+          height: Math.round(leaf.h * heightMm),
+          area: itemArea,
+          systemType,
+          series,
+          description,
+          colorFinish: meta.colorFinish,
+          glassSpec: leaf.glass === "Yes" ? meta.glassSpec : "",
+          handleType: meta.handleType,
+          handleColor: meta.handleColor,
+          handleCount: calc.handleCount,
+          meshPresent: leaf.mesh,
+          meshType: leaf.mesh === "Yes" ? meta.meshType : "",
+          rate: roundToTwo(resolvedRate),
+          quantity,
+          amount: roundToTwo(quantity * roundToTwo(resolvedRate) * itemArea),
+          refImage: "",
+          remarks: meta.remarks || "",
+          baseRate: calc.baseRate,
+          areaSlabIndex: calc.areaSlabIndex,
+        };
+      };
+
+      const subItems = await Promise.all(leafNodes.map((leaf, idx) => buildSubItem(leaf, idx)));
+      const isCombination = subItems.length > 1;
+      const anyMesh = subItems.some((item) => item.meshPresent === "Yes");
+      const anyGlass = subItems.some((item) => item.glassSpec !== "");
+      const singleLeaf = leafNodes[0];
+
+      let rate = 0;
+      let amount = 0;
+      let baseRate = 0;
+      let areaSlabIndex = 0;
+      let handleCount = 0;
+
+      if (!isCombination && singleLeaf) {
+        const systemType = singleLeaf.systemType;
+        const series = singleLeaf.series || "";
+        const description = singleLeaf.description || `${systemType} ${meta.productType}`;
+        const descriptions = await getDescriptions(systemType, series);
+        const options = await getOptions(systemType);
+        const calc = calculateRateForItem(
+          {
+            area: areaSqft,
+            description,
+            colorFinish: meta.colorFinish,
+            glassSpec: meta.glassSpec,
+            handleType: meta.handleType,
+            handleColor: meta.handleColor,
+            meshPresent: singleLeaf.mesh,
+            meshType: singleLeaf.mesh === "Yes" ? meta.meshType : "",
+          },
+          descriptions,
+          options
+        );
+        baseRate = calc.baseRate;
+        areaSlabIndex = calc.areaSlabIndex;
+        handleCount = calc.handleCount;
+        rate = meta.rate > 0 ? meta.rate : applyProfitToRate(calc.rate, profitPercentage);
+        amount = roundToTwo(Math.max(1, meta.quantity || 1) * rate * areaSqft);
+      } else {
+        const parentQuantity = Math.max(1, meta.quantity || 1);
+        const perFrameAmount = roundToTwo(subItems.reduce((sum, sub) => sum + sub.amount, 0));
+        rate = roundToTwo(subItems.reduce((sum, sub) => sum + sub.rate, 0));
+        amount = roundToTwo(perFrameAmount * parentQuantity);
+      }
+
+      const nextItem: QuotationItem = {
+        id: initialItem?.id ?? crypto.randomUUID(),
+        refCode: meta.refCode || "",
+        location: meta.location || "",
+        width: widthMm,
+        height: heightMm,
+        area: areaSqft,
+        systemType: isCombination ? COMBINATION_SYSTEM : singleLeaf?.systemType || baseSystemType,
+        series: isCombination ? "" : singleLeaf?.series || "",
+        description: isCombination
+          ? ""
+          : singleLeaf?.description || `${singleLeaf?.systemType || baseSystemType} ${meta.productType}`,
+        colorFinish: isCombination ? "" : meta.colorFinish,
+        glassSpec: isCombination ? "" : meta.glassSpec || (anyGlass ? "Yes" : ""),
+        handleType: isCombination ? "" : meta.handleType,
+        handleColor: isCombination ? "" : meta.handleColor,
+        handleCount,
+        meshPresent: isCombination ? "" : singleLeaf?.mesh || "No",
+        meshType: isCombination ? "" : anyMesh ? meta.meshType : "",
+        rate,
+        quantity: Math.max(1, meta.quantity || 1),
+        amount,
+        refImage: dataUrl,
+        remarks: meta.remarks || "",
+        baseRate,
+        areaSlabIndex,
+        subItems: isCombination ? subItems : [],
+      };
+
+      onSaveItem(nextItem);
+      onClose();
+    } finally {
+      setHideSelectionForExport(false);
+      setIsSaving(false);
+    }
   };
 
   const splitSelected = useCallback(
@@ -1805,8 +2103,9 @@ export default function WindowDoorConfigurator({
     const fy = view.offsetY;
     const fw = view.drawW;
     const fh = view.drawH;
+    const selectedForRender = hideSelectionForExport ? null : selectedId;
 
-    addProfileRect(layer, fx, fy, fw, fh, selectedId === "root");
+    addProfileRect(layer, fx, fy, fw, fh, selectedForRender === "root");
 
     // root hit
     const rootHit = new Konva.Rect({ x: fx, y: fy, width: fw, height: fh, fill: "transparent" });
@@ -1864,7 +2163,7 @@ export default function WindowDoorConfigurator({
       const y = fy + leaf.y * fh;
       const w = leaf.w * fw;
       const h = leaf.h * fh;
-      const isSelected = leaf.id === selectedId;
+      const isSelected = leaf.id === selectedForRender;
 
       const g = new Konva.Group({ listening: true, draggable: false });
 
@@ -2256,7 +2555,7 @@ export default function WindowDoorConfigurator({
     }
 
     layer.draw();
-  }, [heightMm, push, root, selectedId, setDirect, stageSize.h, stageSize.w, view, widthMm]);
+  }, [heightMm, hideSelectionForExport, push, root, selectedId, setDirect, stageSize.h, stageSize.w, view, widthMm]);
 
   // create stage
   useEffect(() => {
@@ -2312,13 +2611,143 @@ export default function WindowDoorConfigurator({
     renderCanvas();
   }, [renderCanvas]);
 
+  useEffect(() => {
+    if (!initialItem) return;
+    const mapped = mapItemToConfiguratorState(initialItem);
+    setWidthMm(mapped.width);
+    setHeightMm(mapped.height);
+    setBaseSystemType(mapped.baseSystemType);
+    setBaseGlass(mapped.baseGlass);
+    setBaseMesh(mapped.baseMesh);
+    setMeta(mapped.meta);
+    reset(mapped.root);
+    setSelectedId("root");
+    const leaves: SectionNode[] = [];
+    mapLeafNodes(mapped.root, (leaf) => leaves.push(leaf));
+    const sortedLeaves = leaves.sort((a, b) => (a.y - b.y) || (a.x - b.x));
+    const subItems = initialItem.subItems ?? [];
+    const nextManualRates: Record<string, number> = {};
+    sortedLeaves.forEach((leaf, idx) => {
+      if (subItems[idx]?.rate !== undefined) {
+        nextManualRates[leaf.id] = Number(subItems[idx].rate) || 0;
+      }
+    });
+    setManualChildRates(nextManualRates);
+    setAutoChildRates({});
+  }, [initialItem, reset]);
+
   // apply base preset
   useEffect(() => {
+    if (initialItem) return;
     reset(buildPreset(baseSystemType, baseGlass, baseMesh));
     setSelectedId(null);
-  }, [baseGlass, baseMesh, baseSystemType, reset]);
+    setManualChildRates({});
+    setAutoChildRates({});
+  }, [baseGlass, baseMesh, baseSystemType, initialItem, reset]);
 
   const areaSqft = useMemo(() => mmToSqft(widthMm, heightMm), [widthMm, heightMm]);
+  const leafNodesForMode = useMemo(() => {
+    const leaves: SectionNode[] = [];
+    mapLeafNodes(root, (leaf) => leaves.push(leaf));
+    return leaves.sort((a, b) => (a.y - b.y) || (a.x - b.x));
+  }, [root]);
+  const isCombinationDraft = leafNodesForMode.length > 1;
+  const selectedIsWholeFrame = selectedId === null || selectedNode.id === "root";
+  const isCombinationParentSelection = isCombinationDraft && selectedIsWholeFrame;
+  const isCombinationChildSelection = isCombinationDraft && !selectedIsWholeFrame;
+  const selectedLeafIndex = leafNodesForMode.findIndex((leaf) => leaf.id === selectedNode.id);
+  const childAutoRef =
+    isCombinationChildSelection && meta.refCode && selectedLeafIndex >= 0
+      ? `${meta.refCode}-${indexToAlphaLower(selectedLeafIndex)}`
+      : "";
+  const selectedLeafAreaSqft =
+    isCombinationChildSelection && selectedLeafIndex >= 0
+      ? mmToSqft(
+          leafNodesForMode[selectedLeafIndex].w * widthMm,
+          leafNodesForMode[selectedLeafIndex].h * heightMm
+        )
+      : 0;
+  const selectedChildRate =
+    isCombinationChildSelection && selectedId
+      ? (manualChildRates[selectedId] ?? autoChildRates[selectedId] ?? 0)
+      : 0;
+  const parentCombinationRate = useMemo(
+    () =>
+      roundToTwo(
+        leafNodesForMode.reduce(
+          (sum, leaf) => sum + (manualChildRates[leaf.id] ?? autoChildRates[leaf.id] ?? 0),
+          0
+        )
+      ),
+    [autoChildRates, leafNodesForMode, manualChildRates]
+  );
+
+  useEffect(() => {
+    if (!isCombinationDraft) {
+      setAutoChildRates({});
+      return;
+    }
+
+    let isActive = true;
+    const run = async () => {
+      const next: Record<string, number> = {};
+      await Promise.all(
+        leafNodesForMode.map(async (leaf) => {
+          const systemType = leaf.systemType;
+          const series = leaf.series || "";
+          const description = leaf.description || `${systemType} ${meta.productType}`;
+          if (!systemType || !description || !series) {
+            next[leaf.id] = 0;
+            return;
+          }
+          try {
+            const [descriptionsResp, optionsResp] = await Promise.all([
+              fetchDescriptions(systemType, series),
+              fetchOptions(systemType),
+            ]);
+            const area = mmToSqft(leaf.w * widthMm, leaf.h * heightMm);
+            const calc = calculateRateForItem(
+              {
+                area,
+                description,
+                colorFinish: meta.colorFinish,
+                glassSpec: leaf.glass === "Yes" ? meta.glassSpec : "",
+                handleType: meta.handleType,
+                handleColor: meta.handleColor,
+                meshPresent: leaf.mesh,
+                meshType: leaf.mesh === "Yes" ? meta.meshType : "",
+              },
+              descriptionsResp.descriptions,
+              optionsResp
+            );
+            next[leaf.id] = applyProfitToRate(calc.rate, profitPercentage);
+          } catch {
+            next[leaf.id] = 0;
+          }
+        })
+      );
+
+      if (!isActive) return;
+      setAutoChildRates(next);
+    };
+
+    void run();
+    return () => {
+      isActive = false;
+    };
+  }, [
+    heightMm,
+    isCombinationDraft,
+    leafNodesForMode,
+    meta.colorFinish,
+    meta.glassSpec,
+    meta.handleColor,
+    meta.handleType,
+    meta.meshType,
+    meta.productType,
+    profitPercentage,
+    widthMm,
+  ]);
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
@@ -2429,170 +2858,409 @@ export default function WindowDoorConfigurator({
         </div>
       </div>
 
-      {/* RIGHT (READ ONLY) */}
+      {/* RIGHT */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm min-w-0">
         <h4 className="text-base font-semibold text-gray-900 mb-4">Summary</h4>
 
         <div className="mb-5 rounded-lg border border-gray-200 p-3">
           <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
-            Selected Section
+            Quotation Fields
           </div>
           <div className="grid grid-cols-1 gap-3 text-sm">
-            <label className="text-xs text-gray-600">
-              System
-              <select
-                value={selectedNode.systemType}
-                onChange={(e) => {
-                  const nextSystem = e.target.value as SystemType;
-                  updateSelectedLeaves((target) => {
-                    target.systemType = nextSystem;
-                    target.series = "";
-                    target.description = "";
-                    if (nextSystem !== "Sliding" && (target.sash === "left" || target.sash === "right" || target.sash === "double")) {
-                      target.sash = "fixed";
+            {isCombinationParentSelection ? (
+              <>
+                <label className="text-xs text-gray-600">
+                  Ref Code
+                  <input
+                    value={meta.refCode}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, refCode: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  />
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Location
+                  <input
+                    value={meta.location}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, location: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  />
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  System
+                  <input
+                    value={COMBINATION_SYSTEM}
+                    readOnly
+                    className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-600"
+                  />
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Quantity
+                  <input
+                    type="number"
+                    min={1}
+                    value={meta.quantity}
+                    onChange={(e) =>
+                      setMeta((prev) => ({ ...prev, quantity: Math.max(1, Number(e.target.value) || 1) }))
                     }
-                  });
-                }}
-                className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-              >
-                {systemOptions.map((sys) => (
-                  <option key={sys} value={sys}>
-                    {sys}
-                  </option>
-                ))}
-              </select>
-            </label>
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  />
+                </label>
 
-            <label className="text-xs text-gray-600">
-              Series
-              <select
-                value={selectedNode.series}
-                onChange={(e) => {
-                  const nextSeries = e.target.value;
-                  updateSelectedLeaves((target) => {
-                    target.series = nextSeries;
-                    target.description = "";
-                    target.panelFractions = undefined;
-                    target.panelMeshCount = undefined;
-                  });
-                }}
-                className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-              >
-                <option value="">Select</option>
-                {seriesOptions.map((series) => (
-                  <option key={series} value={series}>
-                    {series}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <label className="text-xs text-gray-600">
+                  Rate (Auto)
+                  <input
+                    value={parentCombinationRate}
+                    readOnly
+                    className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-600"
+                  />
+                </label>
 
-            <label className="text-xs text-gray-600">
-              Description
-              <select
-                value={selectedNode.description}
-                onChange={(e) => {
-                  const nextDescription = e.target.value;
-                  updateSelectedLeaves((target) => {
-                    target.description = nextDescription;
-                    const pattern = parsePanelPattern(nextDescription);
-                    if (pattern) {
-                      if (target.systemType === "Sliding" && pattern.fractions.length > 1 && !target.children?.length) {
-                        target.split = "vertical";
-                        target.children = buildSplitChildren(
-                          target,
-                          "vertical",
-                          target.systemType,
-                          target.glass,
-                          target.mesh,
-                          pattern.fractions.length,
-                          pattern.fractions
-                        );
-                        target.children.forEach((child, idx) => {
-                          child.systemType = "Sliding";
-                          child.series = target.series;
-                          child.description = "";
-                          child.sash = idx % 2 === 0 ? "left" : "right";
-                          if (pattern.meshCount && idx >= target.children!.length - pattern.meshCount) {
-                            child.mesh = "Yes";
-                          }
-                        });
+                <label className="text-xs text-gray-600">
+                  Remarks
+                  <textarea
+                    value={meta.remarks}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, remarks: e.target.value }))}
+                    rows={2}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657] resize-none"
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                {isCombinationChildSelection ? (
+                  <label className="text-xs text-gray-600">
+                    Ref Code (Auto)
+                    <input
+                      value={childAutoRef || "Will be generated from parent ref"}
+                      readOnly
+                      className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-600"
+                    />
+                  </label>
+                ) : (
+                  <>
+                    <label className="text-xs text-gray-600">
+                      Ref Code
+                      <input
+                        value={meta.refCode}
+                        onChange={(e) => setMeta((prev) => ({ ...prev, refCode: e.target.value }))}
+                        className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      />
+                    </label>
+
+                    <label className="text-xs text-gray-600">
+                      Location
+                      <input
+                        value={meta.location}
+                        onChange={(e) => setMeta((prev) => ({ ...prev, location: e.target.value }))}
+                        className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      />
+                    </label>
+                  </>
+                )}
+
+                <label className="text-xs text-gray-600">
+                  Section System
+                  <select
+                    value={selectedNode.systemType}
+                    onChange={(e) => {
+                      const nextSystem = e.target.value as SystemType;
+                      updateSelectedLeaves((target) => {
+                        target.systemType = nextSystem;
+                        target.series = "";
+                        target.description = "";
+                        if (nextSystem !== "Sliding" && (target.sash === "left" || target.sash === "right" || target.sash === "double")) {
+                          target.sash = "fixed";
+                        }
+                      });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    {selectableSystemOptions.map((sys) => (
+                      <option key={sys} value={sys}>
+                        {sys}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Section Series
+                  <select
+                    value={selectedNode.series}
+                    onChange={(e) => {
+                      const nextSeries = e.target.value;
+                      updateSelectedLeaves((target) => {
+                        target.series = nextSeries;
+                        target.description = "";
                         target.panelFractions = undefined;
                         target.panelMeshCount = undefined;
-                      } else {
-                        target.panelFractions = pattern.fractions;
-                        target.panelMeshCount = pattern.meshCount;
-                      }
-                    } else {
-                      target.panelFractions = undefined;
-                      target.panelMeshCount = undefined;
-                    }
-                  });
-                }}
-                className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-              >
-                <option value="">Select</option>
-                {descriptionOptions.map((desc: Description) => (
-                  <option key={desc.name} value={desc.name}>
-                    {desc.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                      });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {seriesOptions.map((series) => (
+                      <option key={series} value={series}>
+                        {series}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label className="text-xs text-gray-600">
-              Glass
-              <select
-                value={selectedNode.glass}
-                onChange={(e) => {
-                  const value = e.target.value as YesNo;
-                  updateSelectedLeaves((target) => {
-                    target.glass = value;
-                  });
-                }}
-                className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-              >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            </label>
+                <label className="text-xs text-gray-600">
+                  Section Description
+                  <select
+                    value={selectedNode.description}
+                    onChange={(e) => {
+                      const nextDescription = e.target.value;
+                      updateSelectedLeaves((target) => {
+                        target.description = nextDescription;
+                        const pattern = parsePanelPattern(nextDescription);
+                        if (pattern) {
+                          if (target.systemType === "Sliding" && pattern.fractions.length > 1 && !target.children?.length) {
+                            target.split = "vertical";
+                            target.children = buildSplitChildren(
+                              target,
+                              "vertical",
+                              target.systemType,
+                              target.glass,
+                              target.mesh,
+                              pattern.fractions.length,
+                              pattern.fractions
+                            );
+                            target.children.forEach((child, idx) => {
+                              child.systemType = "Sliding";
+                              child.series = target.series;
+                              child.description = "";
+                              child.sash = idx % 2 === 0 ? "left" : "right";
+                              if (pattern.meshCount && idx >= target.children!.length - pattern.meshCount) {
+                                child.mesh = "Yes";
+                              }
+                            });
+                            target.panelFractions = undefined;
+                            target.panelMeshCount = undefined;
+                          } else {
+                            target.panelFractions = pattern.fractions;
+                            target.panelMeshCount = pattern.meshCount;
+                          }
+                        } else {
+                          target.panelFractions = undefined;
+                          target.panelMeshCount = undefined;
+                        }
+                      });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {descriptionOptions.map((desc: Description) => (
+                      <option key={desc.name} value={desc.name}>
+                        {desc.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label className="text-xs text-gray-600">
-              Mesh
-              <select
-                value={selectedNode.mesh}
-                onChange={(e) => {
-                  const value = e.target.value as YesNo;
-                  updateSelectedLeaves((target) => {
-                    target.mesh = value;
-                  });
-                }}
-                className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-              >
-                <option value="No">No</option>
-                <option value="Yes">Yes</option>
-              </select>
-            </label>
+                {!isCombinationChildSelection && (
+                  <label className="text-xs text-gray-600">
+                    Section Glass
+                    <select
+                      value={selectedNode.glass}
+                      onChange={(e) => {
+                        const value = e.target.value as YesNo;
+                        updateSelectedLeaves((target) => {
+                          target.glass = value;
+                        });
+                      }}
+                      className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    >
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </label>
+                )}
 
-            {selectedNode.systemType === "Sliding" && !selectedNode.children?.length && (
-              <label className="text-xs text-gray-600">
-                Sliding Movement
-                <select
-                  value={selectedNode.sash}
-                  onChange={(e) => {
-                    const sash = e.target.value as SashType;
-                    updateSelectedNode((target) => {
-                      target.sash = sash;
-                    });
-                  }}
-                  className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                >
-                  <option value="left">Left Sliding</option>
-                  <option value="right">Right Sliding</option>
-                  <option value="double">Both Ways</option>
-                  <option value="fixed">Fixed</option>
-                </select>
-              </label>
+                <label className="text-xs text-gray-600">
+                  Section Mesh
+                  <select
+                    value={selectedNode.mesh}
+                    onChange={(e) => {
+                      const value = e.target.value as YesNo;
+                      updateSelectedLeaves((target) => {
+                        target.mesh = value;
+                      });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </select>
+                </label>
+
+                {selectedNode.systemType === "Sliding" && !selectedNode.children?.length && (
+                  <label className="text-xs text-gray-600">
+                    Sliding Movement
+                    <select
+                      value={selectedNode.sash}
+                      onChange={(e) => {
+                        const sash = e.target.value as SashType;
+                        updateSelectedNode((target) => {
+                          target.sash = sash;
+                        });
+                      }}
+                      className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    >
+                      <option value="left">Left Sliding</option>
+                      <option value="right">Right Sliding</option>
+                      <option value="double">Both Ways</option>
+                      <option value="fixed">Fixed</option>
+                    </select>
+                  </label>
+                )}
+
+                <label className="text-xs text-gray-600">
+                  Color Finish
+                  <select
+                    value={meta.colorFinish}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, colorFinish: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {metaOptionsQuery.data?.colorFinishes.map((opt: OptionWithRate) => (
+                      <option key={opt.name} value={opt.name}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Glass Spec
+                  <select
+                    value={meta.glassSpec}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, glassSpec: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {metaOptionsQuery.data?.glassSpecs.map((opt: OptionWithRate) => (
+                      <option key={opt.name} value={opt.name}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Handle Type
+                  <select
+                    value={meta.handleType}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, handleType: e.target.value, handleColor: "" }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {metaOptionsQuery.data?.handleOptions.map((opt: HandleOption) => (
+                      <option key={opt.name} value={opt.name}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Handle Color
+                  <select
+                    value={meta.handleColor}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, handleColor: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {(metaHandleOption?.colors ?? []).map((opt: OptionWithRate) => (
+                      <option key={opt.name} value={opt.name}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {!isCombinationChildSelection && (
+                  <label className="text-xs text-gray-600">
+                    Mesh Type
+                    <select
+                      value={meta.meshType}
+                      onChange={(e) => setMeta((prev) => ({ ...prev, meshType: e.target.value }))}
+                      className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      disabled={selectedNode.mesh !== "Yes"}
+                    >
+                      <option value="">Select</option>
+                      {metaOptionsQuery.data?.meshTypes.map((opt: OptionWithRate) => (
+                        <option key={opt.name} value={opt.name}>
+                          {opt.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {isCombinationChildSelection ? (
+                  <label className="text-xs text-gray-600">
+                    Rate
+                    <input
+                      type="number"
+                      min={0}
+                      value={selectedChildRate}
+                      onChange={(e) => {
+                        if (!selectedId) return;
+                        setManualChildRates((prev) => ({
+                          ...prev,
+                          [selectedId]: Number(e.target.value) || 0,
+                        }));
+                      }}
+                      className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    />
+                    <div className="mt-1 text-[11px] text-gray-500">
+                      Section area: {selectedLeafAreaSqft.toFixed(2)} sqft
+                    </div>
+                  </label>
+                ) : (
+                  <>
+                    <label className="text-xs text-gray-600">
+                      Quantity
+                      <input
+                        type="number"
+                        min={1}
+                        value={meta.quantity}
+                        onChange={(e) =>
+                          setMeta((prev) => ({ ...prev, quantity: Math.max(1, Number(e.target.value) || 1) }))
+                        }
+                        className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      />
+                    </label>
+
+                    <label className="text-xs text-gray-600">
+                      Rate
+                      <input
+                        type="number"
+                        min={0}
+                        value={meta.rate}
+                        onChange={(e) => setMeta((prev) => ({ ...prev, rate: Number(e.target.value) || 0 }))}
+                        className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      />
+                    </label>
+
+                    <label className="text-xs text-gray-600">
+                      Remarks
+                      <textarea
+                        value={meta.remarks}
+                        onChange={(e) => setMeta((prev) => ({ ...prev, remarks: e.target.value }))}
+                        rows={2}
+                        className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657] resize-none"
+                      />
+                    </label>
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -2614,10 +3282,11 @@ export default function WindowDoorConfigurator({
           <div className="pt-2">
             <button
               type="button"
-              onClick={handleAddItem}
-              className="w-full rounded-lg bg-[#124657] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0b3642]"
+              onClick={handleSaveItem}
+              disabled={isSaving}
+              className="w-full rounded-lg bg-[#124657] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0b3642] disabled:opacity-60"
             >
-              Add to Quotation
+              {isSaving ? "Saving..." : initialItem ? "Update Item" : "Add to Quotation"}
             </button>
             <button
               type="button"

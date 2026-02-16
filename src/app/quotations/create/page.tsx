@@ -10,6 +10,7 @@ import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import { QuotationItemRow, QuotationItem } from "@/components/QuotationItemRow";
 import { loadGlobalConfig } from "@/utils/globalConfig";
 import { API_BASE_URL } from "@/services/api";
+import dynamic from "next/dynamic";
 
 interface CustomerDetails {
   name: string;
@@ -40,32 +41,6 @@ interface GlobalConfig {
   };
 }
 
-const initialItem: QuotationItem = {
-  id: "1",
-  refCode: "",
-  location: "",
-  width: 0,
-  height: 0,
-  area: 0,
-  systemType: "",
-  series: "",
-  description: "",
-  colorFinish: "",
-  glassSpec: "",
-  handleType: "",
-  handleColor: "",
-  handleCount: 0,
-  meshPresent: "",
-  meshType: "",
-  rate: 0,
-  quantity: 1,
-  amount: 0,
-  refImage: "",
-  remarks: "",
-  baseRate: 0,
-  areaSlabIndex: 0,
-  subItems: [],
-};
 const COMBINATION_SYSTEM = "Combination";
 const initialGlobalConfig: GlobalConfig = {
   logo: "",
@@ -98,7 +73,9 @@ function CreateQuotationContent() {
     pincode: "",
   });
 
-  const [items, setItems] = useState<QuotationItem[]>([initialItem]);
+  const [items, setItems] = useState<QuotationItem[]>([]);
+  const [isConfiguratorOpen, setIsConfiguratorOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   const [quotationDetails, setQuotationDetails] = useState({
     quotationNumber: "",
@@ -167,10 +144,6 @@ function CreateQuotationContent() {
     }
   }, []);
 
-  const handleItemChange = (nextItem: QuotationItem) => {
-    setItems((prev) => prev.map((it) => (it.id === nextItem.id ? nextItem : it)));
-  };
-
   const duplicateItem = (id: string) => {
     setItems((prev) => {
       const sourceIndex = prev.findIndex((it) => it.id === id);
@@ -191,30 +164,48 @@ function CreateQuotationContent() {
   };
 
   const addItem = () => {
-    setItems((prev) => [
-      ...prev,
-      {
-        ...initialItem,
-        id: Date.now().toString(),
-      },
-    ]);
+    setEditingItemId(null);
+    setIsConfiguratorOpen(true);
   };
 
   const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((it) => it.id !== id));
+    if (items.length > 1) {
+      setItems((prev) => prev.filter((it) => it.id !== id));
+    }
+  };
+
+  const handleEditItem = (id: string) => {
+    setEditingItemId(id);
+    setIsConfiguratorOpen(true);
+  };
+
+  const handleSaveDesignItem = (nextItem: QuotationItem) => {
+    setItems((prev) => {
+      if (!editingItemId) {
+        return [...prev, nextItem];
+      }
+      return prev.map((item) => (item.id === editingItemId ? nextItem : item));
+    });
+    setEditingItemId(null);
+    setIsConfiguratorOpen(false);
   };
 
   const getItemTotals = (item: QuotationItem) => {
     if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
-      return item.subItems.reduce(
+      const parentQuantity = Math.max(1, item.quantity || 1);
+      const perFrame = item.subItems.reduce(
         (acc, sub) => {
           acc.amount += sub.amount;
-          acc.area += sub.area * sub.quantity;
-          acc.quantity += sub.quantity;
+          acc.area += sub.area;
           return acc;
         },
-        { amount: 0, area: 0, quantity: 0 }
+        { amount: 0, area: 0 }
       );
+      return {
+        amount: roundToTwo(perFrame.amount * parentQuantity),
+        area: roundToTwo(perFrame.area * parentQuantity),
+        quantity: parentQuantity,
+      };
     }
 
     return {
@@ -223,6 +214,8 @@ function CreateQuotationContent() {
       quantity: item.quantity,
     };
   };
+
+  const roundToTwo = (value: number) => Number(value.toFixed(2));
 
   const calculateTotal = () =>
     items.reduce((total, item) => total + getItemTotals(item).amount, 0);
@@ -385,6 +378,37 @@ function CreateQuotationContent() {
         </div>
 
         <div className="space-y-8">
+          {isConfiguratorOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4 py-6">
+              <div className="h-full w-full overflow-y-auto bg-white p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Window &amp; Door Configurator</h2>
+                    <p className="text-sm text-gray-500">Design and add to quotation.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsConfiguratorOpen(false);
+                      setEditingItemId(null);
+                    }}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                </div>
+                <WindowDoorConfigurator
+                  onSaveItem={handleSaveDesignItem}
+                  onClose={() => {
+                    setIsConfiguratorOpen(false);
+                    setEditingItemId(null);
+                  }}
+                  initialItem={items.find((item) => item.id === editingItemId) ?? null}
+                  profitPercentage={profitPercentage}
+                />
+              </div>
+            </div>
+          )}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6">Quotation Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -828,11 +852,10 @@ function CreateQuotationContent() {
                       key={item.id}
                       item={item}
                       index={index}
-                      onChange={handleItemChange}
                       removeItem={removeItem}
                       duplicateItem={duplicateItem}
+                      onEdit={handleEditItem}
                       canRemove={items.length > 1}
-                      profitPercentage={profitPercentage}
                     />
                   ))}
                 </tbody>
@@ -854,3 +877,8 @@ export default function CreateQuotationPage() {
     </QueryClientProvider>
   );
 }
+
+const WindowDoorConfigurator = dynamic(
+  () => import("@/components/WindowDoorConfigurator"),
+  { ssr: false }
+);
