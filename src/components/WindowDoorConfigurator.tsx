@@ -316,8 +316,8 @@ const calculateRateForItem = (
 };
 
 const mapItemToConfiguratorState = (item: QuotationItem) => {
-  const width = Math.max(400, Math.round(item.width || 1500));
-  const height = Math.max(400, Math.round(item.height || 1500));
+  const width = Math.round(item.width || 1500);
+  const height = Math.round(item.height || 1500);
   const subItems = item.subItems ?? [];
   const hasSubItems = item.systemType === COMBINATION_SYSTEM && subItems.length > 1;
   const sourceSystem = hasSubItems
@@ -1425,7 +1425,7 @@ function addDimensionLine(layer: Konva.Layer | Konva.Group, x1: number, y1: numb
 }
 
 function drawMeshTriangle(group: Konva.Group, x: number, y: number, size: number) {
-  const meshSize = Math.max(28, size);
+  const meshSize = Math.max(38, size);
   const topX = x;
   const topY = y - meshSize;
   const leftX = x - meshSize;
@@ -1777,7 +1777,7 @@ export default function WindowDoorConfigurator({
       y: clampY(hMidY - 14),
       value: heightMm,
       selectId: "root",
-      onChange: (next) => setHeightMm(clampMm(next, 400, 100000)),
+      onChange: (next) => setHeightMm(clampMm(next, 0, 100000)),
     });
 
     // main width label
@@ -1791,7 +1791,7 @@ export default function WindowDoorConfigurator({
       y: clampY(wMidY - 14),
       value: widthMm,
       selectId: "root",
-      onChange: (next) => setWidthMm(clampMm(next, 400, 100000)),
+      onChange: (next) => setWidthMm(clampMm(next, 0, 100000)),
     });
 
     splitParentsWithLevel.forEach(({ node: parent, levelFromFrame }) => {
@@ -1998,7 +1998,9 @@ export default function WindowDoorConfigurator({
       } else {
         const parentQuantity = Math.max(1, meta.quantity || 1);
         const perFrameAmount = roundToTwo(subItems.reduce((sum, sub) => sum + sub.amount, 0));
-        rate = roundToTwo(subItems.reduce((sum, sub) => sum + sub.rate, 0));
+        const weightedRateTotal = subItems.reduce((sum, sub) => sum + sub.rate * sub.area, 0);
+        const frameArea = areaSqft;
+        rate = frameArea > 0 ? roundToTwo(weightedRateTotal / frameArea) : 0;
         amount = roundToTwo(perFrameAmount * parentQuantity);
       }
 
@@ -2226,7 +2228,7 @@ export default function WindowDoorConfigurator({
                 g,
                 cursor + pw - 6,
                 innerY + innerH - 6,
-                Math.min(pw, innerH) * 0.22
+                Math.min(pw, innerH) * 0.5
               );
             }
             cursor += pw;
@@ -2375,7 +2377,7 @@ export default function WindowDoorConfigurator({
       if (leaf.mesh === "Yes") {
         const triX = x + w - inset - 6;
         const triY = y + h - inset - 6;
-        drawMeshTriangle(g, triX, triY, Math.min(w, h) * 0.18);
+        drawMeshTriangle(g, triX, triY, Math.min(w, h) * 0.5);
       }
 
       // handle icon for openable/sliding-movable
@@ -2408,8 +2410,8 @@ export default function WindowDoorConfigurator({
           addHandleIcon(g, x + w * 0.53, y + h / 2 - 18, "left");
         }
 
-        // darker arrow moved away from bottom rail
-        const arrowY = y + h - 34;
+        // keep sliding direction arrows centered vertically
+        const arrowY = y + h / 2;
         if (leaf.sash === "double") {
           g.add(new Konva.Arrow({
             points: [x + w * 0.50, arrowY, x + w * 0.28, arrowY],
@@ -2672,14 +2674,15 @@ export default function WindowDoorConfigurator({
       ? (manualChildRates[selectedId] ?? autoChildRates[selectedId] ?? 0)
       : 0;
   const parentCombinationRate = useMemo(
-    () =>
-      roundToTwo(
-        leafNodesForMode.reduce(
-          (sum, leaf) => sum + (manualChildRates[leaf.id] ?? autoChildRates[leaf.id] ?? 0),
-          0
-        )
-      ),
-    [autoChildRates, leafNodesForMode, manualChildRates]
+    () => {
+      const weightedRateTotal = leafNodesForMode.reduce((sum, leaf) => {
+        const leafArea = mmToSqft(leaf.w * widthMm, leaf.h * heightMm);
+        const leafRate = manualChildRates[leaf.id] ?? autoChildRates[leaf.id] ?? 0;
+        return sum + leafRate * leafArea;
+      }, 0);
+      return areaSqft > 0 ? roundToTwo(weightedRateTotal / areaSqft) : 0;
+    },
+    [areaSqft, autoChildRates, leafNodesForMode, manualChildRates, heightMm, widthMm]
   );
 
   useEffect(() => {
@@ -2800,7 +2803,7 @@ export default function WindowDoorConfigurator({
               onChange={(e) => label.onChange(Number(e.target.value))}
               onFocus={() => setSelectedId(label.selectId)}
               data-dim-input="true"
-              className="pointer-events-auto absolute h-7 w-[88px] rounded-sm border border-[#CBD5E1] bg-white text-center text-sm text-gray-900 shadow-sm focus:border-[#124657] focus:outline-none focus:ring-2 focus:ring-[#124657]"
+              className="pointer-events-auto absolute h-7 w-[88px] rounded-sm border border-gray-400 bg-white text-center text-sm text-gray-900 shadow-sm focus:border-[#124657] focus:outline-none focus:ring-2 focus:ring-[#124657]"
               style={{ left: label.x, top: label.y }}
             />
           ))}
@@ -2813,7 +2816,7 @@ export default function WindowDoorConfigurator({
             <select
               value={splitCount}
               onChange={(e) => setSplitCount(Number(e.target.value) || 2)}
-              className="rounded-md border border-gray-200 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+              className="rounded-md border border-gray-400 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
             >
               <option value={2}>2</option>
               <option value={3}>3</option>
@@ -2827,7 +2830,7 @@ export default function WindowDoorConfigurator({
             <select
               value={splitDirection}
               onChange={(e) => setSplitDirection(e.target.value as SplitDirection)}
-              className="rounded-md border border-gray-200 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+              className="rounded-md border border-gray-400 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
             >
               <option value="vertical">Vertical</option>
               <option value="horizontal">Horizontal</option>
@@ -2874,7 +2877,7 @@ export default function WindowDoorConfigurator({
                   <input
                     value={meta.refCode}
                     onChange={(e) => setMeta((prev) => ({ ...prev, refCode: e.target.value }))}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   />
                 </label>
 
@@ -2883,7 +2886,7 @@ export default function WindowDoorConfigurator({
                   <input
                     value={meta.location}
                     onChange={(e) => setMeta((prev) => ({ ...prev, location: e.target.value }))}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   />
                 </label>
 
@@ -2892,7 +2895,7 @@ export default function WindowDoorConfigurator({
                   <input
                     value={COMBINATION_SYSTEM}
                     readOnly
-                    className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-600"
+                    className="mt-1 w-full rounded-md border border-gray-400 bg-gray-50 px-2 py-2 text-sm text-gray-600"
                   />
                 </label>
 
@@ -2905,7 +2908,7 @@ export default function WindowDoorConfigurator({
                     onChange={(e) =>
                       setMeta((prev) => ({ ...prev, quantity: Math.max(1, Number(e.target.value) || 1) }))
                     }
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   />
                 </label>
 
@@ -2914,7 +2917,7 @@ export default function WindowDoorConfigurator({
                   <input
                     value={parentCombinationRate}
                     readOnly
-                    className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-600"
+                    className="mt-1 w-full rounded-md border border-gray-400 bg-gray-50 px-2 py-2 text-sm text-gray-600"
                   />
                 </label>
 
@@ -2924,7 +2927,7 @@ export default function WindowDoorConfigurator({
                     value={meta.remarks}
                     onChange={(e) => setMeta((prev) => ({ ...prev, remarks: e.target.value }))}
                     rows={2}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657] resize-none"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657] resize-none"
                   />
                 </label>
               </>
@@ -2936,7 +2939,7 @@ export default function WindowDoorConfigurator({
                     <input
                       value={childAutoRef || "Will be generated from parent ref"}
                       readOnly
-                      className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-sm text-gray-600"
+                      className="mt-1 w-full rounded-md border border-gray-400 bg-gray-50 px-2 py-2 text-sm text-gray-600"
                     />
                   </label>
                 ) : (
@@ -2946,7 +2949,7 @@ export default function WindowDoorConfigurator({
                       <input
                         value={meta.refCode}
                         onChange={(e) => setMeta((prev) => ({ ...prev, refCode: e.target.value }))}
-                        className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                       />
                     </label>
 
@@ -2955,7 +2958,7 @@ export default function WindowDoorConfigurator({
                       <input
                         value={meta.location}
                         onChange={(e) => setMeta((prev) => ({ ...prev, location: e.target.value }))}
-                        className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                       />
                     </label>
                   </>
@@ -2976,7 +2979,7 @@ export default function WindowDoorConfigurator({
                         }
                       });
                     }}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     {selectableSystemOptions.map((sys) => (
                       <option key={sys} value={sys}>
@@ -2999,7 +3002,7 @@ export default function WindowDoorConfigurator({
                         target.panelMeshCount = undefined;
                       });
                     }}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="">Select</option>
                     {seriesOptions.map((series) => (
@@ -3052,7 +3055,7 @@ export default function WindowDoorConfigurator({
                         }
                       });
                     }}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="">Select</option>
                     {descriptionOptions.map((desc: Description) => (
@@ -3074,7 +3077,7 @@ export default function WindowDoorConfigurator({
                           target.glass = value;
                         });
                       }}
-                      className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                     >
                       <option value="Yes">Yes</option>
                       <option value="No">No</option>
@@ -3092,7 +3095,7 @@ export default function WindowDoorConfigurator({
                         target.mesh = value;
                       });
                     }}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="No">No</option>
                     <option value="Yes">Yes</option>
@@ -3110,7 +3113,7 @@ export default function WindowDoorConfigurator({
                           target.sash = sash;
                         });
                       }}
-                      className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                     >
                       <option value="left">Left Sliding</option>
                       <option value="right">Right Sliding</option>
@@ -3125,7 +3128,7 @@ export default function WindowDoorConfigurator({
                   <select
                     value={meta.colorFinish}
                     onChange={(e) => setMeta((prev) => ({ ...prev, colorFinish: e.target.value }))}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="">Select</option>
                     {metaOptionsQuery.data?.colorFinishes.map((opt: OptionWithRate) => (
@@ -3141,7 +3144,7 @@ export default function WindowDoorConfigurator({
                   <select
                     value={meta.glassSpec}
                     onChange={(e) => setMeta((prev) => ({ ...prev, glassSpec: e.target.value }))}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="">Select</option>
                     {metaOptionsQuery.data?.glassSpecs.map((opt: OptionWithRate) => (
@@ -3157,7 +3160,7 @@ export default function WindowDoorConfigurator({
                   <select
                     value={meta.handleType}
                     onChange={(e) => setMeta((prev) => ({ ...prev, handleType: e.target.value, handleColor: "" }))}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="">Select</option>
                     {metaOptionsQuery.data?.handleOptions.map((opt: HandleOption) => (
@@ -3173,7 +3176,7 @@ export default function WindowDoorConfigurator({
                   <select
                     value={meta.handleColor}
                     onChange={(e) => setMeta((prev) => ({ ...prev, handleColor: e.target.value }))}
-                    className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="">Select</option>
                     {(metaHandleOption?.colors ?? []).map((opt: OptionWithRate) => (
@@ -3190,7 +3193,7 @@ export default function WindowDoorConfigurator({
                     <select
                       value={meta.meshType}
                       onChange={(e) => setMeta((prev) => ({ ...prev, meshType: e.target.value }))}
-                      className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                       disabled={selectedNode.mesh !== "Yes"}
                     >
                       <option value="">Select</option>
@@ -3217,7 +3220,7 @@ export default function WindowDoorConfigurator({
                           [selectedId]: Number(e.target.value) || 0,
                         }));
                       }}
-                      className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                     />
                     <div className="mt-1 text-[11px] text-gray-500">
                       Section area: {selectedLeafAreaSqft.toFixed(2)} sqft
@@ -3234,7 +3237,7 @@ export default function WindowDoorConfigurator({
                         onChange={(e) =>
                           setMeta((prev) => ({ ...prev, quantity: Math.max(1, Number(e.target.value) || 1) }))
                         }
-                        className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                       />
                     </label>
 
@@ -3245,7 +3248,7 @@ export default function WindowDoorConfigurator({
                         min={0}
                         value={meta.rate}
                         onChange={(e) => setMeta((prev) => ({ ...prev, rate: Number(e.target.value) || 0 }))}
-                        className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                       />
                     </label>
 
@@ -3255,7 +3258,7 @@ export default function WindowDoorConfigurator({
                         value={meta.remarks}
                         onChange={(e) => setMeta((prev) => ({ ...prev, remarks: e.target.value }))}
                         rows={2}
-                        className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657] resize-none"
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657] resize-none"
                       />
                     </label>
                   </>

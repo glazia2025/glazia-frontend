@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Plus, Download, Save, ArrowLeft } from "lucide-react";
+import { Plus, Download, Save, ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -124,9 +124,21 @@ export default function EditQuotationPage() {
 
   const [profitPercentage, setProfitPercentage] = useState<number>(0);
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(initialGlobalConfig);
+  const [expandedSections, setExpandedSections] = useState({
+    quotationDetails: false,
+    customerDetails: true,
+    globalConfig: false,
+  });
   const [error, setError] = useState<string | null>(null);
   const [isConfiguratorOpen, setIsConfiguratorOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   // Load existing quotation data
   useEffect(() => {
@@ -598,7 +610,19 @@ export default function EditQuotationPage() {
           )}
           {/* Quotation Details */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Quotation Details</h2>
+              <button
+                type="button"
+                onClick={() => toggleSection("quotationDetails")}
+                className="mb-6 flex w-full items-center justify-between text-left"
+              >
+                <h2 className="text-xl font-bold text-gray-900">Quotation Details</h2>
+                {expandedSections.quotationDetails ? (
+                  <ChevronUp className="h-5 w-5 text-gray-600" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-gray-600" />
+                )}
+              </button>
+              {expandedSections.quotationDetails && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -639,11 +663,24 @@ export default function EditQuotationPage() {
                   />
                 </div>
               </div>
+              )}
             </div>
 
           {/* Customer Details */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Customer Details</h2>
+              <button
+                type="button"
+                onClick={() => toggleSection("customerDetails")}
+                className="mb-6 flex w-full items-center justify-between text-left"
+              >
+                <h2 className="text-xl font-bold text-gray-900">Customer Details</h2>
+                {expandedSections.customerDetails ? (
+                  <ChevronUp className="h-5 w-5 text-gray-600" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-gray-600" />
+                )}
+              </button>
+              {expandedSections.customerDetails && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -726,11 +763,25 @@ export default function EditQuotationPage() {
                   />
                 </div>
               </div>
+              )}
             </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
+            <button
+              type="button"
+              onClick={() => toggleSection("globalConfig")}
+              className="mb-6 flex w-full items-center justify-between text-left"
+            >
               <h2 className="text-xl font-bold text-gray-900">Global Config</h2>
+              {expandedSections.globalConfig ? (
+                <ChevronUp className="h-5 w-5 text-gray-600" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-gray-600" />
+              )}
+            </button>
+            {expandedSections.globalConfig && (
+              <>
+            <div className="mb-6 flex items-center justify-end">
               <Link
                 href="/quotations/settings"
                 className="text-sm font-medium text-[#124657] hover:underline"
@@ -955,6 +1006,8 @@ export default function EditQuotationPage() {
                 />
               </div>
             </div>
+              </>
+            )}
           </div>
 
           {/* Items Section */}

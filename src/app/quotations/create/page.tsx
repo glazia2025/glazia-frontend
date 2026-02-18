@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, Plus, Save } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Download, Plus, Save } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import axios from "axios";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
@@ -90,6 +90,18 @@ function CreateQuotationContent() {
 
   const [profitPercentage, setProfitPercentage] = useState<number>(0);
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(initialGlobalConfig);
+  const [expandedSections, setExpandedSections] = useState({
+    quotationDetails: false,
+    customerDetails: true,
+    globalConfig: false,
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   const getNextQuotationNumber = () => {
     const existing = JSON.parse(localStorage.getItem("quotations") || "[]");
@@ -410,8 +422,20 @@ function CreateQuotationContent() {
             </div>
           )}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Quotation Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <button
+              type="button"
+              onClick={() => toggleSection("quotationDetails")}
+              className="mb-6 flex w-full items-center justify-between text-left"
+            >
+              <h2 className="text-xl font-bold text-gray-900">Quotation Details</h2>
+              {expandedSections.quotationDetails ? (
+                <ChevronUp className="h-5 w-5 text-gray-600" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-gray-600" />
+              )}
+            </button>
+            {expandedSections.quotationDetails && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
                 <input
@@ -449,12 +473,25 @@ function CreateQuotationContent() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>
-            </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Customer Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <button
+              type="button"
+              onClick={() => toggleSection("customerDetails")}
+              className="mb-6 flex w-full items-center justify-between text-left"
+            >
+              <h2 className="text-xl font-bold text-gray-900">Customer Details</h2>
+              {expandedSections.customerDetails ? (
+                <ChevronUp className="h-5 w-5 text-gray-600" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-gray-600" />
+              )}
+            </button>
+            {expandedSections.customerDetails && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
                 <input
@@ -521,12 +558,26 @@ function CreateQuotationContent() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>
-            </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
+            <button
+              type="button"
+              onClick={() => toggleSection("globalConfig")}
+              className="mb-6 flex w-full items-center justify-between text-left"
+            >
               <h2 className="text-xl font-bold text-gray-900">Global Config</h2>
+              {expandedSections.globalConfig ? (
+                <ChevronUp className="h-5 w-5 text-gray-600" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-gray-600" />
+              )}
+            </button>
+            {expandedSections.globalConfig && (
+              <>
+            <div className="mb-6 flex items-center justify-end">
               <Link
                 href="/quotations/settings"
                 className="text-sm font-medium text-[#124657] hover:underline"
@@ -752,6 +803,8 @@ function CreateQuotationContent() {
                 />
               </div>
             </div>
+              </>
+            )}
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
