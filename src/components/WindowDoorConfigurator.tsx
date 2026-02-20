@@ -34,6 +34,7 @@ type SectionNode = {
   description: string;
   panelFractions?: number[];
   panelMeshCount?: number;
+  panelSashes?: SashType[];
   glass: YesNo;
   mesh: YesNo;
   children?: SectionNode[];
@@ -93,6 +94,9 @@ const indexToAlphaLower = (index: number): string => {
   }
   return result;
 };
+
+const buildDefaultSlidingPanelSashes = (count: number): SashType[] =>
+  Array.from({ length: count }, (_, idx) => (idx % 2 === 0 ? "left" : "right"));
 
 const createRoot = (baseSystem: SystemType): SectionNode => ({
   id: "root",
@@ -1538,6 +1542,7 @@ export default function WindowDoorConfigurator({
   const layerRef = useRef<Konva.Layer | null>(null);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedSlidingPanelIndex, setSelectedSlidingPanelIndex] = useState<number | null>(null);
   const [widthMm, setWidthMm] = useState(1500);
   const [heightMm, setHeightMm] = useState(1500);
 
@@ -1561,6 +1566,13 @@ export default function WindowDoorConfigurator({
 
   const root = present;
   const selectedNode = (selectedId ? findNode(root, selectedId) : null) ?? root;
+  const isSlidingPanelSelection =
+    selectedNode.systemType === "Sliding" &&
+    !selectedNode.children?.length &&
+    (selectedNode.panelFractions?.length ?? 0) > 1 &&
+    selectedSlidingPanelIndex !== null &&
+    selectedSlidingPanelIndex >= 0 &&
+    selectedSlidingPanelIndex < (selectedNode.panelFractions?.length ?? 0);
   const systemsQuery = useSystemsQuery();
   const selectedSeriesQuery = useSeriesQuery(selectedNode.systemType);
   const selectedDescriptionsQuery = useDescriptionsQuery(selectedNode.systemType, selectedNode.series);
@@ -1574,6 +1586,18 @@ export default function WindowDoorConfigurator({
   );
   const seriesOptions = selectedSeriesQuery.data?.series ?? [];
   const descriptionOptions = selectedDescriptionsQuery.data?.descriptions ?? [];
+
+  useEffect(() => {
+    if (
+      selectedNode.systemType !== "Sliding" ||
+      !selectedNode.panelFractions?.length ||
+      selectedNode.panelFractions.length < 2 ||
+      selectedSlidingPanelIndex === null ||
+      selectedSlidingPanelIndex >= selectedNode.panelFractions.length
+    ) {
+      setSelectedSlidingPanelIndex(null);
+    }
+  }, [selectedNode, selectedSlidingPanelIndex]);
 
   const rootDimensions = useMemo(() => {
     const baseW = Math.max(widthMm, 0);
@@ -1692,7 +1716,7 @@ export default function WindowDoorConfigurator({
     if (!leaf || !leaf.panelFractions || leaf.panelFractions.length < 2) return;
 
     const total = leaf.w * widthMm;
-    const minMm = 120;
+    const minMm = 0;
     const count = leaf.panelFractions.length;
 
     const current = leaf.panelFractions.map((frac) => Math.round(frac * total));
@@ -1726,6 +1750,7 @@ export default function WindowDoorConfigurator({
       y: number;
       value: number;
       selectId: string | null;
+      panelIndex?: number;
       onChange: (next: number) => void;
     }> = [];
 
@@ -1777,6 +1802,7 @@ export default function WindowDoorConfigurator({
       y: clampY(hMidY - 14),
       value: heightMm,
       selectId: "root",
+      panelIndex: undefined,
       onChange: (next) => setHeightMm(clampMm(next, 0, 100000)),
     });
 
@@ -1791,6 +1817,7 @@ export default function WindowDoorConfigurator({
       y: clampY(wMidY - 14),
       value: widthMm,
       selectId: "root",
+      panelIndex: undefined,
       onChange: (next) => setWidthMm(clampMm(next, 0, 100000)),
     });
 
@@ -1805,6 +1832,7 @@ export default function WindowDoorConfigurator({
             y: clampY(y2 - 14),
             value: Math.round(c.w * widthMm),
             selectId: c.id,
+            panelIndex: undefined,
             onChange: (next) => updateChildDimension(parent.id, idx, next, "vertical"),
           });
         });
@@ -1820,6 +1848,7 @@ export default function WindowDoorConfigurator({
             y: clampY(midY - 14),
             value: Math.round(c.h * heightMm),
             selectId: c.id,
+            panelIndex: undefined,
             onChange: (next) => updateChildDimension(parent.id, idx, next, "horizontal"),
           });
         });
@@ -1846,6 +1875,7 @@ export default function WindowDoorConfigurator({
           y: clampY(y2 - 14),
           value: Math.round(frac * leaf.w * widthMm),
           selectId: leaf.id,
+          panelIndex: idx,
           onChange: (next) => updateLeafPanelDimension(leaf.id, idx, next),
         });
         cursor += pw;
@@ -2045,6 +2075,7 @@ export default function WindowDoorConfigurator({
     (direction: SplitDirection) => {
       if (!selectedId) return;
       if (!selectedNode || selectedNode.children?.length) return;
+      if (selectedNode.systemType === "Sliding") return;
 
       const next = cloneTree(root);
       const target = findNode(next, selectedId);
@@ -2111,6 +2142,10 @@ export default function WindowDoorConfigurator({
 
     // root hit
     const rootHit = new Konva.Rect({ x: fx, y: fy, width: fw, height: fh, fill: "transparent" });
+    rootHit.on("mousedown touchstart", () => {
+      setSelectedId("root");
+      setSelectedSlidingPanelIndex(null);
+    });
     layer.add(rootHit);
 
     /** ============ OUTER RESIZE HANDLES REMOVED ============ */
@@ -2216,12 +2251,77 @@ export default function WindowDoorConfigurator({
         };
 
         const drawPanels = (fractions: number[], sashTypes?: SashType[], meshCount = 0) => {
+          const isPanelizedSliding = leaf.systemType === "Sliding" && fractions.length > 1;
+          const panelSashes = isPanelizedSliding
+            ? (leaf.panelSashes && leaf.panelSashes.length === fractions.length
+                ? leaf.panelSashes
+                : buildDefaultSlidingPanelSashes(fractions.length))
+            : [];
           let cursor = innerX;
           fractions.forEach((frac, idx) => {
             const pw = innerW * frac;
             fixedPanel(cursor, innerY, pw, innerH);
             if (sashTypes?.[idx]) {
               drawSashGlyph(g, cursor, innerY, pw, innerH, sashTypes[idx], COLORS.frameDark);
+            }
+            if (isPanelizedSliding) {
+              const panelSash = panelSashes[idx] ?? "fixed";
+              const arrowY = innerY + innerH / 2;
+              if (panelSash === "double") {
+                g.add(new Konva.Arrow({
+                  points: [cursor + pw * 0.5, arrowY, cursor + pw * 0.25, arrowY],
+                  stroke: "#111827",
+                  fill: "#111827",
+                  strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+                  pointerLength: 7,
+                  pointerWidth: 7,
+                  opacity: 0.7,
+                  listening: false,
+                }));
+                g.add(new Konva.Arrow({
+                  points: [cursor + pw * 0.5, arrowY, cursor + pw * 0.75, arrowY],
+                  stroke: "#111827",
+                  fill: "#111827",
+                  strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+                  pointerLength: 7,
+                  pointerWidth: 7,
+                  opacity: 0.7,
+                  listening: false,
+                }));
+              } else if (panelSash === "left" || panelSash === "right") {
+                const from = panelSash === "left" ? cursor + pw * 0.75 : cursor + pw * 0.25;
+                const to = panelSash === "left" ? cursor + pw * 0.25 : cursor + pw * 0.75;
+                g.add(new Konva.Arrow({
+                  points: [from, arrowY, to, arrowY],
+                  stroke: "#111827",
+                  fill: "#111827",
+                  strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+                  pointerLength: 7,
+                  pointerWidth: 7,
+                  opacity: 0.7,
+                  listening: false,
+                }));
+              }
+
+              const panelHit = new Konva.Rect({
+                x: cursor,
+                y: innerY,
+                width: pw,
+                height: innerH,
+                fill: "rgba(255,255,255,0.001)",
+                stroke:
+                  isSelected && selectedSlidingPanelIndex === idx
+                    ? COLORS.selected
+                    : "rgba(148, 163, 184, 0.45)",
+                strokeWidth: isSelected && selectedSlidingPanelIndex === idx ? 2 : 1,
+                listening: true,
+              });
+              panelHit.on("mousedown touchstart", (event) => {
+                event.cancelBubble = true;
+                setSelectedId(leaf.id);
+                setSelectedSlidingPanelIndex(idx);
+              });
+              g.add(panelHit);
             }
             if (meshCount > 0 && idx >= fractions.length - meshCount) {
               drawMeshTriangle(
@@ -2383,6 +2483,7 @@ export default function WindowDoorConfigurator({
       // handle icon for openable/sliding-movable
       const insetHandle = inset + 6;
       const isSliding = leaf.systemType === "Sliding";
+      const hasSlidingPanels = isSliding && (leaf.panelFractions?.length ?? 0) > 1;
       const isSlideFold = leaf.systemType === "Slide N Fold";
       const isCustomSlideNFoldPattern =
         isSlideFold &&
@@ -2402,7 +2503,7 @@ export default function WindowDoorConfigurator({
         else if (leaf.sash === "double") addHandleIcon(g, x + w / 2 - 6, y + h / 2 - 18, "right");
       }
 
-      if (isSlidingMove) {
+      if (isSlidingMove && !hasSlidingPanels) {
         if (leaf.sash === "left") addHandleIcon(g, x + w * 0.55, y + h / 2 - 18, "right");
         if (leaf.sash === "right") addHandleIcon(g, x + w * 0.40, y + h / 2 - 18, "left");
         if (leaf.sash === "double") {
@@ -2498,6 +2599,11 @@ export default function WindowDoorConfigurator({
       g.add(new Konva.Line({ points: [x + w / 2 - 10, y + h / 2 + 8, x + w / 2 + 10, y + h / 2 + 8], stroke: COLORS.frameDark, strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6, opacity: 0.85, listening: false }));
       g.add(new Konva.Line({ points: [x + w / 2, y + h / 2 - 2, x + w / 2, y + h / 2 + 18], stroke: COLORS.frameDark, strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6, opacity: 0.85, listening: false }));
 
+      g.on("mousedown touchstart", () => {
+        setSelectedId(leaf.id);
+        setSelectedSlidingPanelIndex(null);
+      });
+
       layer.add(g);
     });
 
@@ -2557,7 +2663,7 @@ export default function WindowDoorConfigurator({
     }
 
     layer.draw();
-  }, [heightMm, hideSelectionForExport, push, root, selectedId, setDirect, stageSize.h, stageSize.w, view, widthMm]);
+  }, [heightMm, hideSelectionForExport, push, root, selectedId, selectedSlidingPanelIndex, setDirect, stageSize.h, stageSize.w, view, widthMm]);
 
   // create stage
   useEffect(() => {
@@ -2801,7 +2907,10 @@ export default function WindowDoorConfigurator({
               type="number"
               value={label.value}
               onChange={(e) => label.onChange(Number(e.target.value))}
-              onFocus={() => setSelectedId(label.selectId)}
+              onFocus={() => {
+                setSelectedId(label.selectId);
+                setSelectedSlidingPanelIndex(label.panelIndex ?? null);
+              }}
               data-dim-input="true"
               className="pointer-events-auto absolute h-7 w-[88px] rounded-sm border border-gray-400 bg-white text-center text-sm text-gray-900 shadow-sm focus:border-[#124657] focus:outline-none focus:ring-2 focus:ring-[#124657]"
               style={{ left: label.x, top: label.y }}
@@ -2840,7 +2949,8 @@ export default function WindowDoorConfigurator({
           <button
             type="button"
             onClick={() => splitSelected(splitDirection)}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            disabled={selectedNode.systemType === "Sliding"}
+            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {splitDirection === "vertical" ? (
               <SplitSquareVertical className="h-4 w-4" />
@@ -2964,6 +3074,41 @@ export default function WindowDoorConfigurator({
                   </>
                 )}
 
+                {isSlidingPanelSelection ? (
+                  <label className="text-xs text-gray-600">
+                    Sliding Movement
+                    <select
+                      value={
+                        selectedNode.panelSashes &&
+                        selectedNode.panelSashes.length === (selectedNode.panelFractions?.length ?? 0) &&
+                        selectedSlidingPanelIndex !== null
+                          ? (selectedNode.panelSashes[selectedSlidingPanelIndex] ?? "fixed")
+                          : "fixed"
+                      }
+                      onChange={(e) => {
+                        const sash = e.target.value as SashType;
+                        if (selectedSlidingPanelIndex === null) return;
+                        updateSelectedNode((target) => {
+                          const panelCount = target.panelFractions?.length ?? 0;
+                          if (panelCount < 2) return;
+                          const nextSashes =
+                            target.panelSashes && target.panelSashes.length === panelCount
+                              ? [...target.panelSashes]
+                              : buildDefaultSlidingPanelSashes(panelCount);
+                          nextSashes[selectedSlidingPanelIndex] = sash;
+                          target.panelSashes = nextSashes;
+                        });
+                      }}
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    >
+                      <option value="left">Left Sliding</option>
+                      <option value="right">Right Sliding</option>
+                      <option value="double">Both Ways</option>
+                      <option value="fixed">Fixed</option>
+                    </select>
+                  </label>
+                ) : (
+                  <>
                 <label className="text-xs text-gray-600">
                   Section System
                   <select
@@ -2974,6 +3119,7 @@ export default function WindowDoorConfigurator({
                         target.systemType = nextSystem;
                         target.series = "";
                         target.description = "";
+                        target.panelSashes = undefined;
                         if (nextSystem !== "Sliding" && (target.sash === "left" || target.sash === "right" || target.sash === "double")) {
                           target.sash = "fixed";
                         }
@@ -3000,6 +3146,7 @@ export default function WindowDoorConfigurator({
                         target.description = "";
                         target.panelFractions = undefined;
                         target.panelMeshCount = undefined;
+                        target.panelSashes = undefined;
                       });
                     }}
                     className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
@@ -3019,39 +3166,38 @@ export default function WindowDoorConfigurator({
                     value={selectedNode.description}
                     onChange={(e) => {
                       const nextDescription = e.target.value;
+                      if (selectedNode.systemType === "Sliding") {
+                        updateSelectedNode((target) => {
+                          target.description = nextDescription;
+                          target.split = "none";
+                          target.children = undefined;
+                          const pattern = parsePanelPattern(nextDescription);
+                          if (pattern) {
+                            target.panelFractions = pattern.fractions;
+                            target.panelMeshCount = pattern.meshCount;
+                            target.panelSashes =
+                              target.panelSashes && target.panelSashes.length === pattern.fractions.length
+                                ? target.panelSashes
+                                : buildDefaultSlidingPanelSashes(pattern.fractions.length);
+                          } else {
+                            target.panelFractions = undefined;
+                            target.panelMeshCount = undefined;
+                            target.panelSashes = undefined;
+                          }
+                        });
+                        return;
+                      }
                       updateSelectedLeaves((target) => {
                         target.description = nextDescription;
                         const pattern = parsePanelPattern(nextDescription);
                         if (pattern) {
-                          if (target.systemType === "Sliding" && pattern.fractions.length > 1 && !target.children?.length) {
-                            target.split = "vertical";
-                            target.children = buildSplitChildren(
-                              target,
-                              "vertical",
-                              target.systemType,
-                              target.glass,
-                              target.mesh,
-                              pattern.fractions.length,
-                              pattern.fractions
-                            );
-                            target.children.forEach((child, idx) => {
-                              child.systemType = "Sliding";
-                              child.series = target.series;
-                              child.description = "";
-                              child.sash = idx % 2 === 0 ? "left" : "right";
-                              if (pattern.meshCount && idx >= target.children!.length - pattern.meshCount) {
-                                child.mesh = "Yes";
-                              }
-                            });
-                            target.panelFractions = undefined;
-                            target.panelMeshCount = undefined;
-                          } else {
-                            target.panelFractions = pattern.fractions;
-                            target.panelMeshCount = pattern.meshCount;
-                          }
+                          target.panelFractions = pattern.fractions;
+                          target.panelMeshCount = pattern.meshCount;
+                          target.panelSashes = undefined;
                         } else {
                           target.panelFractions = undefined;
                           target.panelMeshCount = undefined;
+                          target.panelSashes = undefined;
                         }
                       });
                     }}
@@ -3263,6 +3409,8 @@ export default function WindowDoorConfigurator({
                     </label>
                   </>
                 )}
+                  </>
+                )}
               </>
             )}
           </div>
@@ -3303,7 +3451,13 @@ export default function WindowDoorConfigurator({
           <div className="text-xs text-gray-400">
             Selected:{" "}
             <span className="font-medium text-gray-600">
-              {selectedId === null ? "None" : selectedNode.id === "root" ? "Whole Frame" : "Section"}
+              {selectedId === null
+                ? "None"
+                : selectedNode.id === "root"
+                  ? "Whole Frame"
+                  : isSlidingPanelSelection
+                    ? `Sliding Panel ${selectedSlidingPanelIndex! + 1}`
+                    : "Section"}
             </span>
           </div>
         </div>
