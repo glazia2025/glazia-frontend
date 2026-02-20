@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Plus, Download, Save, ArrowLeft } from "lucide-react";
+import { Plus, Download, Save, ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -124,8 +124,21 @@ export default function EditQuotationPage() {
 
   const [profitPercentage, setProfitPercentage] = useState<number>(0);
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(initialGlobalConfig);
+  const [expandedSections, setExpandedSections] = useState({
+    quotationDetails: false,
+    customerDetails: true,
+    globalConfig: false,
+  });
   const [error, setError] = useState<string | null>(null);
   const [isConfiguratorOpen, setIsConfiguratorOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   // Load existing quotation data
   useEffect(() => {
@@ -310,10 +323,6 @@ export default function EditQuotationPage() {
     }
   }, []);
 
-  const updateItem = (nextItem: QuotationItem) => {
-    setItems((prev) => prev.map((item) => (item.id === nextItem.id ? nextItem : item)));
-  };
-
   const duplicateItem = (id: string) => {
     setItems((prev) => {
       const sourceIndex = prev.findIndex((it) => it.id === id);
@@ -335,6 +344,7 @@ export default function EditQuotationPage() {
 
   // Add item function
   const addItem = () => {
+    setEditingItemId(null);
     setIsConfiguratorOpen(true);
   };
 
@@ -345,17 +355,27 @@ export default function EditQuotationPage() {
     }
   };
 
+  const handleEditItem = (id: string) => {
+    setEditingItemId(id);
+    setIsConfiguratorOpen(true);
+  };
+
   const getItemTotals = (item: QuotationItem) => {
     if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
-      return item.subItems.reduce(
+      const parentQuantity = Math.max(1, item.quantity || 1);
+      const perFrame = item.subItems.reduce(
         (acc, sub) => {
           acc.amount += sub.amount;
-          acc.area += sub.area * sub.quantity;
-          acc.quantity += sub.quantity;
+          acc.area += sub.area;
           return acc;
         },
-        { amount: 0, area: 0, quantity: 0 }
+        { amount: 0, area: 0 }
       );
+      return {
+        amount: roundToTwo(perFrame.amount * parentQuantity),
+        area: roundToTwo(perFrame.area * parentQuantity),
+        quantity: parentQuantity,
+      };
     }
 
     return {
@@ -364,6 +384,8 @@ export default function EditQuotationPage() {
       quantity: item.quantity,
     };
   };
+
+  const roundToTwo = (value: number) => Number(value.toFixed(2));
 
   const calculateTotal = () =>
     items.reduce((total, item) => total + getItemTotals(item).amount, 0);
@@ -400,113 +422,12 @@ export default function EditQuotationPage() {
 
   const logoPreview = globalConfig.logoUrl || globalConfig.logo || "";
 
-  const handleAddDesignItem = (payload: {
-    widthMm: number;
-    heightMm: number;
-    areaSqft: number;
-    refImage: string;
-    meta: {
-      productType: "Window" | "Door";
-      systemType: string;
-      series: string;
-      description: string;
-      colorFinish: string;
-      glassSpec: string;
-      handleType: string;
-      handleColor: string;
-      meshPresent: string;
-      meshType: string;
-      location: string;
-      quantity: number;
-    };
-    subItems?: Array<{
-      widthMm: number;
-      heightMm: number;
-      areaSqft: number;
-      systemType: "Casement" | "Sliding" | "Slide N Fold";
-      series: string;
-      description: string;
-      glass: "Yes" | "No";
-      mesh: "Yes" | "No";
-    }>;
-  }) => {
-    if (payload.subItems?.length) {
-      const nextItem: QuotationItem = {
-        id: crypto.randomUUID(),
-        refCode: "",
-        location: payload.meta.location || "",
-        width: payload.widthMm,
-        height: payload.heightMm,
-        area: payload.areaSqft,
-        systemType: "Combination",
-        series: payload.meta.series,
-        description: payload.meta.description || "Combination Design",
-        colorFinish: payload.meta.colorFinish,
-        glassSpec: payload.meta.glassSpec,
-        handleType: payload.meta.handleType,
-        handleColor: payload.meta.handleColor,
-        handleCount: 0,
-        meshPresent: payload.meta.meshPresent,
-        meshType: payload.meta.meshType,
-        rate: 0,
-        quantity: payload.meta.quantity || 1,
-        amount: 0,
-        refImage: payload.refImage,
-        remarks: "",
-        subItems: payload.subItems.map((sub, idx) => ({
-          id: crypto.randomUUID(),
-          refCode: `A-${idx + 1}`,
-          location: payload.meta.location || "",
-          width: sub.widthMm,
-          height: sub.heightMm,
-          area: sub.areaSqft,
-          systemType: sub.systemType,
-          series: sub.series || payload.meta.series,
-          description: sub.description || `${sub.systemType} ${payload.meta.productType}`,
-          colorFinish: payload.meta.colorFinish,
-          glassSpec: sub.glass === "Yes" ? (payload.meta.glassSpec || "Glass") : "",
-          handleType: payload.meta.handleType,
-          handleColor: payload.meta.handleColor,
-          handleCount: 0,
-          meshPresent: sub.mesh,
-          meshType: payload.meta.meshType,
-          rate: 0,
-          quantity: 1,
-          amount: 0,
-          refImage: "",
-          remarks: "",
-        })),
-      };
-      setItems((prev) => [...prev, nextItem]);
-      setIsConfiguratorOpen(false);
-      return;
-    }
-
-    const nextItem: QuotationItem = {
-      id: crypto.randomUUID(),
-      refCode: "",
-      location: payload.meta.location || "",
-      width: payload.widthMm,
-      height: payload.heightMm,
-      area: payload.areaSqft,
-      systemType: payload.meta.systemType || payload.meta.productType,
-      series: payload.meta.series,
-      description: payload.meta.description || `${payload.meta.productType} Design`,
-      colorFinish: payload.meta.colorFinish,
-      glassSpec: payload.meta.glassSpec,
-      handleType: payload.meta.handleType,
-      handleColor: payload.meta.handleColor,
-      handleCount: 0,
-      meshPresent: payload.meta.meshPresent,
-      meshType: payload.meta.meshType,
-      rate: 0,
-      quantity: payload.meta.quantity || 1,
-      amount: 0,
-      refImage: payload.refImage,
-      remarks: "",
-      subItems: [],
-    };
-    setItems((prev) => [...prev, nextItem]);
+  const handleSaveDesignItem = (nextItem: QuotationItem) => {
+    setItems((prev) => {
+      if (!editingItemId) return [...prev, nextItem];
+      return prev.map((item) => (item.id === editingItemId ? nextItem : item));
+    });
+    setEditingItemId(null);
     setIsConfiguratorOpen(false);
   };
 
@@ -657,8 +578,8 @@ export default function EditQuotationPage() {
 
         <div className="space-y-8">
           {isConfiguratorOpen && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4 py-6">
-              <div className="h-full w-full overflow-y-auto bg-white p-6">
+            <div className="fixed inset-0 z-[60] bg-black/50">
+              <div className="h-full w-full bg-white p-4 md:p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">Window &amp; Door Configurator</h2>
@@ -666,22 +587,44 @@ export default function EditQuotationPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setIsConfiguratorOpen(false)}
+                    onClick={() => {
+                      setIsConfiguratorOpen(false);
+                      setEditingItemId(null);
+                    }}
                     className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
                   >
                     Close
                   </button>
                 </div>
-                <WindowDoorConfigurator
-                  onAddItem={handleAddDesignItem}
-                  onClose={() => setIsConfiguratorOpen(false)}
-                />
+                <div className="h-[calc(100%-56px)] min-h-0">
+                  <WindowDoorConfigurator
+                    onSaveItem={handleSaveDesignItem}
+                    onClose={() => {
+                      setIsConfiguratorOpen(false);
+                      setEditingItemId(null);
+                    }}
+                    initialItem={items.find((item) => item.id === editingItemId) ?? null}
+                    profitPercentage={profitPercentage}
+                  />
+                </div>
               </div>
             </div>
           )}
           {/* Quotation Details */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Quotation Details</h2>
+              <button
+                type="button"
+                onClick={() => toggleSection("quotationDetails")}
+                className="mb-6 flex w-full items-center justify-between text-left"
+              >
+                <h2 className="text-xl font-bold text-gray-900">Quotation Details</h2>
+                {expandedSections.quotationDetails ? (
+                  <ChevronUp className="h-5 w-5 text-gray-600" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-gray-600" />
+                )}
+              </button>
+              {expandedSections.quotationDetails && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -722,11 +665,24 @@ export default function EditQuotationPage() {
                   />
                 </div>
               </div>
+              )}
             </div>
 
           {/* Customer Details */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Customer Details</h2>
+              <button
+                type="button"
+                onClick={() => toggleSection("customerDetails")}
+                className="mb-6 flex w-full items-center justify-between text-left"
+              >
+                <h2 className="text-xl font-bold text-gray-900">Customer Details</h2>
+                {expandedSections.customerDetails ? (
+                  <ChevronUp className="h-5 w-5 text-gray-600" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-gray-600" />
+                )}
+              </button>
+              {expandedSections.customerDetails && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -809,11 +765,25 @@ export default function EditQuotationPage() {
                   />
                 </div>
               </div>
+              )}
             </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
+            <button
+              type="button"
+              onClick={() => toggleSection("globalConfig")}
+              className="mb-6 flex w-full items-center justify-between text-left"
+            >
               <h2 className="text-xl font-bold text-gray-900">Global Config</h2>
+              {expandedSections.globalConfig ? (
+                <ChevronUp className="h-5 w-5 text-gray-600" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-gray-600" />
+              )}
+            </button>
+            {expandedSections.globalConfig && (
+              <>
+            <div className="mb-6 flex items-center justify-end">
               <Link
                 href="/quotations/settings"
                 className="text-sm font-medium text-[#124657] hover:underline"
@@ -1038,6 +1008,8 @@ export default function EditQuotationPage() {
                 />
               </div>
             </div>
+              </>
+            )}
           </div>
 
           {/* Items Section */}
@@ -1140,11 +1112,10 @@ export default function EditQuotationPage() {
                       key={item.id}
                       item={item}
                       index={index}
-                      onChange={updateItem}
                       removeItem={removeItem}
                       duplicateItem={duplicateItem}
+                      onEdit={handleEditItem}
                       canRemove={items.length > 1}
-                      profitPercentage={profitPercentage}
                     />
                   ))}
                 </tbody>

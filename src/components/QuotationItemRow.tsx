@@ -1,19 +1,8 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
+
 import { useEffect, useState } from "react";
-import {
-  useDescriptionsQuery,
-  useOptionsQuery,
-  useSeriesQuery,
-  useSystemsQuery,
-} from "@/lib/quotations/queries";
-import {
-  Description,
-  HandleOption,
-  OptionWithRate,
-  OptionsResponse,
-} from "@/lib/quotations/types";
-import { Copy, Trash2 } from "lucide-react";
+import { Copy, Pencil, Trash2 } from "lucide-react";
 
 interface QuotationItemBase {
   id: string;
@@ -50,52 +39,20 @@ export interface QuotationItem extends QuotationItemBase {
 interface Props {
   item: QuotationItem;
   index: number;
-  onChange: (nextItem: QuotationItem) => void;
   removeItem: (id: string) => void;
   duplicateItem: (id: string) => void;
+  onEdit: (id: string) => void;
   canRemove: boolean;
-  profitPercentage: number;
 }
 
-const AREA_SLABS = [
-  { max: 20, index: 0 },
-  { max: 40, index: 1 },
-  { max: Infinity, index: 2 },
-];
 const COMBINATION_SYSTEM = "Combination";
-const OTHER_OPTION = "Other";
 
-const indexToAlpha = (index: number): string => {
-  let n = index;
-  let result = "";
-  while (n >= 0) {
-    result = String.fromCharCode(97 + (n % 26)) + result;
-    n = Math.floor(n / 26) - 1;
-  }
-  return result;
+const formatValue = (value?: string | number) => {
+  if (value === undefined || value === null || value === "") return "-";
+  return value;
 };
 
-const buildSubLabel = (count: number): string =>
-  Array.from({ length: count }, (_, i) => indexToAlpha(i).toUpperCase()).join("+");
-
-const applySubRefCodes = (
-  parentRef: string,
-  subItems: QuotationSubItem[]
-): QuotationSubItem[] =>
-  subItems.map((sub, idx) => ({
-    ...sub,
-    refCode: parentRef ? `${parentRef}-${indexToAlpha(idx)}` : "",
-  }));
-
-const isOtherValue = (value?: string) =>
-  !!value && (value === OTHER_OPTION || value.startsWith(`${OTHER_OPTION}:`));
-
-const getOtherText = (value?: string) =>
-  value && value.startsWith(`${OTHER_OPTION}:`) ? value.slice(OTHER_OPTION.length + 1).trim() : "";
-
-const buildOtherValue = (text: string) => (text ? `${OTHER_OPTION}: ${text}` : OTHER_OPTION);
-
-function getImagePath(description: string): string {
+function getPresetImagePath(description: string): string {
   if (!description) return "";
   if (description === "Fix") return "/Quotations/Fix.png";
   if (description === "French Door" || description === "French Window")
@@ -107,473 +64,43 @@ function getImagePath(description: string): string {
   return `/Quotations/${description}.jpg`;
 }
 
-const createBlankSubItem = (): QuotationSubItem => ({
-  id: crypto.randomUUID(),
-  refCode: "",
-  location: "",
-  width: 0,
-  height: 0,
-  area: 0,
-  systemType: "",
-  series: "",
-  description: "",
-  colorFinish: "",
-  glassSpec: "",
-  handleType: "",
-  handleColor: "",
-  handleCount: 0,
-  meshPresent: "",
-  meshType: "",
-  rate: 0,
-  quantity: 1,
-  amount: 0,
-  refImage: "",
-  remarks: "",
-  baseRate: 0,
-  areaSlabIndex: 0,
-});
-
-const calculateArea = (width: number, height: number) =>
-  (width * height) / (304.78 ** 2);
-
-const calculateRateForItem = (
-  next: QuotationItemBase,
-  descriptions: Description[] | undefined,
-  options: OptionsResponse | undefined
-) => {
-  const desc = descriptions?.find((d) => d.name === next.description);
-  const baseRates = desc?.baseRates ?? [];
-  const slab = AREA_SLABS.find((s) => next.area <= s.max);
-  const baseRate = baseRates[slab?.index ?? 0] ?? 0;
-
-  const colorRate = options?.colorFinishes.find((c) => c.name === next.colorFinish)?.rate ?? 0;
-  const meshRate =
-    next.meshPresent === "Yes"
-      ? options?.meshTypes.find((m) => m.name === next.meshType)?.rate ?? 0
-      : 0;
-  const glassRate = options?.glassSpecs.find((g) => g.name === next.glassSpec)?.rate ?? 0;
-  const handleOpt = options?.handleOptions.find((h) => h.name === next.handleType);
-  const handleCount = desc?.defaultHandleCount ?? 0;
-  const handleUnitRate =
-    handleOpt?.colors.find((c) => c.name === next.handleColor)?.rate ?? 0;
-  const handleRate =
-    handleCount > 0
-      ? (handleCount * handleUnitRate) / (next.area || 1)
-      : 0;
-
-  return {
-    rate: baseRate + colorRate + meshRate + glassRate + handleRate,
-    baseRate,
-    areaSlabIndex: slab?.index ?? 0,
-    handleCount,
-  };
-};
-
-const RATE_RECALC_FIELDS: Array<keyof QuotationItemBase> = [
-  "systemType",
-  "series",
-  "description",
-  "colorFinish",
-  "glassSpec",
-  "handleType",
-  "handleColor",
-  "meshPresent",
-  "meshType",
-  "width",
-  "height",
-];
-
-const roundToTwo = (value: number) => Number(value.toFixed(2));
-const applyProfitToRate = (rate: number, profitPercentage: number) =>
-  profitPercentage > 0 ? roundToTwo(rate + (rate * profitPercentage / 100)) : rate;
-
-const syncCombinationValues = (next: QuotationItem): QuotationItem => {
-  const subItems = next.subItems ?? [];
-  if (subItems.length === 0) {
-    return {
-      ...next,
-      width: 0,
-      height: 0,
-      area: 0,
-      rate: 0,
-      amount: 0,
-      quantity: 0,
-    };
-  }
-
-  const totals = subItems.reduce(
-    (acc, sub) => {
-      acc.width += sub.width;
-      acc.height += sub.height;
-      acc.area += sub.area * sub.quantity;
-      acc.amount += sub.amount;
-      acc.quantity += sub.quantity;
-      return acc;
-    },
-    { width: 0, height: 0, area: 0, amount: 0, quantity: 0 }
-  );
-
-  const rate = totals.area ? totals.amount / totals.area : 0;
-
-  return {
-    ...next,
-    width: totals.width,
-    height: totals.height,
-    area: totals.area,
-    rate: roundToTwo(rate),
-    amount: roundToTwo(totals.amount),
-    quantity: totals.quantity,
-  };
-};
-
-function QuotationSubItemRow({
+function QuotationSubItemDisplayRow({
   item,
   index,
-  onChange,
-  removeItem,
-  duplicateItem,
-  canRemove,
-  profitPercentage,
 }: {
   item: QuotationSubItem;
   index: number;
-  onChange: (nextItem: QuotationSubItem) => void;
-  removeItem: (id: string) => void;
-  duplicateItem: (id: string) => void;
-  canRemove: boolean;
-  profitPercentage: number;
 }) {
   const [imageError, setImageError] = useState(false);
-  const systemsQuery = useSystemsQuery();
-  const seriesQuery = useSeriesQuery(item.systemType);
-  const descriptionsQuery = useDescriptionsQuery(item.systemType, item.series);
-  const optionsQuery = useOptionsQuery(item.systemType);
-  const handleOption =
-    optionsQuery.data?.handleOptions.find((h) => h.name === item.handleType);
-
-  const handleFieldChange = (field: keyof QuotationSubItem, raw: string | number) => {
-    const value = typeof raw === "string" ? raw : raw;
-    const next: QuotationSubItem = { ...item, [field]: value };
-
-    if (field === "systemType") {
-      next.series = "";
-      next.description = "";
-      next.handleType = "";
-      next.handleColor = "";
-      next.colorFinish = "";
-      next.glassSpec = "";
-      next.meshPresent = "";
-      next.meshType = "";
-    }
-
-    if (field === "series") {
-      next.description = "";
-      next.handleType = "";
-      next.handleColor = "";
-    }
-
-    if (field === "description") {
-      next.refImage = getImagePath(String(value));
-    }
-
-    if (field === "width" || field === "height") {
-      const width = field === "width" ? Number(raw) : next.width;
-      const height = field === "height" ? Number(raw) : next.height;
-      next.area = calculateArea(width, height);
-    }
-
-    if (field === "quantity") {
-      next.quantity = Number(raw) || 0;
-    }
-
-    if (field === "meshPresent" && value !== "Yes") {
-      next.meshType = "";
-    }
-
-    const shouldRecalcRate = field !== "rate" && RATE_RECALC_FIELDS.includes(field);
-    if (shouldRecalcRate) {
-      const { rate, baseRate, areaSlabIndex, handleCount } = calculateRateForItem(
-        next,
-        descriptionsQuery.data?.descriptions,
-        optionsQuery.data
-      );
-      next.rate = applyProfitToRate(rate, profitPercentage);
-      next.baseRate = baseRate;
-      next.areaSlabIndex = areaSlabIndex;
-      next.handleCount = handleCount;
-    }
-    if (field === "rate") {
-      next.rate = applyProfitToRate(Number(raw), profitPercentage);
-    }
-    next.amount = roundToTwo(next.quantity * next.rate * next.area);
-    onChange(next);
-  };
+  const presetImage = getPresetImagePath(item.description);
 
   useEffect(() => {
     setImageError(false);
-  }, [item.refImage]);
+  }, [presetImage]);
 
   return (
     <tr className="bg-white">
-      <td className="border border-gray-200 px-2 py-2 text-center text-xs font-medium">
-        {index + 1}
-      </td>
+      <td className="border border-gray-200 px-2 py-2 text-center text-xs font-medium">{index + 1}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.refCode)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.location)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs text-right">{formatValue(item.width)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs text-right">{formatValue(item.height)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.systemType)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.series)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.description)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.colorFinish)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.glassSpec)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.handleType)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.handleColor)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.meshPresent)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.meshType)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs text-right">{formatValue(item.rate)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs text-right">{formatValue(item.quantity)}</td>
       <td className="border border-gray-200 px-2 py-2">
-        <input
-          type="text"
-          value={item.refCode}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
-          placeholder="Ref code..."
-          disabled
-        />
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <input
-          type="text"
-          value={item.location}
-          onChange={(e) => handleFieldChange("location", e.target.value)}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
-          placeholder="Location..."
-        />
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <input
-          type="text"
-          value={item.width}
-          onChange={(e) => {
-            const sanitizedValue = e.target.value
-              .replace(/[^0-9]/g, "")
-              .toUpperCase();
-            handleFieldChange("width", parseFloat(sanitizedValue) || 0)
-          }}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
-          placeholder="Width"
-        />
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <input
-          type="text"
-          value={item.height}
-          onChange={(e) => {
-            const sanitizedValue = e.target.value
-              .replace(/[^0-9]/g, "")
-              .toUpperCase();
-            handleFieldChange("height", parseFloat(sanitizedValue) || 0)
-          }}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
-          placeholder="Height"
-        />
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <select
-          value={item.systemType}
-          onChange={(e) => handleFieldChange("systemType", e.target.value)}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-        >
-          <option value="">Select System</option>
-          {systemsQuery.data?.systems
-            .filter((s: string) => s !== COMBINATION_SYSTEM)
-            .map((s: string) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <select
-          value={item.series}
-          onChange={(e) => handleFieldChange("series", e.target.value)}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-          disabled={!item.systemType}
-        >
-          <option value="">Select Series</option>
-          {seriesQuery.data?.series.map((s: string) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <select
-          value={item.description}
-          onChange={(e) => handleFieldChange("description", e.target.value)}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-          disabled={!item.series}
-        >
-          <option value="">Select Description</option>
-          {descriptionsQuery.data?.descriptions.map((d: Description) => (
-            <option key={d.name} value={d.name}>
-              {d.name}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <div className="flex items-center gap-2">
-          <select
-            value={isOtherValue(item.colorFinish) ? OTHER_OPTION : item.colorFinish}
-            onChange={(e) => handleFieldChange("colorFinish", e.target.value)}
-            className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-          >
-            <option value="">Select Color Finish</option>
-            {optionsQuery.data?.colorFinishes.map((c: OptionWithRate) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-            <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
-          </select>
-          {isOtherValue(item.colorFinish) && (
-            <input
-              type="text"
-              value={getOtherText(item.colorFinish)}
-              onChange={(e) => handleFieldChange("colorFinish", buildOtherValue(e.target.value))}
-              className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
-              placeholder="Enter custom color"
-            />
-          )}
-        </div>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <div className="flex items-center gap-2">
-          <select
-            value={isOtherValue(item.glassSpec) ? OTHER_OPTION : item.glassSpec}
-            onChange={(e) => handleFieldChange("glassSpec", e.target.value)}
-            className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-          >
-            <option value="">Select Glass Spec</option>
-            {optionsQuery.data?.glassSpecs.map((c: OptionWithRate) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-            <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
-          </select>
-          {isOtherValue(item.glassSpec) && (
-            <input
-              type="text"
-              value={getOtherText(item.glassSpec)}
-              onChange={(e) => handleFieldChange("glassSpec", buildOtherValue(e.target.value))}
-              className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
-              placeholder="Enter custom glass spec"
-            />
-          )}
-        </div>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <div className="flex items-center gap-2">
-          <select
-            value={isOtherValue(item.handleType) ? OTHER_OPTION : item.handleType}
-            onChange={(e) => handleFieldChange("handleType", e.target.value)}
-            className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-          >
-            <option value="">Select Handle</option>
-            {optionsQuery.data?.handleOptions.map((c: HandleOption) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-            <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
-          </select>
-          {isOtherValue(item.handleType) && (
-            <input
-              type="text"
-              value={getOtherText(item.handleType)}
-              onChange={(e) => handleFieldChange("handleType", buildOtherValue(e.target.value))}
-              className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
-              placeholder="Enter custom handle type"
-            />
-          )}
-        </div>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <div className="flex items-center gap-2">
-          <select
-            value={isOtherValue(item.handleColor) ? OTHER_OPTION : item.handleColor}
-            onChange={(e) => handleFieldChange("handleColor", e.target.value)}
-            className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-          >
-            <option value="">Select Color</option>
-            {handleOption?.colors.map((c: OptionWithRate) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            )) || (
-              <>
-                <option value="Black">Black</option>
-                <option value="Silver">Silver</option>
-              </>
-            )}
-            <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
-          </select>
-          {isOtherValue(item.handleColor) && (
-            <input
-              type="text"
-              value={getOtherText(item.handleColor)}
-              onChange={(e) => handleFieldChange("handleColor", buildOtherValue(e.target.value))}
-              className="w-1/2 min-w-[90px] px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
-              placeholder="Enter custom handle color"
-            />
-          )}
-        </div>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <select
-          value={item.meshPresent}
-          onChange={(e) => handleFieldChange("meshPresent", e.target.value)}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-        >
-          <option value="">Select</option>
-          <option value="Yes">Yes</option>
-          <option value="No">No</option>
-        </select>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <select
-          value={item.meshType}
-          onChange={(e) => handleFieldChange("meshType", e.target.value)}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-white"
-          disabled={item.meshPresent !== "Yes"}
-        >
-          <option value="">Select Mesh</option>
-          {optionsQuery.data?.meshTypes.map((c: OptionWithRate) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <input
-          type="number"
-          value={item.rate}
-          onChange={(e) => {
-            handleFieldChange("rate", parseInt(e.target.value) || 0)
-          }}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] bg-gray-50 text-gray-600"
-        />
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <input
-          type="text"
-          value={item.quantity}
-          onChange={(e) => {
-            const sanitizedValue = e.target.value
-              .replace(/[^0-9]/g, "")
-              .toUpperCase();
-            handleFieldChange("quantity", parseFloat(sanitizedValue) || 0)
-          }}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657]"
-          min={0}
-        />
-      </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <div className="flex items-center justify-center h-16 w-20 bg-gray-50 rounded border border-gray-200">
-          {item.refImage && !imageError ? (
+        <div className="flex items-center justify-center h-14 w-20 bg-gray-50 rounded border border-gray-200">
+          {presetImage && !imageError ? (
             <img
-              src={item.refImage}
+              src={presetImage}
               alt={item.description || "Product"}
               className="max-h-full max-w-full object-contain rounded"
               onError={() => setImageError(true)}
@@ -583,33 +110,7 @@ function QuotationSubItemRow({
           )}
         </div>
       </td>
-      <td className="border border-gray-200 px-2 py-2">
-        <textarea
-          value={item.remarks}
-          onChange={(e) => handleFieldChange("remarks", e.target.value)}
-          rows={2}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-[#124657] focus:border-[#124657] resize-none"
-          placeholder="Add remarks..."
-        />
-      </td>
-      <td className="border border-gray-200 px-2 py-2 text-center">
-        <button
-          onClick={() => duplicateItem(item.id)}
-          className="text-gray-600 hover:text-gray-800 transition-colors p-1 rounded hover:bg-gray-100"
-          title="Duplicate Sub Item"
-        >
-          <Copy className="w-4 h-4" />
-        </button>
-        {canRemove && (
-          <button
-            onClick={() => removeItem(item.id)}
-            className="text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-50"
-            title="Remove Sub Item"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
-      </td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.remarks)}</td>
     </tr>
   );
 }
@@ -617,146 +118,13 @@ function QuotationSubItemRow({
 export function QuotationItemRow({
   item,
   index,
-  onChange,
   removeItem,
   duplicateItem,
+  onEdit,
   canRemove,
-  profitPercentage
 }: Props) {
   const [imageError, setImageError] = useState(false);
   const isCombination = item.systemType === COMBINATION_SYSTEM;
-  const querySystemType = isCombination ? "" : item.systemType;
-  const [profit, setProfit] = useState(profitPercentage);
-  const subLabel = isCombination && item.subItems?.length
-    ? buildSubLabel(item.subItems.length)
-    : "";
-  const systemsQuery = useSystemsQuery();
-  const seriesQuery = useSeriesQuery(querySystemType);
-  const descriptionsQuery = useDescriptionsQuery(querySystemType, item.series);
-  const optionsQuery = useOptionsQuery(querySystemType);
-  const handleOption =
-    optionsQuery.data?.handleOptions.find((h) => h.name === item.handleType);
-
-  const handleSubItemChange = (nextSubItem: QuotationSubItem) => {
-    const subItems = (item.subItems || []).map((sub) =>
-      sub.id === nextSubItem.id ? nextSubItem : sub
-    );
-    const nextItem = syncCombinationValues({ ...item, subItems });
-    onChange(nextItem);
-  };
-
-  const addSubItem = () => {
-    const subItems = applySubRefCodes(
-      item.refCode,
-      [...(item.subItems || []), createBlankSubItem()]
-    );
-    const nextItem = syncCombinationValues({ ...item, subItems });
-    onChange(nextItem);
-  };
-
-  const removeSubItem = (id: string) => {
-    const subItems = applySubRefCodes(
-      item.refCode,
-      (item.subItems || []).filter((sub) => sub.id !== id)
-    );
-    const nextItem = syncCombinationValues({ ...item, subItems });
-    onChange(nextItem);
-  };
-
-  const duplicateSubItem = (id: string) => {
-    const subItems = item.subItems || [];
-    const sourceIndex = subItems.findIndex((sub) => sub.id === id);
-    if (sourceIndex === -1) return;
-    const source = subItems[sourceIndex];
-    const cloned: QuotationSubItem = { ...source, id: crypto.randomUUID() };
-    const nextSubItems = [
-      ...subItems.slice(0, sourceIndex + 1),
-      cloned,
-      ...subItems.slice(sourceIndex + 1),
-    ];
-    const updatedSubItems = applySubRefCodes(item.refCode, nextSubItems);
-    const nextItem = syncCombinationValues({ ...item, subItems: updatedSubItems });
-    onChange(nextItem);
-  };
-
-  const handleFieldChange = (field: keyof QuotationItem, raw: string | number) => {
-    const value = typeof raw === "string" ? raw : raw;
-    const next: QuotationItem = { ...item, [field]: value };
-
-    if (field === "systemType") {
-      if (value === COMBINATION_SYSTEM) {
-        const initialSubItems = next.subItems?.length
-          ? next.subItems
-          : [createBlankSubItem()];
-        next.subItems = applySubRefCodes(next.refCode, initialSubItems);
-      } else {
-        next.subItems = [];
-      }
-      next.series = "";
-      next.description = "";
-      next.handleType = "";
-      next.handleColor = "";
-      next.colorFinish = "";
-      next.glassSpec = "";
-      next.meshPresent = "";
-      next.meshType = "";
-    }
-
-    if (field === "series") {
-      next.description = "";
-      next.handleType = "";
-      next.handleColor = "";
-    }
-
-    if (field === "description") {
-      next.refImage = getImagePath(String(value));
-    }
-
-    if (field === "refCode" && next.systemType === COMBINATION_SYSTEM) {
-      next.subItems = applySubRefCodes(String(value), next.subItems || []);
-    }
-
-    if (field === "width" || field === "height") {
-      const width = field === "width" ? Number(raw) : next.width;
-      const height = field === "height" ? Number(raw) : next.height;
-      next.area = calculateArea(width, height);
-    }
-
-    if (field === "quantity") {
-      next.quantity = Number(raw) || 0;
-    }
-
-    if (field === "meshPresent" && value !== "Yes") {
-      next.meshType = "";
-    }
-
-    if (field === "remarks") {
-      next.remarks = value.toString();
-    }
-
-    if (next.systemType === COMBINATION_SYSTEM) {
-      onChange(syncCombinationValues(next));
-      return;
-    }
-
-    const shouldRecalcRate = field !== "rate" && RATE_RECALC_FIELDS.includes(field);
-    if (shouldRecalcRate) {
-      const { rate, baseRate, areaSlabIndex, handleCount } = calculateRateForItem(
-        next,
-        descriptionsQuery.data?.descriptions,
-        optionsQuery.data
-      );
-      next.rate = applyProfitToRate(rate, profitPercentage);
-      next.baseRate = baseRate;
-      next.areaSlabIndex = areaSlabIndex;
-      next.handleCount = handleCount;
-    }
-    if (field === "rate") {
-      next.rate = applyProfitToRate(Number(raw), profitPercentage);
-    }
-    next.amount = roundToTwo(next.quantity * next.rate * next.area);
-    onChange(next);
-  };
 
   useEffect(() => {
     setImageError(false);
@@ -765,290 +133,25 @@ export function QuotationItemRow({
   return (
     <>
       <tr className="hover:bg-gray-50">
-        <td className="border border-gray-300 px-3 py-3 text-center text-sm font-medium">
-          {index + 1}
-        </td>
-
-        <td className="border border-gray-300 px-2 py-2">
-          <input
-            type="text"
-            value={item.refCode}
-            onChange={(e) => handleFieldChange("refCode", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-            placeholder="Ref code..."
-          />
-        </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <input
-            type="text"
-            value={item.location}
-            onChange={(e) => handleFieldChange("location", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-            placeholder="Location..."
-          />
-        </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <input
-            type="number"
-            value={item.width}
-             onChange={(e) => {
-              const sanitizedValue = e.target.value
-                .replace(/[^0-9]/g, "")
-                .toUpperCase();
-              handleFieldChange("width", parseFloat(sanitizedValue) || 0)
-            }}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] disabled:bg-gray-50 disabled:text-gray-500"
-            placeholder="Width"
-            disabled={isCombination}
-          />
-        </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <input
-            type="number"
-            value={item.height}
-            onChange={(e) => {
-              const sanitizedValue = e.target.value
-                .replace(/[^0-9]/g, "")
-                .toUpperCase();
-              handleFieldChange("height", parseFloat(sanitizedValue) || 0)
-            }}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] disabled:bg-gray-50 disabled:text-gray-500"
-            placeholder="Height"
-            disabled={isCombination}
-          />
-        </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <select
-            value={item.systemType}
-            onChange={(e) => handleFieldChange("systemType", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
-          >
-            <option value="">Select System</option>
-            {systemsQuery.data?.systems.map((s: string) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-            {!systemsQuery.data?.systems?.includes(COMBINATION_SYSTEM) && (
-              <option value={COMBINATION_SYSTEM}>{COMBINATION_SYSTEM}</option>
-            )}
-          </select>
-        </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <select
-            value={item.series}
-            onChange={(e) => handleFieldChange("series", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            disabled={!item.systemType || isCombination}
-          >
-            <option value="">Select Series</option>
-            {seriesQuery.data?.series.map((s: string) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </td>
-
-        <td className="border border-gray-300 px-2 py-2">
-          <select
-            value={item.description}
-            onChange={(e) => handleFieldChange("description", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            disabled={!item.series || isCombination}
-          >
-            <option value="">Select Description</option>
-            {descriptionsQuery.data?.descriptions.map((d: Description) => (
-              <option key={d.name} value={d.name}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </td>
-
-      <td className="border border-gray-300 px-2 py-2">
-          <div className="flex items-center gap-2">
-            <select
-              value={isOtherValue(item.colorFinish) ? OTHER_OPTION : item.colorFinish}
-              onChange={(e) => handleFieldChange("colorFinish", e.target.value)}
-              className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-              disabled={isCombination}
-            >
-              <option value="">Select Color Finish</option>
-              {optionsQuery.data?.colorFinishes.map((c: OptionWithRate) => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-              <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
-            </select>
-            {isOtherValue(item.colorFinish) && !isCombination && (
-              <input
-                type="text"
-                value={getOtherText(item.colorFinish)}
-                onChange={(e) => handleFieldChange("colorFinish", buildOtherValue(e.target.value))}
-                className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                placeholder="Enter custom color"
-              />
-            )}
-          </div>
-        </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <div className="flex items-center gap-2">
-            <select
-              value={isOtherValue(item.glassSpec) ? OTHER_OPTION : item.glassSpec}
-              onChange={(e) => handleFieldChange("glassSpec", e.target.value)}
-              className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-              disabled={isCombination}
-            >
-              <option value="">Select Glass Spec</option>
-              {optionsQuery.data?.glassSpecs.map((c: OptionWithRate) => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-              <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
-            </select>
-            {isOtherValue(item.glassSpec) && !isCombination && (
-              <input
-                type="text"
-                value={getOtherText(item.glassSpec)}
-                onChange={(e) => handleFieldChange("glassSpec", buildOtherValue(e.target.value))}
-                className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                placeholder="Enter custom glass spec"
-              />
-            )}
-          </div>
-        </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <div className="flex items-center gap-2">
-            <select
-              value={isOtherValue(item.handleType) ? OTHER_OPTION : item.handleType}
-              onChange={(e) => handleFieldChange("handleType", e.target.value)}
-              className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-              disabled={isCombination}
-            >
-              <option value="">Select Handle</option>
-              {optionsQuery.data?.handleOptions.map((c: HandleOption) => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-              <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
-            </select>
-            {isOtherValue(item.handleType) && !isCombination && (
-              <input
-                type="text"
-                value={getOtherText(item.handleType)}
-                onChange={(e) => handleFieldChange("handleType", buildOtherValue(e.target.value))}
-                className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                placeholder="Enter custom handle type"
-              />
-            )}
-          </div>
-        </td>
-
-        <td className="border border-gray-300 px-2 py-2">
-          <div className="flex items-center gap-2">
-            <select
-              value={isOtherValue(item.handleColor) ? OTHER_OPTION : item.handleColor}
-              onChange={(e) => handleFieldChange("handleColor", e.target.value)}
-              className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-              disabled={isCombination}
-            >
-              <option value="">Select Color</option>
-              {handleOption?.colors.map((c: OptionWithRate) => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              )) || (
-                <>
-                  <option value="Black">Black</option>
-                  <option value="Silver">Silver</option>
-                </>
-              )}
-              <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
-            </select>
-            {isOtherValue(item.handleColor) && !isCombination && (
-              <input
-                type="text"
-                value={getOtherText(item.handleColor)}
-                onChange={(e) => handleFieldChange("handleColor", buildOtherValue(e.target.value))}
-                className="w-1/2 min-w-[120px] px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657]"
-                placeholder="Enter custom handle color"
-              />
-            )}
-          </div>
-        </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <select
-            value={item.meshPresent}
-            onChange={(e) => handleFieldChange("meshPresent", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            disabled={isCombination}
-          >
-            <option value="">Select</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-          </select>
-        </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <select
-            value={item.meshType}
-            onChange={(e) => handleFieldChange("meshType", e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white disabled:bg-gray-50 disabled:text-gray-400"
-            disabled={isCombination || item.meshPresent !== "Yes"}
-          >
-            <option value="">Select Mesh</option>
-            {optionsQuery.data?.meshTypes.map((c: OptionWithRate) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </td>
-
-        <td className="border border-gray-300 px-2 py-2">
-          <input
-            type="number"
-            value={item.rate === 0 ? "" : item.rate}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === "") {
-                handleFieldChange("rate", 0);
-                return;
-              } else {
-                handleFieldChange("rate", parseInt(val) || 0)
-              }
-              
-             
-            }}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-gray-50 text-gray-600"
-            disabled={isCombination}
-          />
-        </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <input
-            type="text"
-            value={item.quantity}
-            onChange={(e) => {
-              const sanitizedValue = e.target.value
-                .replace(/[^0-9]/g, "")
-                .toUpperCase();
-              handleFieldChange("quantity", parseFloat(sanitizedValue) || 0)
-            }}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] disabled:bg-gray-50 disabled:text-gray-500"
-            min={0}
-            disabled={isCombination}
-          />
-        </td>
+        <td className="border border-gray-300 px-3 py-3 text-center text-sm font-medium">{index + 1}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.refCode)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.location)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm text-right">{formatValue(item.width)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm text-right">{formatValue(item.height)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.systemType)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.series)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.description)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.colorFinish)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.glassSpec)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.handleType)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.handleColor)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.meshPresent)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.meshType)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm text-right">{formatValue(item.rate)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm text-right">{formatValue(item.quantity)}</td>
         <td className="border border-gray-300 px-2 py-2">
           <div className="flex items-center justify-center h-20 w-24 bg-gray-50 rounded-lg border border-gray-200">
-            {subLabel ? (
-              <div className="text-sm font-semibold tracking-wide text-gray-700">
-                {subLabel}
-              </div>
-            ) : item.refImage && !imageError ? (
+            {item.refImage && !imageError ? (
               <img
                 src={item.refImage}
                 alt={item.description || "Product"}
@@ -1060,16 +163,15 @@ export function QuotationItemRow({
             )}
           </div>
         </td>
-        <td className="border border-gray-300 px-2 py-2">
-          <textarea
-            value={item.remarks}
-            onChange={(e) => handleFieldChange("remarks", e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] resize-none"
-            placeholder="Add remarks..."
-          />
-        </td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.remarks)}</td>
         <td className="border border-gray-300 px-2 py-2 text-center">
+          <button
+            onClick={() => onEdit(item.id)}
+            className="text-blue-600 hover:text-blue-800 transition-colors p-2 rounded-lg hover:bg-blue-50"
+            title="Edit Item"
+          >
+            <Pencil className="w-5 h-5" />
+          </button>
           <button
             onClick={() => duplicateItem(item.id)}
             className="text-gray-600 hover:text-gray-800 transition-colors p-2 rounded-lg hover:bg-gray-100"
@@ -1091,15 +193,7 @@ export function QuotationItemRow({
       {isCombination && (
         <tr className="bg-gray-50">
           <td className="border border-gray-300 px-3 py-3" colSpan={19}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-sm font-semibold text-gray-700">Sub Rows</div>
-              <button
-                onClick={addSubItem}
-                className="px-3 py-1 text-sm bg-[#124657] text-white rounded hover:bg-blue-700 transition-colors"
-              >
-                Add Sub Row
-              </button>
-            </div>
+            <div className="mb-3 text-sm font-semibold text-gray-700">Sub Rows</div>
             <div className="overflow-x-auto rounded-lg border border-gray-200">
               <table className="w-full border-collapse min-w-max">
                 <thead className="bg-gray-100">
@@ -1122,21 +216,11 @@ export function QuotationItemRow({
                     <th className="border border-gray-200 px-2 py-2 text-xs font-semibold text-gray-700 min-w-[70px]">Qty</th>
                     <th className="border border-gray-200 px-2 py-2 text-xs font-semibold text-gray-700 min-w-[110px]">Ref Image</th>
                     <th className="border border-gray-200 px-2 py-2 text-xs font-semibold text-gray-700 min-w-[140px]">Remarks</th>
-                    <th className="border border-gray-200 px-2 py-2 text-xs font-semibold text-gray-700 min-w-[80px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(item.subItems || []).map((subItem, subIndex) => (
-                    <QuotationSubItemRow
-                      key={subItem.id}
-                      item={subItem}
-                      index={subIndex}
-                      onChange={handleSubItemChange}
-                      removeItem={removeSubItem}
-                      duplicateItem={duplicateSubItem}
-                      canRemove={(item.subItems || []).length > 1}
-                      profitPercentage={profitPercentage}
-                    />
+                    <QuotationSubItemDisplayRow key={subItem.id} item={subItem} index={subIndex} />
                   ))}
                 </tbody>
               </table>

@@ -77,6 +77,18 @@ interface QuotationItem extends QuotationItemBase {
   subItems?: QuotationSubItem[];
 }
 
+const getPresetImagePath = (description?: string): string => {
+  if (!description) return "";
+  if (description === "Fix") return "/Quotations/Fix.png";
+  if (description === "French Door" || description === "French Window")
+    return "/Quotations/French Door-Window.jpg";
+  if (description === "Left Openable Window" || description === "Left Openable Door")
+    return "/Quotations/Left Openable Door-Window.jpg";
+  if (description === "Right Openable Window" || description === "Right Openable Door")
+    return "/Quotations/Right Openable Door-Window.jpg";
+  return `/Quotations/${description}.jpg`;
+};
+
 interface QuotationData {
   id: string;
   quotationNumber?: string;
@@ -185,18 +197,6 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
 
 
   const COMBINATION_SYSTEM = "Combination";
-  const indexToAlpha = (index: number): string => {
-    let n = index;
-    let result = "";
-    while (n >= 0) {
-      result = String.fromCharCode(65 + (n % 26)) + result;
-      n = Math.floor(n / 26) - 1;
-    }
-    return result;
-  };
-  const buildSubLabel = (count: number): string =>
-    Array.from({ length: count }, (_, i) => indexToAlpha(i)).join("+");
-
   const applyProfit = <T extends QuotationItemBase>(item: T): T => {
     const quantity = item.quantity || 0;
     const area = item.area || 0;
@@ -252,7 +252,6 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
   type DisplayItem = QuotationItemBase & {
     __isSubRow?: boolean;
     __rowNumber?: number | string;
-    __subLabel?: string;
   };
 
   let itemsWithProfit: QuotationItem[] = (quotation.items || []).map((item) => {
@@ -350,7 +349,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
   const displayItems: DisplayItem[] = itemsWithProfit.flatMap((item) => {
     if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
       return [
-        { ...item, __isSubRow: false, __subLabel: buildSubLabel(item.subItems.length) },
+        { ...item, __isSubRow: false },
         ...item.subItems.map((sub) => ({ ...sub, __isSubRow: true })),
       ];
     }
@@ -727,36 +726,56 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
               </tr>
             </thead>
             <tbody>
-              ${adjustedDisplayItems.map((item) => `
+              ${adjustedDisplayItems.map((item) => {
+                const isCombinationParent =
+                  !item.__isSubRow && item.systemType === COMBINATION_SYSTEM;
+                const isSubRow = Boolean(item.__isSubRow);
+                const showRef = item.refCode || "-";
+                const showSystem = item.systemType || "-";
+                const showSeries = isCombinationParent ? "-" : item.series || "-";
+                const showWidth = item.width || "-";
+                const showHeight = item.height || "-";
+                const showArea = item.area?.toFixed(2) || "-";
+                const showColor = isCombinationParent ? "-" : item.colorFinish || "-";
+                const showLocation = isSubRow ? "-" : item.location || "-";
+                const showDescription = isCombinationParent ? "-" : item.description || "-";
+                const showGlass = isCombinationParent ? "-" : item.glassSpec || "-";
+                const showHandleType = isCombinationParent ? "-" : item.handleType || "-";
+                const showHandleColor = isCombinationParent ? "-" : item.handleColor || "-";
+                const showMeshPresent = isCombinationParent ? "-" : item.meshPresent || "-";
+                const showMeshType = isCombinationParent ? "-" : item.meshType || "-";
+                const showQty = isSubRow ? "-" : item.quantity || "-";
+                const showAmount = isSubRow ? "-" : formatCurrency(item.amount || 0);
+                const showRemarks = isSubRow ? "-" : item.remarks || "-";
+                return `
                 <tr class="${item.__isSubRow ? "sub-row" : "main-row"}">
                   <td>${item.__rowNumber || ""}</td>
-                  <td>${item.refCode || "-"}</td>
-                  <td>${item.systemType || "-"}</td>
-                  <td>${item.series || "-"}</td>
-                  <td>${item.width || "-"}</td>
-                  <td>${item.height || "-"}</td>
-                  <td>${item.area?.toFixed(2) || "-"}</td>
-                  <td>${item.colorFinish || "-"}</td>
-                  <td>${item.location || "-"}</td>
-                  <td>${item.description || "-"}</td>
-                  <td>${item.glassSpec || "-"}</td>
-                  <td>${item.handleType || "-"}</td>
-                  <td>${item.handleColor || "-"}</td>
-                  <td>${item.meshPresent || "-"}</td>
-                  <td>${item.meshType || "-"}</td>
+                  <td>${showRef}</td>
+                  <td>${showSystem}</td>
+                  <td>${showSeries}</td>
+                  <td>${showWidth}</td>
+                  <td>${showHeight}</td>
+                  <td>${showArea}</td>
+                  <td>${showColor}</td>
+                  <td>${showLocation}</td>
+                  <td>${showDescription}</td>
+                  <td>${showGlass}</td>
+                  <td>${showHandleType}</td>
+                  <td>${showHandleColor}</td>
+                  <td>${showMeshPresent}</td>
+                  <td>${showMeshType}</td>
                   <td>${formatCurrency(item.rate || 0)}</td>
-                  <td>${item.quantity}</td>
-                  <td>${formatCurrency(item.amount || 0)}</td>
+                  <td>${showQty}</td>
+                  <td>${showAmount}</td>
                   <td>
-                    ${item.__subLabel
-                      ? `<span class="combo-label">${item.__subLabel}</span>`
-                      : item.refImage
+                    ${item.refImage
                         ? `<img class="${item.__isSubRow ? "sub-row-image" : "ref-image"}" src="${item.refImage}" alt="Reference image">`
                         : `<span class="no-image">No image</span>`}
                   </td>
-                  <td>{item.remarks || "-"}</td>
+                  <td>${showRemarks}</td>
                 </tr>
-              `).join("")}
+              `;
+            }).join("")}
             </tbody>
           </table>
         </div>
@@ -810,7 +829,9 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
         ? await Promise.all(
             item.subItems.map(async (sub) => ({
               ...sub,
-              refImage: sub.refImage ? await imageToBase64(sub.refImage) : "",
+              refImage: sub.refImage
+                ? await imageToBase64(sub.refImage)
+                : await imageToBase64(getPresetImagePath(sub.description)),
             }))
           )
         : undefined,

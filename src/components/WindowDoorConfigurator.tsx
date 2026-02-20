@@ -10,8 +10,10 @@ import {
   RotateCcw,
   Square,
 } from "lucide-react";
-import { useDescriptionsQuery, useSeriesQuery, useSystemsQuery } from "@/lib/quotations/queries";
-import type { Description } from "@/lib/quotations/types";
+import { useDescriptionsQuery, useOptionsQuery, useSeriesQuery, useSystemsQuery } from "@/lib/quotations/queries";
+import { fetchDescriptions, fetchOptions } from "@/lib/quotations/api";
+import type { Description, HandleOption, OptionWithRate, OptionsResponse } from "@/lib/quotations/types";
+import type { QuotationItem, QuotationSubItem } from "@/components/QuotationItemRow";
 
 type SplitDirection = "none" | "vertical" | "horizontal";
 type SystemType = "Casement" | "Sliding" | "Slide N Fold";
@@ -32,6 +34,7 @@ type SectionNode = {
   description: string;
   panelFractions?: number[];
   panelMeshCount?: number;
+  panelSashes?: SashType[];
   glass: YesNo;
   mesh: YesNo;
   children?: SectionNode[];
@@ -50,24 +53,9 @@ type ProductMeta = {
   meshType: string;
   location: string;
   quantity: number;
-};
-
-type AddItemPayload = {
-  widthMm: number;
-  heightMm: number;
-  areaSqft: number;
-  refImage: string;
-  meta: ProductMeta;
-  subItems?: Array<{
-    widthMm: number;
-    heightMm: number;
-    areaSqft: number;
-    systemType: SystemType;
-    series: string;
-    description: string;
-    glass: "Yes" | "No";
-    mesh: "Yes" | "No";
-  }>;
+  refCode: string;
+  remarks: string;
+  rate: number;
 };
 
 const DEFAULT_META: ProductMeta = {
@@ -83,7 +71,32 @@ const DEFAULT_META: ProductMeta = {
   meshType: "",
   location: "",
   quantity: 1,
+  refCode: "",
+  remarks: "",
+  rate: 0,
 };
+
+const AREA_SLABS = [
+  { max: 20, index: 0 },
+  { max: 40, index: 1 },
+  { max: Infinity, index: 2 },
+];
+const COMBINATION_SYSTEM = "Combination";
+const roundToTwo = (value: number) => Number(value.toFixed(2));
+const applyProfitToRate = (rate: number, profitPercentage: number) =>
+  profitPercentage > 0 ? roundToTwo(rate + (rate * profitPercentage) / 100) : roundToTwo(rate);
+const indexToAlphaLower = (index: number): string => {
+  let n = index;
+  let result = "";
+  while (n >= 0) {
+    result = String.fromCharCode(97 + (n % 26)) + result;
+    n = Math.floor(n / 26) - 1;
+  }
+  return result;
+};
+
+const buildDefaultSlidingPanelSashes = (count: number): SashType[] =>
+  Array.from({ length: count }, (_, idx) => (idx % 2 === 0 ? "left" : "right"));
 
 const createRoot = (baseSystem: SystemType): SectionNode => ({
   id: "root",
@@ -254,6 +267,139 @@ const mmToSqft = (wMm: number, hMm: number) => {
   const wFt = wMm / 304.8;
   const hFt = hMm / 304.8;
   return Number((wFt * hFt).toFixed(2));
+};
+
+const normalizeSystemType = (value?: string): SystemType => {
+  if (value === "Sliding" || value === "Slide N Fold" || value === "Casement") {
+    return value;
+  }
+  return "Casement";
+};
+
+const yesNoFromValue = (value?: string | boolean): YesNo => {
+  if (value === true || value === "Yes") return "Yes";
+  if (typeof value === "string" && value.trim() !== "" && value !== "No") return "Yes";
+  return "No";
+};
+
+const calculateRateForItem = (
+  next: {
+    area: number;
+    description: string;
+    colorFinish: string;
+    glassSpec: string;
+    handleType: string;
+    handleColor: string;
+    meshPresent: string;
+    meshType: string;
+  },
+  descriptions: Description[] | undefined,
+  options: OptionsResponse | undefined
+) => {
+  const desc = descriptions?.find((d) => d.name === next.description);
+  const baseRates = desc?.baseRates ?? [];
+  const slab = AREA_SLABS.find((s) => next.area <= s.max);
+  const baseRate = baseRates[slab?.index ?? 0] ?? 0;
+  const colorRate = options?.colorFinishes.find((c) => c.name === next.colorFinish)?.rate ?? 0;
+  const meshRate =
+    next.meshPresent === "Yes"
+      ? options?.meshTypes.find((m) => m.name === next.meshType)?.rate ?? 0
+      : 0;
+  const glassRate = options?.glassSpecs.find((g) => g.name === next.glassSpec)?.rate ?? 0;
+  const handleOpt = options?.handleOptions.find((h) => h.name === next.handleType);
+  const handleCount = desc?.defaultHandleCount ?? 0;
+  const handleUnitRate = handleOpt?.colors.find((c) => c.name === next.handleColor)?.rate ?? 0;
+  const handleRate = handleCount > 0 ? (handleCount * handleUnitRate) / (next.area || 1) : 0;
+
+  return {
+    rate: baseRate + colorRate + meshRate + glassRate + handleRate,
+    handleCount,
+    baseRate,
+    areaSlabIndex: slab?.index ?? 0,
+  };
+};
+
+const mapItemToConfiguratorState = (item: QuotationItem) => {
+  const width = Math.round(item.width || 1500);
+  const height = Math.round(item.height || 1500);
+  const subItems = item.subItems ?? [];
+  const hasSubItems = item.systemType === COMBINATION_SYSTEM && subItems.length > 1;
+  const sourceSystem = hasSubItems
+    ? normalizeSystemType(subItems[0]?.systemType)
+    : normalizeSystemType(item.systemType);
+
+  const root = createRoot(sourceSystem);
+  root.glass = yesNoFromValue(hasSubItems ? subItems[0]?.glassSpec : item.glassSpec);
+  root.mesh = yesNoFromValue(hasSubItems ? subItems[0]?.meshPresent : item.meshPresent);
+
+  if (hasSubItems) {
+    const totalWidth = subItems.reduce((sum, sub) => sum + (sub.width || 0), 0) || width;
+    let cursor = 0;
+    root.split = "vertical";
+    root.children = subItems.map((sub, idx) => {
+      const frac = (sub.width || width / subItems.length) / totalWidth;
+      const safeFrac = Number.isFinite(frac) && frac > 0 ? frac : 1 / subItems.length;
+      const child = createLeaf(
+        cursor,
+        0,
+        safeFrac,
+        1,
+        sub.systemType === "Sliding" ? (idx % 2 === 0 ? "left" : "right") : "fixed",
+        normalizeSystemType(sub.systemType),
+        yesNoFromValue(sub.glassSpec),
+        yesNoFromValue(sub.meshPresent)
+      );
+      child.series = sub.series || "";
+      child.description = sub.description || "";
+      cursor += safeFrac;
+      return child;
+    });
+    const sum = root.children.reduce((acc, child) => acc + child.w, 0) || 1;
+    let normalizedCursor = 0;
+    root.children.forEach((child, idx) => {
+      const w = child.w / sum;
+      child.w = w;
+      child.x = normalizedCursor;
+      if (idx === root.children!.length - 1) {
+        child.w = 1 - normalizedCursor;
+      }
+      normalizedCursor += child.w;
+    });
+  } else {
+    root.systemType = sourceSystem;
+    root.series = item.series || "";
+    root.description = item.description || "";
+    root.glass = yesNoFromValue(item.glassSpec);
+    root.mesh = yesNoFromValue(item.meshPresent);
+  }
+
+  const meta: ProductMeta = {
+    productType: item.height > 2200 ? "Door" : "Window",
+    systemType: item.systemType || sourceSystem,
+    series: item.series || "",
+    description: item.description || "",
+    colorFinish: item.colorFinish || "",
+    glassSpec: item.glassSpec || "",
+    handleType: item.handleType || "",
+    handleColor: item.handleColor || "",
+    meshPresent: item.meshPresent || "No",
+    meshType: item.meshType || "",
+    location: item.location || "",
+    quantity: item.quantity || 1,
+    refCode: item.refCode || "",
+    remarks: item.remarks || "",
+    rate: item.rate || 0,
+  };
+
+  return {
+    width,
+    height,
+    root,
+    baseSystemType: sourceSystem,
+    baseGlass: root.glass,
+    baseMesh: root.mesh,
+    meta,
+  };
 };
 
 
@@ -1283,7 +1429,7 @@ function addDimensionLine(layer: Konva.Layer | Konva.Group, x1: number, y1: numb
 }
 
 function drawMeshTriangle(group: Konva.Group, x: number, y: number, size: number) {
-  const meshSize = Math.max(28, size);
+  const meshSize = Math.max(38, size);
   const topX = x;
   const topY = y - meshSize;
   const leftX = x - meshSize;
@@ -1380,31 +1526,43 @@ function resizeChildrenByDivider(parent: SectionNode, direction: "vertical" | "h
 }
 
 export default function WindowDoorConfigurator({
-  onAddItem,
+  onSaveItem,
   onClose,
+  initialItem,
+  profitPercentage,
 }: {
-  onAddItem: (payload: AddItemPayload) => void;
+  onSaveItem: (item: QuotationItem) => void;
   onClose: () => void;
+  initialItem?: QuotationItem | null;
+  profitPercentage: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const layerRef = useRef<Konva.Layer | null>(null);
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const panOriginRef = useRef({ x: 0, y: 0 });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedSlidingPanelIndex, setSelectedSlidingPanelIndex] = useState<number | null>(null);
   const [widthMm, setWidthMm] = useState(1500);
   const [heightMm, setHeightMm] = useState(1500);
 
-  const [meta] = useState<ProductMeta>(DEFAULT_META);
+  const [meta, setMeta] = useState<ProductMeta>(DEFAULT_META);
   const [baseSystemType, setBaseSystemType] = useState<SystemType>("Casement");
-  const [showSetup] = useState(false);
 
   const [splitCount, setSplitCount] = useState(2);
   const [splitDirection, setSplitDirection] = useState<SplitDirection>("vertical");
   const [baseGlass, setBaseGlass] = useState<YesNo>("Yes");
   const [baseMesh, setBaseMesh] = useState<YesNo>("No");
+  const [isSaving, setIsSaving] = useState(false);
+  const [hideSelectionForExport, setHideSelectionForExport] = useState(false);
+  const [manualChildRates, setManualChildRates] = useState<Record<string, number>>({});
+  const [autoChildRates, setAutoChildRates] = useState<Record<string, number>>({});
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
 
-  const [stageSize, setStageSize] = useState({ w: 720, h: 520 });
+  const [stageSize, setStageSize] = useState({ w: 1200, h: 780 });
 
   const { past, future, present, push, setDirect, undo, redo, reset } = useHistory(
     buildPreset(DEFAULT_META.systemType as SystemType, "Yes", "No")
@@ -1412,12 +1570,39 @@ export default function WindowDoorConfigurator({
 
   const root = present;
   const selectedNode = (selectedId ? findNode(root, selectedId) : null) ?? root;
+  const isSlidingPanelSelection =
+    selectedNode.systemType === "Sliding" &&
+    !selectedNode.children?.length &&
+    (selectedNode.panelFractions?.length ?? 0) > 1 &&
+    selectedSlidingPanelIndex !== null &&
+    selectedSlidingPanelIndex >= 0 &&
+    selectedSlidingPanelIndex < (selectedNode.panelFractions?.length ?? 0);
+  const showSummaryPopup = selectedId !== null;
   const systemsQuery = useSystemsQuery();
-  const seriesQuery = useSeriesQuery(selectedNode.systemType);
-  const descriptionsQuery = useDescriptionsQuery(selectedNode.systemType, selectedNode.series);
+  const selectedSeriesQuery = useSeriesQuery(selectedNode.systemType);
+  const selectedDescriptionsQuery = useDescriptionsQuery(selectedNode.systemType, selectedNode.series);
+  const optionsSystemType = selectedNode.systemType || baseSystemType;
+  const metaOptionsQuery = useOptionsQuery(optionsSystemType);
+  const metaHandleOption =
+    metaOptionsQuery.data?.handleOptions.find((option) => option.name === meta.handleType) ?? null;
   const systemOptions = systemsQuery.data?.systems ?? ["Casement", "Sliding", "Slide N Fold"];
-  const seriesOptions = seriesQuery.data?.series ?? [];
-  const descriptionOptions = descriptionsQuery.data?.descriptions ?? [];
+  const selectableSystemOptions = systemOptions.filter(
+    (sys): sys is SystemType => sys === "Casement" || sys === "Sliding" || sys === "Slide N Fold"
+  );
+  const seriesOptions = selectedSeriesQuery.data?.series ?? [];
+  const descriptionOptions = selectedDescriptionsQuery.data?.descriptions ?? [];
+
+  useEffect(() => {
+    if (
+      selectedNode.systemType !== "Sliding" ||
+      !selectedNode.panelFractions?.length ||
+      selectedNode.panelFractions.length < 2 ||
+      selectedSlidingPanelIndex === null ||
+      selectedSlidingPanelIndex >= selectedNode.panelFractions.length
+    ) {
+      setSelectedSlidingPanelIndex(null);
+    }
+  }, [selectedNode, selectedSlidingPanelIndex]);
 
   const rootDimensions = useMemo(() => {
     const baseW = Math.max(widthMm, 0);
@@ -1426,16 +1611,17 @@ export default function WindowDoorConfigurator({
   }, [widthMm, heightMm]);
 
   const view = useMemo(() => {
-    const padding = 56;
+    // Keep extra breathing room for multi-level dimension labels.
+    const padding = 120;
     const maxW = stageSize.w - padding * 2;
     const maxH = stageSize.h - padding * 2;
     const ratio = Math.min(maxW / Math.max(rootDimensions.w, 1), maxH / Math.max(rootDimensions.h, 1));
     const drawW = rootDimensions.w * ratio;
     const drawH = rootDimensions.h * ratio;
-    const offsetX = (stageSize.w - drawW) / 2;
-    const offsetY = (stageSize.h - drawH) / 2;
+    const offsetX = (stageSize.w - drawW) / 2 + panOffset.x;
+    const offsetY = (stageSize.h - drawH) / 2 + panOffset.y;
     return { ratio, drawW, drawH, offsetX, offsetY };
-  }, [rootDimensions, stageSize]);
+  }, [panOffset, rootDimensions, stageSize]);
 
   const clampMm = (value: number, min: number, max: number) =>
     Math.max(min, Math.min(max, Math.round(value)));
@@ -1536,7 +1722,7 @@ export default function WindowDoorConfigurator({
     if (!leaf || !leaf.panelFractions || leaf.panelFractions.length < 2) return;
 
     const total = leaf.w * widthMm;
-    const minMm = 120;
+    const minMm = 0;
     const count = leaf.panelFractions.length;
 
     const current = leaf.panelFractions.map((frac) => Math.round(frac * total));
@@ -1570,6 +1756,7 @@ export default function WindowDoorConfigurator({
       y: number;
       value: number;
       selectId: string | null;
+      panelIndex?: number;
       onChange: (next: number) => void;
     }> = [];
 
@@ -1598,6 +1785,11 @@ export default function WindowDoorConfigurator({
       depth,
       levelFromFrame: maxSplitDepth - depth,
     }));
+    const leavesForPanelRows: SectionNode[] = [];
+    mapLeafNodes(root, (leaf) => leavesForPanelRows.push(leaf));
+    const hasLeafPanelLabels = leavesForPanelRows.some(
+      (leaf) => (leaf.panelFractions?.length ?? 0) >= 2
+    );
 
     const maxVerticalLevel = splitParentsWithLevel.reduce(
       (max, item) =>
@@ -1610,9 +1802,14 @@ export default function WindowDoorConfigurator({
       -1
     );
 
+    const splitBaseOffset = 18;
+    const panelRowBand = hasLeafPanelLabels ? 40 : 0;
+    const verticalGuideBase = splitBaseOffset + panelRowBand;
+    const horizontalGuideBase = splitBaseOffset;
+
     // main height label
     const mainHeightGuideX =
-      fx - 18 - (maxHorizontalLevel >= 0 ? (maxHorizontalLevel + 1) * hierarchyOffset : 26);
+      fx - horizontalGuideBase - (maxHorizontalLevel >= 0 ? (maxHorizontalLevel + 1) * hierarchyOffset : 26);
     const hMidX = mainHeightGuideX;
     const hMidY = (fy + fy + fh) / 2;
     labels.push({
@@ -1621,13 +1818,14 @@ export default function WindowDoorConfigurator({
       y: clampY(hMidY - 14),
       value: heightMm,
       selectId: "root",
-      onChange: (next) => setHeightMm(clampMm(next, 400, 100000)),
+      panelIndex: undefined,
+      onChange: (next) => setHeightMm(clampMm(next, 0, 100000)),
     });
 
     // main width label
     const wMidX = (fx + fx + fw) / 2;
     const mainWidthGuideY =
-      fy + fh + 18 + (maxVerticalLevel >= 0 ? (maxVerticalLevel + 1) * hierarchyOffset : 26);
+      fy + fh + verticalGuideBase + (maxVerticalLevel >= 0 ? (maxVerticalLevel + 1) * hierarchyOffset : 26);
     const wMidY = mainWidthGuideY;
     labels.push({
       id: "width",
@@ -1635,12 +1833,13 @@ export default function WindowDoorConfigurator({
       y: clampY(wMidY - 14),
       value: widthMm,
       selectId: "root",
-      onChange: (next) => setWidthMm(clampMm(next, 400, 100000)),
+      panelIndex: undefined,
+      onChange: (next) => setWidthMm(clampMm(next, 0, 100000)),
     });
 
     splitParentsWithLevel.forEach(({ node: parent, levelFromFrame }) => {
       if (parent.split === "vertical") {
-        const y2 = fy + fh + 18 + levelFromFrame * hierarchyOffset;
+        const y2 = fy + fh + verticalGuideBase + levelFromFrame * hierarchyOffset;
         parent.children!.forEach((c, idx) => {
           const midX = (fx + c.x * fw + fx + (c.x + c.w) * fw) / 2;
           labels.push({
@@ -1649,13 +1848,14 @@ export default function WindowDoorConfigurator({
             y: clampY(y2 - 14),
             value: Math.round(c.w * widthMm),
             selectId: c.id,
+            panelIndex: undefined,
             onChange: (next) => updateChildDimension(parent.id, idx, next, "vertical"),
           });
         });
       }
 
       if (parent.split === "horizontal") {
-        const x2 = fx - 18 - levelFromFrame * hierarchyOffset;
+        const x2 = fx - horizontalGuideBase - levelFromFrame * hierarchyOffset;
         parent.children!.forEach((c, idx) => {
           const midY = (fy + c.y * fh + fy + (c.y + c.h) * fh) / 2;
           labels.push({
@@ -1664,6 +1864,7 @@ export default function WindowDoorConfigurator({
             y: clampY(midY - 14),
             value: Math.round(c.h * heightMm),
             selectId: c.id,
+            panelIndex: undefined,
             onChange: (next) => updateChildDimension(parent.id, idx, next, "horizontal"),
           });
         });
@@ -1671,15 +1872,13 @@ export default function WindowDoorConfigurator({
     });
 
     // leaf panel labels for descriptions (track/panel)
-    const leaves: SectionNode[] = [];
-    mapLeafNodes(root, (leaf) => leaves.push(leaf));
-    leaves.forEach((leaf) => {
+    leavesForPanelRows.forEach((leaf) => {
       if (!leaf.panelFractions || leaf.panelFractions.length < 2) return;
       const leafX = fx + leaf.x * fw;
       const leafY = fy + leaf.y * fh;
       const leafW = leaf.w * fw;
       const leafH = leaf.h * fh;
-      const y2 = leafY + leafH + 10;
+      const y2 = leafY + leafH + splitBaseOffset;
       let cursor = leafX;
       leaf.panelFractions.forEach((frac, idx) => {
         const pw = leafW * frac;
@@ -1690,6 +1889,7 @@ export default function WindowDoorConfigurator({
           y: clampY(y2 - 14),
           value: Math.round(frac * leaf.w * widthMm),
           selectId: leaf.id,
+          panelIndex: idx,
           onChange: (next) => updateLeafPanelDimension(leaf.id, idx, next),
         });
         cursor += pw;
@@ -1699,52 +1899,197 @@ export default function WindowDoorConfigurator({
     return labels;
   }, [heightMm, widthMm, root, view, updateChildDimension, stageSize, updateLeafPanelDimension]);
 
-  const handleAddItem = () => {
-    const dataUrl = stageRef.current?.toDataURL({ pixelRatio: 2 }) ?? "";
-    const areaSqft = mmToSqft(widthMm, heightMm);
+  const handleSaveItem = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      setHideSelectionForExport(true);
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
+      const dataUrl = stageRef.current?.toDataURL({ pixelRatio: 2 }) ?? "";
+      setHideSelectionForExport(false);
+      const areaSqft = mmToSqft(widthMm, heightMm);
+      const leafNodes: SectionNode[] = [];
+      mapLeafNodes(root, (leaf) => leafNodes.push(leaf));
+      const alpha = (idx: number) => String.fromCharCode(97 + idx);
 
-    const leafNodes: SectionNode[] = [];
-    mapLeafNodes(root, (leaf) => leafNodes.push(leaf));
+      const optionsCache = new Map<string, OptionsResponse>();
+      const descriptionsCache = new Map<string, Description[]>();
 
-    const subItems = leafNodes.map((leaf) => ({
-      widthMm: Math.round(leaf.w * widthMm),
-      heightMm: Math.round(leaf.h * heightMm),
-      areaSqft: mmToSqft(leaf.w * widthMm, leaf.h * heightMm),
-      systemType: leaf.systemType,
-      series: leaf.series,
-      description: leaf.description,
-      glass: leaf.glass,
-      mesh: leaf.mesh,
-    }));
+      const getOptions = async (systemType: string) => {
+        if (!systemType) return undefined;
+        if (!optionsCache.has(systemType)) {
+          try {
+            const data = await fetchOptions(systemType);
+            optionsCache.set(systemType, data);
+          } catch {
+            optionsCache.set(systemType, {
+              colorFinishes: [],
+              meshTypes: [],
+              glassSpecs: [],
+              handleOptions: [],
+            });
+          }
+        }
+        return optionsCache.get(systemType);
+      };
 
-    const singleLeaf = leafNodes[0];
-    const anyMesh = subItems.some((item) => item.mesh === "Yes");
-    const anyGlass = subItems.some((item) => item.glass === "Yes");
+      const getDescriptions = async (systemType: string, series: string) => {
+        const key = `${systemType}::${series}`;
+        if (!systemType || !series) return [];
+        if (!descriptionsCache.has(key)) {
+          try {
+            const data = await fetchDescriptions(systemType, series);
+            descriptionsCache.set(key, data.descriptions ?? []);
+          } catch {
+            descriptionsCache.set(key, []);
+          }
+        }
+        return descriptionsCache.get(key) ?? [];
+      };
 
-    onAddItem({
-      widthMm,
-      heightMm,
-      areaSqft,
-      refImage: dataUrl,
-      meta: {
-        ...meta,
-        systemType: subItems.length > 1 ? "Combination" : singleLeaf.systemType,
-        series: subItems.length > 1 ? meta.series : singleLeaf.series,
-        description:
-          subItems.length > 1
-            ? meta.description || `${meta.systemType} ${meta.productType}`
-            : singleLeaf.description || `${singleLeaf.systemType} ${meta.productType}`,
-        glassSpec: meta.glassSpec || (anyGlass ? "Yes" : "No"),
-        meshPresent: anyMesh ? "Yes" : "No",
-      },
-      subItems: subItems.length > 1 ? subItems : undefined,
-    });
+      const buildSubItem = async (leaf: SectionNode, idx: number): Promise<QuotationSubItem> => {
+        const systemType = leaf.systemType;
+        const series = leaf.series || "";
+        const description = leaf.description || `${systemType} ${meta.productType}`;
+        const itemArea = mmToSqft(leaf.w * widthMm, leaf.h * heightMm);
+        const descriptions = await getDescriptions(systemType, series);
+        const options = await getOptions(systemType);
+        const calc = calculateRateForItem(
+          {
+            area: itemArea,
+            description,
+            colorFinish: meta.colorFinish,
+            glassSpec: leaf.glass === "Yes" ? meta.glassSpec : "",
+            handleType: meta.handleType,
+            handleColor: meta.handleColor,
+            meshPresent: leaf.mesh,
+            meshType: leaf.mesh === "Yes" ? meta.meshType : "",
+          },
+          descriptions,
+          options
+        );
+        const computedRate = applyProfitToRate(calc.rate, profitPercentage);
+        const resolvedRate = manualChildRates[leaf.id] ?? autoChildRates[leaf.id] ?? computedRate;
+        const quantity = 1;
+        return {
+          id: crypto.randomUUID(),
+          refCode: meta.refCode ? `${meta.refCode}-${alpha(idx)}` : "",
+          location: meta.location || "",
+          width: Math.round(leaf.w * widthMm),
+          height: Math.round(leaf.h * heightMm),
+          area: itemArea,
+          systemType,
+          series,
+          description,
+          colorFinish: meta.colorFinish,
+          glassSpec: leaf.glass === "Yes" ? meta.glassSpec : "",
+          handleType: meta.handleType,
+          handleColor: meta.handleColor,
+          handleCount: calc.handleCount,
+          meshPresent: leaf.mesh,
+          meshType: leaf.mesh === "Yes" ? meta.meshType : "",
+          rate: roundToTwo(resolvedRate),
+          quantity,
+          amount: roundToTwo(quantity * roundToTwo(resolvedRate) * itemArea),
+          refImage: "",
+          remarks: meta.remarks || "",
+          baseRate: calc.baseRate,
+          areaSlabIndex: calc.areaSlabIndex,
+        };
+      };
+
+      const subItems = await Promise.all(leafNodes.map((leaf, idx) => buildSubItem(leaf, idx)));
+      const isCombination = subItems.length > 1;
+      const anyMesh = subItems.some((item) => item.meshPresent === "Yes");
+      const anyGlass = subItems.some((item) => item.glassSpec !== "");
+      const singleLeaf = leafNodes[0];
+
+      let rate = 0;
+      let amount = 0;
+      let baseRate = 0;
+      let areaSlabIndex = 0;
+      let handleCount = 0;
+
+      if (!isCombination && singleLeaf) {
+        const systemType = singleLeaf.systemType;
+        const series = singleLeaf.series || "";
+        const description = singleLeaf.description || `${systemType} ${meta.productType}`;
+        const descriptions = await getDescriptions(systemType, series);
+        const options = await getOptions(systemType);
+        const calc = calculateRateForItem(
+          {
+            area: areaSqft,
+            description,
+            colorFinish: meta.colorFinish,
+            glassSpec: meta.glassSpec,
+            handleType: meta.handleType,
+            handleColor: meta.handleColor,
+            meshPresent: singleLeaf.mesh,
+            meshType: singleLeaf.mesh === "Yes" ? meta.meshType : "",
+          },
+          descriptions,
+          options
+        );
+        baseRate = calc.baseRate;
+        areaSlabIndex = calc.areaSlabIndex;
+        handleCount = calc.handleCount;
+        rate = meta.rate > 0 ? meta.rate : applyProfitToRate(calc.rate, profitPercentage);
+        amount = roundToTwo(Math.max(1, meta.quantity || 1) * rate * areaSqft);
+      } else {
+        const parentQuantity = Math.max(1, meta.quantity || 1);
+        const perFrameAmount = roundToTwo(subItems.reduce((sum, sub) => sum + sub.amount, 0));
+        const weightedRateTotal = subItems.reduce((sum, sub) => sum + sub.rate * sub.area, 0);
+        const frameArea = areaSqft;
+        rate = frameArea > 0 ? roundToTwo(weightedRateTotal / frameArea) : 0;
+        amount = roundToTwo(perFrameAmount * parentQuantity);
+      }
+
+      const nextItem: QuotationItem = {
+        id: initialItem?.id ?? crypto.randomUUID(),
+        refCode: meta.refCode || "",
+        location: meta.location || "",
+        width: widthMm,
+        height: heightMm,
+        area: areaSqft,
+        systemType: isCombination ? COMBINATION_SYSTEM : singleLeaf?.systemType || baseSystemType,
+        series: isCombination ? "" : singleLeaf?.series || "",
+        description: isCombination
+          ? ""
+          : singleLeaf?.description || `${singleLeaf?.systemType || baseSystemType} ${meta.productType}`,
+        colorFinish: isCombination ? "" : meta.colorFinish,
+        glassSpec: isCombination ? "" : meta.glassSpec || (anyGlass ? "Yes" : ""),
+        handleType: isCombination ? "" : meta.handleType,
+        handleColor: isCombination ? "" : meta.handleColor,
+        handleCount,
+        meshPresent: isCombination ? "" : singleLeaf?.mesh || "No",
+        meshType: isCombination ? "" : anyMesh ? meta.meshType : "",
+        rate,
+        quantity: Math.max(1, meta.quantity || 1),
+        amount,
+        refImage: dataUrl,
+        remarks: meta.remarks || "",
+        baseRate,
+        areaSlabIndex,
+        subItems: isCombination ? subItems : [],
+      };
+
+      onSaveItem(nextItem);
+      onClose();
+    } finally {
+      setHideSelectionForExport(false);
+      setIsSaving(false);
+    }
   };
 
   const splitSelected = useCallback(
     (direction: SplitDirection) => {
       if (!selectedId) return;
       if (!selectedNode || selectedNode.children?.length) return;
+      if (selectedNode.systemType === "Sliding") return;
 
       const next = cloneTree(root);
       const target = findNode(next, selectedId);
@@ -1791,6 +2136,36 @@ export default function WindowDoorConfigurator({
 
     // bg
     layer.add(new Konva.Rect({ x: 0, y: 0, width: stageSize.w, height: stageSize.h, fill: COLORS.bg }));
+    const panHit = new Konva.Rect({
+      x: 0,
+      y: 0,
+      width: stageSize.w,
+      height: stageSize.h,
+      fill: "rgba(255,255,255,0.001)",
+      listening: true,
+    });
+    panHit.on("mousedown touchstart", (event) => {
+      event.cancelBubble = true;
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+      isPanningRef.current = true;
+      panStartRef.current = pointer;
+      panOriginRef.current = panOffset;
+      setSelectedId(null);
+      setSelectedSlidingPanelIndex(null);
+      stage.container().style.cursor = "grabbing";
+    });
+    panHit.on("mouseenter", () => {
+      if (!isPanningRef.current) {
+        stage.container().style.cursor = "grab";
+      }
+    });
+    panHit.on("mouseleave", () => {
+      if (!isPanningRef.current) {
+        stage.container().style.cursor = "default";
+      }
+    });
+    layer.add(panHit);
 
     // grid
     const gridSize = 20;
@@ -1805,11 +2180,16 @@ export default function WindowDoorConfigurator({
     const fy = view.offsetY;
     const fw = view.drawW;
     const fh = view.drawH;
+    const selectedForRender = hideSelectionForExport ? null : selectedId;
 
-    addProfileRect(layer, fx, fy, fw, fh, selectedId === "root");
+    addProfileRect(layer, fx, fy, fw, fh, selectedForRender === "root");
 
-    // root hit
+    // root/frame hit: deselect current section/panel
     const rootHit = new Konva.Rect({ x: fx, y: fy, width: fw, height: fh, fill: "transparent" });
+    rootHit.on("mousedown touchstart", () => {
+      setSelectedId(null);
+      setSelectedSlidingPanelIndex(null);
+    });
     layer.add(rootHit);
 
     /** ============ OUTER RESIZE HANDLES REMOVED ============ */
@@ -1864,19 +2244,25 @@ export default function WindowDoorConfigurator({
       const y = fy + leaf.y * fh;
       const w = leaf.w * fw;
       const h = leaf.h * fh;
-      const isSelected = leaf.id === selectedId;
+      const isSelected = leaf.id === selectedForRender;
 
       const g = new Konva.Group({ listening: true, draggable: false });
 
       // hit area for reliable selection
-      g.add(new Konva.Rect({
+      const leafHit = new Konva.Rect({
         x,
         y,
         width: w,
         height: h,
         fill: "rgba(255,255,255,0.01)",
         listening: true,
-      }));
+      });
+      leafHit.on("mousedown touchstart", (event) => {
+        event.cancelBubble = true;
+        setSelectedId(leaf.id);
+        setSelectedSlidingPanelIndex(null);
+      });
+      g.add(leafHit);
 
       // sash profile
       g.add(new Konva.Rect({
@@ -1915,6 +2301,12 @@ export default function WindowDoorConfigurator({
         };
 
         const drawPanels = (fractions: number[], sashTypes?: SashType[], meshCount = 0) => {
+          const isPanelizedSliding = leaf.systemType === "Sliding" && fractions.length > 1;
+          const panelSashes = isPanelizedSliding
+            ? (leaf.panelSashes && leaf.panelSashes.length === fractions.length
+                ? leaf.panelSashes
+                : buildDefaultSlidingPanelSashes(fractions.length))
+            : [];
           let cursor = innerX;
           fractions.forEach((frac, idx) => {
             const pw = innerW * frac;
@@ -1922,12 +2314,71 @@ export default function WindowDoorConfigurator({
             if (sashTypes?.[idx]) {
               drawSashGlyph(g, cursor, innerY, pw, innerH, sashTypes[idx], COLORS.frameDark);
             }
+            if (isPanelizedSliding) {
+              const panelSash = panelSashes[idx] ?? "fixed";
+              const arrowY = innerY + innerH / 2;
+              if (panelSash === "double") {
+                g.add(new Konva.Arrow({
+                  points: [cursor + pw * 0.5, arrowY, cursor + pw * 0.25, arrowY],
+                  stroke: "#111827",
+                  fill: "#111827",
+                  strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+                  pointerLength: 7,
+                  pointerWidth: 7,
+                  opacity: 0.7,
+                  listening: false,
+                }));
+                g.add(new Konva.Arrow({
+                  points: [cursor + pw * 0.5, arrowY, cursor + pw * 0.75, arrowY],
+                  stroke: "#111827",
+                  fill: "#111827",
+                  strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+                  pointerLength: 7,
+                  pointerWidth: 7,
+                  opacity: 0.7,
+                  listening: false,
+                }));
+              } else if (panelSash === "left" || panelSash === "right") {
+                const from = panelSash === "left" ? cursor + pw * 0.75 : cursor + pw * 0.25;
+                const to = panelSash === "left" ? cursor + pw * 0.25 : cursor + pw * 0.75;
+                g.add(new Konva.Arrow({
+                  points: [from, arrowY, to, arrowY],
+                  stroke: "#111827",
+                  fill: "#111827",
+                  strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+                  pointerLength: 7,
+                  pointerWidth: 7,
+                  opacity: 0.7,
+                  listening: false,
+                }));
+              }
+
+              const panelHit = new Konva.Rect({
+                x: cursor,
+                y: innerY,
+                width: pw,
+                height: innerH,
+                fill: "rgba(255,255,255,0.001)",
+                stroke:
+                  isSelected && selectedSlidingPanelIndex === idx
+                    ? COLORS.selected
+                    : "rgba(148, 163, 184, 0.45)",
+                strokeWidth: isSelected && selectedSlidingPanelIndex === idx ? 2 : 1,
+                listening: true,
+              });
+              panelHit.on("mousedown touchstart", (event) => {
+                event.cancelBubble = true;
+                setSelectedId(leaf.id);
+                setSelectedSlidingPanelIndex(idx);
+              });
+              g.add(panelHit);
+            }
             if (meshCount > 0 && idx >= fractions.length - meshCount) {
               drawMeshTriangle(
                 g,
                 cursor + pw - 6,
                 innerY + innerH - 6,
-                Math.min(pw, innerH) * 0.22
+                Math.min(pw, innerH) * 0.5
               );
             }
             cursor += pw;
@@ -2076,12 +2527,13 @@ export default function WindowDoorConfigurator({
       if (leaf.mesh === "Yes") {
         const triX = x + w - inset - 6;
         const triY = y + h - inset - 6;
-        drawMeshTriangle(g, triX, triY, Math.min(w, h) * 0.18);
+        drawMeshTriangle(g, triX, triY, Math.min(w, h) * 0.5);
       }
 
       // handle icon for openable/sliding-movable
       const insetHandle = inset + 6;
       const isSliding = leaf.systemType === "Sliding";
+      const hasSlidingPanels = isSliding && (leaf.panelFractions?.length ?? 0) > 1;
       const isSlideFold = leaf.systemType === "Slide N Fold";
       const isCustomSlideNFoldPattern =
         isSlideFold &&
@@ -2101,7 +2553,7 @@ export default function WindowDoorConfigurator({
         else if (leaf.sash === "double") addHandleIcon(g, x + w / 2 - 6, y + h / 2 - 18, "right");
       }
 
-      if (isSlidingMove) {
+      if (isSlidingMove && !hasSlidingPanels) {
         if (leaf.sash === "left") addHandleIcon(g, x + w * 0.55, y + h / 2 - 18, "right");
         if (leaf.sash === "right") addHandleIcon(g, x + w * 0.40, y + h / 2 - 18, "left");
         if (leaf.sash === "double") {
@@ -2109,8 +2561,8 @@ export default function WindowDoorConfigurator({
           addHandleIcon(g, x + w * 0.53, y + h / 2 - 18, "left");
         }
 
-        // darker arrow moved away from bottom rail
-        const arrowY = y + h - 34;
+        // keep sliding direction arrows centered vertically
+        const arrowY = y + h / 2;
         if (leaf.sash === "double") {
           g.add(new Konva.Arrow({
             points: [x + w * 0.50, arrowY, x + w * 0.28, arrowY],
@@ -2221,23 +2673,28 @@ export default function WindowDoorConfigurator({
     }, -1);
 
     const hierarchyOffset = 34;
+    const hasLeafPanelLabels = leaves.some((leaf) => (leaf.panelFractions?.length ?? 0) >= 2);
+    const splitBaseOffset = 18;
+    const panelRowBand = hasLeafPanelLabels ? 40 : 0;
+    const verticalGuideBase = splitBaseOffset + panelRowBand;
+    const horizontalGuideBase = splitBaseOffset;
     const mainHeightGuideX =
-      fx - 18 - (maxHorizontalLevel >= 0 ? (maxHorizontalLevel + 1) * hierarchyOffset : 26);
+      fx - horizontalGuideBase - (maxHorizontalLevel >= 0 ? (maxHorizontalLevel + 1) * hierarchyOffset : 26);
     const mainWidthGuideY =
-      fy + fh + 18 + (maxVerticalLevel >= 0 ? (maxVerticalLevel + 1) * hierarchyOffset : 26);
+      fy + fh + verticalGuideBase + (maxVerticalLevel >= 0 ? (maxVerticalLevel + 1) * hierarchyOffset : 26);
 
     addDimensionLine(layer, mainHeightGuideX, fy, mainHeightGuideX, fy + fh, "");
     addDimensionLine(layer, fx, mainWidthGuideY, fx + fw, mainWidthGuideY, "");
 
     if (root.split === "vertical" && (root.children?.length ?? 0) >= 2) {
-      const y2 = fy + fh + 18;
+      const y2 = fy + fh + verticalGuideBase;
       root.children!.forEach((c) => {
         addDimensionLine(layer, fx + c.x * fw, y2, fx + (c.x + c.w) * fw, y2, "");
       });
     }
 
     if (root.split === "horizontal" && (root.children?.length ?? 0) >= 2) {
-      const x2 = fx - 18;
+      const x2 = fx - horizontalGuideBase;
       root.children!.forEach((c) => {
         addDimensionLine(layer, x2, fy + c.y * fh, x2, fy + (c.y + c.h) * fh, "");
       });
@@ -2256,7 +2713,7 @@ export default function WindowDoorConfigurator({
     }
 
     layer.draw();
-  }, [heightMm, push, root, selectedId, setDirect, stageSize.h, stageSize.w, view, widthMm]);
+  }, [heightMm, hideSelectionForExport, panOffset, push, root, selectedId, selectedSlidingPanelIndex, setDirect, stageSize.h, stageSize.w, view, widthMm]);
 
   // create stage
   useEffect(() => {
@@ -2270,12 +2727,33 @@ export default function WindowDoorConfigurator({
     const layer = new Konva.Layer();
     stage.add(layer);
 
+    const handlePanMove = () => {
+      if (!isPanningRef.current) return;
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+      setPanOffset({
+        x: panOriginRef.current.x + (pointer.x - panStartRef.current.x),
+        y: panOriginRef.current.y + (pointer.y - panStartRef.current.y),
+      });
+    };
+
+    const stopPanning = () => {
+      if (!isPanningRef.current) return;
+      isPanningRef.current = false;
+      stage.container().style.cursor = "grab";
+    };
+
+    stage.on("mousemove touchmove", handlePanMove);
+    stage.on("mouseup touchend touchcancel mouseleave", stopPanning);
+
     stageRef.current = stage;
     layerRef.current = layer;
 
     renderCanvas();
 
     return () => {
+      stage.off("mousemove touchmove", handlePanMove);
+      stage.off("mouseup touchend touchcancel mouseleave", stopPanning);
       stage.destroy();
       stageRef.current = null;
       layerRef.current = null;
@@ -2291,10 +2769,8 @@ export default function WindowDoorConfigurator({
     const ro = new ResizeObserver(() => {
       const rect = el.getBoundingClientRect();
       const w = Math.max(420, Math.floor(rect.width));
-      const viewportH =
-        typeof window !== "undefined" ? window.innerHeight : 900;
-      const maxAllowed = Math.max(600, viewportH - 220);
-      const h = Math.max(540, Math.floor(Math.min(maxAllowed, 980, rect.width * 0.92)));
+      const fallbackH = typeof window !== "undefined" ? window.innerHeight - 240 : 760;
+      const h = Math.max(620, Math.floor(rect.height > 0 ? rect.height : fallbackH));
 
       setStageSize({ w, h });
       if (stageRef.current) {
@@ -2312,21 +2788,182 @@ export default function WindowDoorConfigurator({
     renderCanvas();
   }, [renderCanvas]);
 
+  useEffect(() => {
+    if (!initialItem) return;
+    const mapped = mapItemToConfiguratorState(initialItem);
+    setWidthMm(mapped.width);
+    setHeightMm(mapped.height);
+    setBaseSystemType(mapped.baseSystemType);
+    setBaseGlass(mapped.baseGlass);
+    setBaseMesh(mapped.baseMesh);
+    setMeta(mapped.meta);
+    reset(mapped.root);
+    setSelectedId("root");
+    const leaves: SectionNode[] = [];
+    mapLeafNodes(mapped.root, (leaf) => leaves.push(leaf));
+    const sortedLeaves = leaves.sort((a, b) => (a.y - b.y) || (a.x - b.x));
+    const subItems = initialItem.subItems ?? [];
+    const nextManualRates: Record<string, number> = {};
+    sortedLeaves.forEach((leaf, idx) => {
+      if (subItems[idx]?.rate !== undefined) {
+        nextManualRates[leaf.id] = Number(subItems[idx].rate) || 0;
+      }
+    });
+    setManualChildRates(nextManualRates);
+    setAutoChildRates({});
+  }, [initialItem, reset]);
+
   // apply base preset
   useEffect(() => {
+    if (initialItem) return;
     reset(buildPreset(baseSystemType, baseGlass, baseMesh));
     setSelectedId(null);
-  }, [baseGlass, baseMesh, baseSystemType, reset]);
+    setManualChildRates({});
+    setAutoChildRates({});
+  }, [baseGlass, baseMesh, baseSystemType, initialItem, reset]);
 
   const areaSqft = useMemo(() => mmToSqft(widthMm, heightMm), [widthMm, heightMm]);
+  const leafNodesForMode = useMemo(() => {
+    const leaves: SectionNode[] = [];
+    mapLeafNodes(root, (leaf) => leaves.push(leaf));
+    return leaves.sort((a, b) => (a.y - b.y) || (a.x - b.x));
+  }, [root]);
+  const isCombinationDraft = leafNodesForMode.length > 1;
+  const selectedIsWholeFrame = selectedId === null || selectedNode.id === "root";
+  const isCombinationParentSelection = isCombinationDraft && selectedIsWholeFrame;
+  const isCombinationChildSelection = isCombinationDraft && !selectedIsWholeFrame;
+  const selectedLeafIndex = leafNodesForMode.findIndex((leaf) => leaf.id === selectedNode.id);
+  const childAutoRef =
+    isCombinationChildSelection && meta.refCode && selectedLeafIndex >= 0
+      ? `${meta.refCode}-${indexToAlphaLower(selectedLeafIndex)}`
+      : "";
+  const selectedLeafAreaSqft =
+    isCombinationChildSelection && selectedLeafIndex >= 0
+      ? mmToSqft(
+          leafNodesForMode[selectedLeafIndex].w * widthMm,
+          leafNodesForMode[selectedLeafIndex].h * heightMm
+        )
+      : 0;
+  const selectedChildRate =
+    isCombinationChildSelection && selectedId
+      ? (manualChildRates[selectedId] ?? autoChildRates[selectedId] ?? 0)
+      : 0;
+  const parentCombinationRate = useMemo(
+    () => {
+      const weightedRateTotal = leafNodesForMode.reduce((sum, leaf) => {
+        const leafArea = mmToSqft(leaf.w * widthMm, leaf.h * heightMm);
+        const leafRate = manualChildRates[leaf.id] ?? autoChildRates[leaf.id] ?? 0;
+        return sum + leafRate * leafArea;
+      }, 0);
+      return areaSqft > 0 ? roundToTwo(weightedRateTotal / areaSqft) : 0;
+    },
+    [areaSqft, autoChildRates, leafNodesForMode, manualChildRates, heightMm, widthMm]
+  );
+
+  useEffect(() => {
+    if (!isCombinationDraft) {
+      setAutoChildRates({});
+      return;
+    }
+
+    let isActive = true;
+    const run = async () => {
+      const next: Record<string, number> = {};
+      await Promise.all(
+        leafNodesForMode.map(async (leaf) => {
+          const systemType = leaf.systemType;
+          const series = leaf.series || "";
+          const description = leaf.description || `${systemType} ${meta.productType}`;
+          if (!systemType || !description || !series) {
+            next[leaf.id] = 0;
+            return;
+          }
+          try {
+            const [descriptionsResp, optionsResp] = await Promise.all([
+              fetchDescriptions(systemType, series),
+              fetchOptions(systemType),
+            ]);
+            const area = mmToSqft(leaf.w * widthMm, leaf.h * heightMm);
+            const calc = calculateRateForItem(
+              {
+                area,
+                description,
+                colorFinish: meta.colorFinish,
+                glassSpec: leaf.glass === "Yes" ? meta.glassSpec : "",
+                handleType: meta.handleType,
+                handleColor: meta.handleColor,
+                meshPresent: leaf.mesh,
+                meshType: leaf.mesh === "Yes" ? meta.meshType : "",
+              },
+              descriptionsResp.descriptions,
+              optionsResp
+            );
+            next[leaf.id] = applyProfitToRate(calc.rate, profitPercentage);
+          } catch {
+            next[leaf.id] = 0;
+          }
+        })
+      );
+
+      if (!isActive) return;
+      setAutoChildRates(next);
+    };
+
+    void run();
+    return () => {
+      isActive = false;
+    };
+  }, [
+    heightMm,
+    isCombinationDraft,
+    leafNodesForMode,
+    meta.colorFinish,
+    meta.glassSpec,
+    meta.handleColor,
+    meta.handleType,
+    meta.meshType,
+    meta.productType,
+    profitPercentage,
+    widthMm,
+  ]);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
+    <div className="relative h-full w-full">
 
       {/* LEFT */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm min-w-0">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="h-full rounded-2xl border border-gray-200 bg-white p-2 shadow-sm min-w-0">
+      <div
+        ref={canvasWrapRef}
+        className="relative h-full min-h-[520px] w-full min-w-0"
+      >
+        <div
+          ref={containerRef}
+          className="rounded-xl border border-gray-200 bg-[#F9FBFD] w-full overflow-hidden"
+          style={{ width: "100%", height: stageSize.h }}
+        />
+        <div className="pointer-events-none absolute inset-0">
+          {dimensionLabels.map((label) => (
+            <input
+              key={label.id}
+              type="number"
+              value={label.value}
+              onChange={(e) => label.onChange(Number(e.target.value))}
+              onFocus={() => {
+                setSelectedId(label.selectId);
+                setSelectedSlidingPanelIndex(label.panelIndex ?? null);
+              }}
+              data-dim-input="true"
+              className="pointer-events-auto absolute h-7 w-[88px] rounded-sm border border-gray-400 bg-white text-center text-sm text-gray-900 shadow-sm focus:border-[#124657] focus:outline-none focus:ring-2 focus:ring-[#124657]"
+              style={{ left: label.x, top: label.y }}
+            />
+          ))}
+        </div>
+        <div className="pointer-events-none absolute right-4 top-4 z-10 text-xs text-gray-500">
+          Use the dimension boxes to edit sizes
+        </div>
+
+        <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-col gap-2">
+          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 p-2 shadow">
             <button
               type="button"
               onClick={undo}
@@ -2351,248 +2988,503 @@ export default function WindowDoorConfigurator({
               <RotateCcw className="h-4 w-4" />
             </button>
           </div>
-        <div className="text-xs text-gray-400">
-          Use the dimension boxes to edit sizes
-        </div>
-      </div>
 
-      <div ref={canvasWrapRef} className="relative w-full min-w-0">
-        <div
-          ref={containerRef}
-          className="rounded-xl border border-gray-200 bg-[#F9FBFD] w-full overflow-hidden"
-          style={{ width: "100%", height: stageSize.h }}
-        />
-        <div className="pointer-events-none absolute inset-0">
-          {dimensionLabels.map((label) => (
-            <input
-              key={label.id}
-              type="number"
-              value={label.value}
-              onChange={(e) => label.onChange(Number(e.target.value))}
-              onFocus={() => setSelectedId(label.selectId)}
-              data-dim-input="true"
-              className="pointer-events-auto absolute h-7 w-[88px] rounded-sm border border-[#CBD5E1] bg-white text-center text-sm text-gray-900 shadow-sm focus:border-[#124657] focus:outline-none focus:ring-2 focus:ring-[#124657]"
-              style={{ left: label.x, top: label.y }}
-            />
-          ))}
-        </div>
-      </div>
+          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 p-2 shadow">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <span>Split Count</span>
+              <select
+                value={splitCount}
+                onChange={(e) => setSplitCount(Number(e.target.value) || 2)}
+                className="rounded-md border border-gray-400 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+              >
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+                <option value={5}>5</option>
+              </select>
+            </label>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
-            Split Count
-            <select
-              value={splitCount}
-              onChange={(e) => setSplitCount(Number(e.target.value) || 2)}
-              className="rounded-md border border-gray-200 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <span>Direction</span>
+              <select
+                value={splitDirection}
+                onChange={(e) => setSplitDirection(e.target.value as SplitDirection)}
+                className="rounded-md border border-gray-400 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+              >
+                <option value="vertical">Vertical</option>
+                <option value="horizontal">Horizontal</option>
+              </select>
+            </label>
+
+            <button
+              type="button"
+              onClick={() => splitSelected(splitDirection)}
+              disabled={selectedNode.systemType === "Sliding"}
+              className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-              <option value={5}>5</option>
-            </select>
-          </label>
+              {splitDirection === "vertical" ? (
+                <SplitSquareVertical className="h-4 w-4" />
+              ) : (
+                <SplitSquareHorizontal className="h-4 w-4" />
+              )}
+              Split
+            </button>
 
-          <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
-            Direction
-            <select
-              value={splitDirection}
-              onChange={(e) => setSplitDirection(e.target.value as SplitDirection)}
-              className="rounded-md border border-gray-200 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+            <button
+              type="button"
+              onClick={mergeSelected}
+              className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
-              <option value="vertical">Vertical</option>
-              <option value="horizontal">Horizontal</option>
-            </select>
-          </label>
-
-          <button
-            type="button"
-            onClick={() => splitSelected(splitDirection)}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            {splitDirection === "vertical" ? (
-              <SplitSquareVertical className="h-4 w-4" />
-            ) : (
-              <SplitSquareHorizontal className="h-4 w-4" />
-            )}
-            Split
-          </button>
-
-          <button
-            type="button"
-            onClick={mergeSelected}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            <Square className="h-4 w-4" />
-            Merge Section
-          </button>
+              <Square className="h-4 w-4" />
+              Merge
+            </button>
+          </div>
         </div>
       </div>
+      </div>
 
-      {/* RIGHT (READ ONLY) */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm min-w-0">
+      {/* SUMMARY */}
+      {showSummaryPopup && (
+      <div className="absolute right-4 top-16 z-20 max-h-[calc(100%-140px)] w-[360px] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl min-w-0">
         <h4 className="text-base font-semibold text-gray-900 mb-4">Summary</h4>
 
         <div className="mb-5 rounded-lg border border-gray-200 p-3">
           <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
-            Selected Section
+            Quotation Fields
           </div>
           <div className="grid grid-cols-1 gap-3 text-sm">
-            <label className="text-xs text-gray-600">
-              System
-              <select
-                value={selectedNode.systemType}
-                onChange={(e) => {
-                  const nextSystem = e.target.value as SystemType;
-                  updateSelectedLeaves((target) => {
-                    target.systemType = nextSystem;
-                    target.series = "";
-                    target.description = "";
-                    if (nextSystem !== "Sliding" && (target.sash === "left" || target.sash === "right" || target.sash === "double")) {
-                      target.sash = "fixed";
+            {isCombinationParentSelection ? (
+              <>
+                <label className="text-xs text-gray-600">
+                  Ref Code
+                  <input
+                    value={meta.refCode}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, refCode: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  />
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Location
+                  <input
+                    value={meta.location}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, location: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  />
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  System
+                  <input
+                    value={COMBINATION_SYSTEM}
+                    readOnly
+                    className="mt-1 w-full rounded-md border border-gray-400 bg-gray-50 px-2 py-2 text-sm text-gray-600"
+                  />
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Quantity
+                  <input
+                    type="number"
+                    min={1}
+                    value={meta.quantity}
+                    onChange={(e) =>
+                      setMeta((prev) => ({ ...prev, quantity: Math.max(1, Number(e.target.value) || 1) }))
                     }
-                  });
-                }}
-                className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-              >
-                {systemOptions.map((sys) => (
-                  <option key={sys} value={sys}>
-                    {sys}
-                  </option>
-                ))}
-              </select>
-            </label>
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  />
+                </label>
 
-            <label className="text-xs text-gray-600">
-              Series
-              <select
-                value={selectedNode.series}
-                onChange={(e) => {
-                  const nextSeries = e.target.value;
-                  updateSelectedLeaves((target) => {
-                    target.series = nextSeries;
-                    target.description = "";
-                    target.panelFractions = undefined;
-                    target.panelMeshCount = undefined;
-                  });
-                }}
-                className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-              >
-                <option value="">Select</option>
-                {seriesOptions.map((series) => (
-                  <option key={series} value={series}>
-                    {series}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <label className="text-xs text-gray-600">
+                  Rate (Auto)
+                  <input
+                    value={parentCombinationRate}
+                    readOnly
+                    className="mt-1 w-full rounded-md border border-gray-400 bg-gray-50 px-2 py-2 text-sm text-gray-600"
+                  />
+                </label>
 
-            <label className="text-xs text-gray-600">
-              Description
-              <select
-                value={selectedNode.description}
-                onChange={(e) => {
-                  const nextDescription = e.target.value;
-                  updateSelectedLeaves((target) => {
-                    target.description = nextDescription;
-                    const pattern = parsePanelPattern(nextDescription);
-                    if (pattern) {
-                      if (target.systemType === "Sliding" && pattern.fractions.length > 1 && !target.children?.length) {
-                        target.split = "vertical";
-                        target.children = buildSplitChildren(
-                          target,
-                          "vertical",
-                          target.systemType,
-                          target.glass,
-                          target.mesh,
-                          pattern.fractions.length,
-                          pattern.fractions
-                        );
-                        target.children.forEach((child, idx) => {
-                          child.systemType = "Sliding";
-                          child.series = target.series;
-                          child.description = "";
-                          child.sash = idx % 2 === 0 ? "left" : "right";
-                          if (pattern.meshCount && idx >= target.children!.length - pattern.meshCount) {
-                            child.mesh = "Yes";
-                          }
+                <label className="text-xs text-gray-600">
+                  Remarks
+                  <textarea
+                    value={meta.remarks}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, remarks: e.target.value }))}
+                    rows={2}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657] resize-none"
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                {isCombinationChildSelection ? (
+                  <label className="text-xs text-gray-600">
+                    Ref Code (Auto)
+                    <input
+                      value={childAutoRef || "Will be generated from parent ref"}
+                      readOnly
+                      className="mt-1 w-full rounded-md border border-gray-400 bg-gray-50 px-2 py-2 text-sm text-gray-600"
+                    />
+                  </label>
+                ) : (
+                  <>
+                    <label className="text-xs text-gray-600">
+                      Ref Code
+                      <input
+                        value={meta.refCode}
+                        onChange={(e) => setMeta((prev) => ({ ...prev, refCode: e.target.value }))}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      />
+                    </label>
+
+                    <label className="text-xs text-gray-600">
+                      Location
+                      <input
+                        value={meta.location}
+                        onChange={(e) => setMeta((prev) => ({ ...prev, location: e.target.value }))}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      />
+                    </label>
+                  </>
+                )}
+
+                {isSlidingPanelSelection ? (
+                  <label className="text-xs text-gray-600">
+                    Sliding Movement
+                    <select
+                      value={
+                        selectedNode.panelSashes &&
+                        selectedNode.panelSashes.length === (selectedNode.panelFractions?.length ?? 0) &&
+                        selectedSlidingPanelIndex !== null
+                          ? (selectedNode.panelSashes[selectedSlidingPanelIndex] ?? "fixed")
+                          : "fixed"
+                      }
+                      onChange={(e) => {
+                        const sash = e.target.value as SashType;
+                        if (selectedSlidingPanelIndex === null) return;
+                        updateSelectedNode((target) => {
+                          const panelCount = target.panelFractions?.length ?? 0;
+                          if (panelCount < 2) return;
+                          const nextSashes =
+                            target.panelSashes && target.panelSashes.length === panelCount
+                              ? [...target.panelSashes]
+                              : buildDefaultSlidingPanelSashes(panelCount);
+                          nextSashes[selectedSlidingPanelIndex] = sash;
+                          target.panelSashes = nextSashes;
                         });
+                      }}
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    >
+                      <option value="left">Left Sliding</option>
+                      <option value="right">Right Sliding</option>
+                      <option value="double">Both Ways</option>
+                      <option value="fixed">Fixed</option>
+                    </select>
+                  </label>
+                ) : (
+                  <>
+                <label className="text-xs text-gray-600">
+                  Section System
+                  <select
+                    value={selectedNode.systemType}
+                    onChange={(e) => {
+                      const nextSystem = e.target.value as SystemType;
+                      updateSelectedLeaves((target) => {
+                        target.systemType = nextSystem;
+                        target.series = "";
+                        target.description = "";
+                        target.panelSashes = undefined;
+                        if (nextSystem !== "Sliding" && (target.sash === "left" || target.sash === "right" || target.sash === "double")) {
+                          target.sash = "fixed";
+                        }
+                      });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    {selectableSystemOptions.map((sys) => (
+                      <option key={sys} value={sys}>
+                        {sys}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Section Series
+                  <select
+                    value={selectedNode.series}
+                    onChange={(e) => {
+                      const nextSeries = e.target.value;
+                      updateSelectedLeaves((target) => {
+                        target.series = nextSeries;
+                        target.description = "";
                         target.panelFractions = undefined;
                         target.panelMeshCount = undefined;
-                      } else {
-                        target.panelFractions = pattern.fractions;
-                        target.panelMeshCount = pattern.meshCount;
+                        target.panelSashes = undefined;
+                      });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {seriesOptions.map((series) => (
+                      <option key={series} value={series}>
+                        {series}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Section Description
+                  <select
+                    value={selectedNode.description}
+                    onChange={(e) => {
+                      const nextDescription = e.target.value;
+                      if (selectedNode.systemType === "Sliding") {
+                        updateSelectedNode((target) => {
+                          target.description = nextDescription;
+                          target.split = "none";
+                          target.children = undefined;
+                          const pattern = parsePanelPattern(nextDescription);
+                          if (pattern) {
+                            target.panelFractions = pattern.fractions;
+                            target.panelMeshCount = pattern.meshCount;
+                            target.panelSashes =
+                              target.panelSashes && target.panelSashes.length === pattern.fractions.length
+                                ? target.panelSashes
+                                : buildDefaultSlidingPanelSashes(pattern.fractions.length);
+                          } else {
+                            target.panelFractions = undefined;
+                            target.panelMeshCount = undefined;
+                            target.panelSashes = undefined;
+                          }
+                        });
+                        return;
                       }
-                    } else {
-                      target.panelFractions = undefined;
-                      target.panelMeshCount = undefined;
-                    }
-                  });
-                }}
-                className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-              >
-                <option value="">Select</option>
-                {descriptionOptions.map((desc: Description) => (
-                  <option key={desc.name} value={desc.name}>
-                    {desc.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                      updateSelectedLeaves((target) => {
+                        target.description = nextDescription;
+                        const pattern = parsePanelPattern(nextDescription);
+                        if (pattern) {
+                          target.panelFractions = pattern.fractions;
+                          target.panelMeshCount = pattern.meshCount;
+                          target.panelSashes = undefined;
+                        } else {
+                          target.panelFractions = undefined;
+                          target.panelMeshCount = undefined;
+                          target.panelSashes = undefined;
+                        }
+                      });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {descriptionOptions.map((desc: Description) => (
+                      <option key={desc.name} value={desc.name}>
+                        {desc.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label className="text-xs text-gray-600">
-              Glass
-              <select
-                value={selectedNode.glass}
-                onChange={(e) => {
-                  const value = e.target.value as YesNo;
-                  updateSelectedLeaves((target) => {
-                    target.glass = value;
-                  });
-                }}
-                className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-              >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            </label>
+                {!isCombinationChildSelection && (
+                  <label className="text-xs text-gray-600">
+                    Section Glass
+                    <select
+                      value={selectedNode.glass}
+                      onChange={(e) => {
+                        const value = e.target.value as YesNo;
+                        updateSelectedLeaves((target) => {
+                          target.glass = value;
+                        });
+                      }}
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    >
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </label>
+                )}
 
-            <label className="text-xs text-gray-600">
-              Mesh
-              <select
-                value={selectedNode.mesh}
-                onChange={(e) => {
-                  const value = e.target.value as YesNo;
-                  updateSelectedLeaves((target) => {
-                    target.mesh = value;
-                  });
-                }}
-                className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-              >
-                <option value="No">No</option>
-                <option value="Yes">Yes</option>
-              </select>
-            </label>
+                <label className="text-xs text-gray-600">
+                  Section Mesh
+                  <select
+                    value={selectedNode.mesh}
+                    onChange={(e) => {
+                      const value = e.target.value as YesNo;
+                      updateSelectedLeaves((target) => {
+                        target.mesh = value;
+                      });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </select>
+                </label>
 
-            {selectedNode.systemType === "Sliding" && !selectedNode.children?.length && (
-              <label className="text-xs text-gray-600">
-                Sliding Movement
-                <select
-                  value={selectedNode.sash}
-                  onChange={(e) => {
-                    const sash = e.target.value as SashType;
-                    updateSelectedNode((target) => {
-                      target.sash = sash;
-                    });
-                  }}
-                  className="mt-1 w-full rounded-md border border-gray-200 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                >
-                  <option value="left">Left Sliding</option>
-                  <option value="right">Right Sliding</option>
-                  <option value="double">Both Ways</option>
-                  <option value="fixed">Fixed</option>
-                </select>
-              </label>
+                {selectedNode.systemType === "Sliding" && !selectedNode.children?.length && (
+                  <label className="text-xs text-gray-600">
+                    Sliding Movement
+                    <select
+                      value={selectedNode.sash}
+                      onChange={(e) => {
+                        const sash = e.target.value as SashType;
+                        updateSelectedNode((target) => {
+                          target.sash = sash;
+                        });
+                      }}
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    >
+                      <option value="left">Left Sliding</option>
+                      <option value="right">Right Sliding</option>
+                      <option value="double">Both Ways</option>
+                      <option value="fixed">Fixed</option>
+                    </select>
+                  </label>
+                )}
+
+                <label className="text-xs text-gray-600">
+                  Color Finish
+                  <select
+                    value={meta.colorFinish}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, colorFinish: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {metaOptionsQuery.data?.colorFinishes.map((opt: OptionWithRate) => (
+                      <option key={opt.name} value={opt.name}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Glass Spec
+                  <select
+                    value={meta.glassSpec}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, glassSpec: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {metaOptionsQuery.data?.glassSpecs.map((opt: OptionWithRate) => (
+                      <option key={opt.name} value={opt.name}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Handle Type
+                  <select
+                    value={meta.handleType}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, handleType: e.target.value, handleColor: "" }))}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {metaOptionsQuery.data?.handleOptions.map((opt: HandleOption) => (
+                      <option key={opt.name} value={opt.name}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-gray-600">
+                  Handle Color
+                  <select
+                    value={meta.handleColor}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, handleColor: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="">Select</option>
+                    {(metaHandleOption?.colors ?? []).map((opt: OptionWithRate) => (
+                      <option key={opt.name} value={opt.name}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {!isCombinationChildSelection && (
+                  <label className="text-xs text-gray-600">
+                    Mesh Type
+                    <select
+                      value={meta.meshType}
+                      onChange={(e) => setMeta((prev) => ({ ...prev, meshType: e.target.value }))}
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      disabled={selectedNode.mesh !== "Yes"}
+                    >
+                      <option value="">Select</option>
+                      {metaOptionsQuery.data?.meshTypes.map((opt: OptionWithRate) => (
+                        <option key={opt.name} value={opt.name}>
+                          {opt.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {isCombinationChildSelection ? (
+                  <label className="text-xs text-gray-600">
+                    Rate
+                    <input
+                      type="number"
+                      min={0}
+                      value={selectedChildRate}
+                      onChange={(e) => {
+                        if (!selectedId) return;
+                        setManualChildRates((prev) => ({
+                          ...prev,
+                          [selectedId]: Number(e.target.value) || 0,
+                        }));
+                      }}
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    />
+                    <div className="mt-1 text-[11px] text-gray-500">
+                      Section area: {selectedLeafAreaSqft.toFixed(2)} sqft
+                    </div>
+                  </label>
+                ) : (
+                  <>
+                    <label className="text-xs text-gray-600">
+                      Quantity
+                      <input
+                        type="number"
+                        min={1}
+                        value={meta.quantity}
+                        onChange={(e) =>
+                          setMeta((prev) => ({ ...prev, quantity: Math.max(1, Number(e.target.value) || 1) }))
+                        }
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      />
+                    </label>
+
+                    <label className="text-xs text-gray-600">
+                      Rate
+                      <input
+                        type="number"
+                        min={0}
+                        value={meta.rate}
+                        onChange={(e) => setMeta((prev) => ({ ...prev, rate: Number(e.target.value) || 0 }))}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      />
+                    </label>
+
+                    <label className="text-xs text-gray-600">
+                      Remarks
+                      <textarea
+                        value={meta.remarks}
+                        onChange={(e) => setMeta((prev) => ({ ...prev, remarks: e.target.value }))}
+                        rows={2}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657] resize-none"
+                      />
+                    </label>
+                  </>
+                )}
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -2614,10 +3506,11 @@ export default function WindowDoorConfigurator({
           <div className="pt-2">
             <button
               type="button"
-              onClick={handleAddItem}
-              className="w-full rounded-lg bg-[#124657] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0b3642]"
+              onClick={handleSaveItem}
+              disabled={isSaving}
+              className="w-full rounded-lg bg-[#124657] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0b3642] disabled:opacity-60"
             >
-              Add to Quotation
+              {isSaving ? "Saving..." : initialItem ? "Update Item" : "Add to Quotation"}
             </button>
             <button
               type="button"
@@ -2631,11 +3524,40 @@ export default function WindowDoorConfigurator({
           <div className="text-xs text-gray-400">
             Selected:{" "}
             <span className="font-medium text-gray-600">
-              {selectedId === null ? "None" : selectedNode.id === "root" ? "Whole Frame" : "Section"}
+              {selectedId === null
+                ? "None"
+                : selectedNode.id === "root"
+                  ? "Whole Frame"
+                  : isSlidingPanelSelection
+                    ? `Sliding Panel ${selectedSlidingPanelIndex! + 1}`
+                    : "Section"}
             </span>
           </div>
         </div>
       </div>
+      )}
+
+      {!showSummaryPopup && (
+        <div className="pointer-events-none absolute bottom-4 right-4 z-30">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
+            <button
+              type="button"
+              onClick={handleSaveItem}
+              disabled={isSaving}
+              className="rounded-lg bg-[#124657] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0b3642] disabled:opacity-60"
+            >
+              {isSaving ? "Saving..." : initialItem ? "Update Item" : "Add to Quotation"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
