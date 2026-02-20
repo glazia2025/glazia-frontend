@@ -1540,6 +1540,9 @@ export default function WindowDoorConfigurator({
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const layerRef = useRef<Konva.Layer | null>(null);
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const panOriginRef = useRef({ x: 0, y: 0 });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedSlidingPanelIndex, setSelectedSlidingPanelIndex] = useState<number | null>(null);
@@ -1557,8 +1560,9 @@ export default function WindowDoorConfigurator({
   const [hideSelectionForExport, setHideSelectionForExport] = useState(false);
   const [manualChildRates, setManualChildRates] = useState<Record<string, number>>({});
   const [autoChildRates, setAutoChildRates] = useState<Record<string, number>>({});
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
 
-  const [stageSize, setStageSize] = useState({ w: 720, h: 520 });
+  const [stageSize, setStageSize] = useState({ w: 1200, h: 780 });
 
   const { past, future, present, push, setDirect, undo, redo, reset } = useHistory(
     buildPreset(DEFAULT_META.systemType as SystemType, "Yes", "No")
@@ -1573,6 +1577,7 @@ export default function WindowDoorConfigurator({
     selectedSlidingPanelIndex !== null &&
     selectedSlidingPanelIndex >= 0 &&
     selectedSlidingPanelIndex < (selectedNode.panelFractions?.length ?? 0);
+  const showSummaryPopup = selectedId !== null;
   const systemsQuery = useSystemsQuery();
   const selectedSeriesQuery = useSeriesQuery(selectedNode.systemType);
   const selectedDescriptionsQuery = useDescriptionsQuery(selectedNode.systemType, selectedNode.series);
@@ -1606,16 +1611,17 @@ export default function WindowDoorConfigurator({
   }, [widthMm, heightMm]);
 
   const view = useMemo(() => {
-    const padding = 56;
+    // Keep extra breathing room for multi-level dimension labels.
+    const padding = 120;
     const maxW = stageSize.w - padding * 2;
     const maxH = stageSize.h - padding * 2;
     const ratio = Math.min(maxW / Math.max(rootDimensions.w, 1), maxH / Math.max(rootDimensions.h, 1));
     const drawW = rootDimensions.w * ratio;
     const drawH = rootDimensions.h * ratio;
-    const offsetX = (stageSize.w - drawW) / 2;
-    const offsetY = (stageSize.h - drawH) / 2;
+    const offsetX = (stageSize.w - drawW) / 2 + panOffset.x;
+    const offsetY = (stageSize.h - drawH) / 2 + panOffset.y;
     return { ratio, drawW, drawH, offsetX, offsetY };
-  }, [rootDimensions, stageSize]);
+  }, [panOffset, rootDimensions, stageSize]);
 
   const clampMm = (value: number, min: number, max: number) =>
     Math.max(min, Math.min(max, Math.round(value)));
@@ -1779,6 +1785,11 @@ export default function WindowDoorConfigurator({
       depth,
       levelFromFrame: maxSplitDepth - depth,
     }));
+    const leavesForPanelRows: SectionNode[] = [];
+    mapLeafNodes(root, (leaf) => leavesForPanelRows.push(leaf));
+    const hasLeafPanelLabels = leavesForPanelRows.some(
+      (leaf) => (leaf.panelFractions?.length ?? 0) >= 2
+    );
 
     const maxVerticalLevel = splitParentsWithLevel.reduce(
       (max, item) =>
@@ -1791,9 +1802,14 @@ export default function WindowDoorConfigurator({
       -1
     );
 
+    const splitBaseOffset = 18;
+    const panelRowBand = hasLeafPanelLabels ? 40 : 0;
+    const verticalGuideBase = splitBaseOffset + panelRowBand;
+    const horizontalGuideBase = splitBaseOffset;
+
     // main height label
     const mainHeightGuideX =
-      fx - 18 - (maxHorizontalLevel >= 0 ? (maxHorizontalLevel + 1) * hierarchyOffset : 26);
+      fx - horizontalGuideBase - (maxHorizontalLevel >= 0 ? (maxHorizontalLevel + 1) * hierarchyOffset : 26);
     const hMidX = mainHeightGuideX;
     const hMidY = (fy + fy + fh) / 2;
     labels.push({
@@ -1809,7 +1825,7 @@ export default function WindowDoorConfigurator({
     // main width label
     const wMidX = (fx + fx + fw) / 2;
     const mainWidthGuideY =
-      fy + fh + 18 + (maxVerticalLevel >= 0 ? (maxVerticalLevel + 1) * hierarchyOffset : 26);
+      fy + fh + verticalGuideBase + (maxVerticalLevel >= 0 ? (maxVerticalLevel + 1) * hierarchyOffset : 26);
     const wMidY = mainWidthGuideY;
     labels.push({
       id: "width",
@@ -1823,7 +1839,7 @@ export default function WindowDoorConfigurator({
 
     splitParentsWithLevel.forEach(({ node: parent, levelFromFrame }) => {
       if (parent.split === "vertical") {
-        const y2 = fy + fh + 18 + levelFromFrame * hierarchyOffset;
+        const y2 = fy + fh + verticalGuideBase + levelFromFrame * hierarchyOffset;
         parent.children!.forEach((c, idx) => {
           const midX = (fx + c.x * fw + fx + (c.x + c.w) * fw) / 2;
           labels.push({
@@ -1839,7 +1855,7 @@ export default function WindowDoorConfigurator({
       }
 
       if (parent.split === "horizontal") {
-        const x2 = fx - 18 - levelFromFrame * hierarchyOffset;
+        const x2 = fx - horizontalGuideBase - levelFromFrame * hierarchyOffset;
         parent.children!.forEach((c, idx) => {
           const midY = (fy + c.y * fh + fy + (c.y + c.h) * fh) / 2;
           labels.push({
@@ -1856,15 +1872,13 @@ export default function WindowDoorConfigurator({
     });
 
     // leaf panel labels for descriptions (track/panel)
-    const leaves: SectionNode[] = [];
-    mapLeafNodes(root, (leaf) => leaves.push(leaf));
-    leaves.forEach((leaf) => {
+    leavesForPanelRows.forEach((leaf) => {
       if (!leaf.panelFractions || leaf.panelFractions.length < 2) return;
       const leafX = fx + leaf.x * fw;
       const leafY = fy + leaf.y * fh;
       const leafW = leaf.w * fw;
       const leafH = leaf.h * fh;
-      const y2 = leafY + leafH + 10;
+      const y2 = leafY + leafH + splitBaseOffset;
       let cursor = leafX;
       leaf.panelFractions.forEach((frac, idx) => {
         const pw = leafW * frac;
@@ -2122,6 +2136,36 @@ export default function WindowDoorConfigurator({
 
     // bg
     layer.add(new Konva.Rect({ x: 0, y: 0, width: stageSize.w, height: stageSize.h, fill: COLORS.bg }));
+    const panHit = new Konva.Rect({
+      x: 0,
+      y: 0,
+      width: stageSize.w,
+      height: stageSize.h,
+      fill: "rgba(255,255,255,0.001)",
+      listening: true,
+    });
+    panHit.on("mousedown touchstart", (event) => {
+      event.cancelBubble = true;
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+      isPanningRef.current = true;
+      panStartRef.current = pointer;
+      panOriginRef.current = panOffset;
+      setSelectedId(null);
+      setSelectedSlidingPanelIndex(null);
+      stage.container().style.cursor = "grabbing";
+    });
+    panHit.on("mouseenter", () => {
+      if (!isPanningRef.current) {
+        stage.container().style.cursor = "grab";
+      }
+    });
+    panHit.on("mouseleave", () => {
+      if (!isPanningRef.current) {
+        stage.container().style.cursor = "default";
+      }
+    });
+    layer.add(panHit);
 
     // grid
     const gridSize = 20;
@@ -2140,10 +2184,10 @@ export default function WindowDoorConfigurator({
 
     addProfileRect(layer, fx, fy, fw, fh, selectedForRender === "root");
 
-    // root hit
+    // root/frame hit: deselect current section/panel
     const rootHit = new Konva.Rect({ x: fx, y: fy, width: fw, height: fh, fill: "transparent" });
     rootHit.on("mousedown touchstart", () => {
-      setSelectedId("root");
+      setSelectedId(null);
       setSelectedSlidingPanelIndex(null);
     });
     layer.add(rootHit);
@@ -2205,14 +2249,20 @@ export default function WindowDoorConfigurator({
       const g = new Konva.Group({ listening: true, draggable: false });
 
       // hit area for reliable selection
-      g.add(new Konva.Rect({
+      const leafHit = new Konva.Rect({
         x,
         y,
         width: w,
         height: h,
         fill: "rgba(255,255,255,0.01)",
         listening: true,
-      }));
+      });
+      leafHit.on("mousedown touchstart", (event) => {
+        event.cancelBubble = true;
+        setSelectedId(leaf.id);
+        setSelectedSlidingPanelIndex(null);
+      });
+      g.add(leafHit);
 
       // sash profile
       g.add(new Konva.Rect({
@@ -2599,11 +2649,6 @@ export default function WindowDoorConfigurator({
       g.add(new Konva.Line({ points: [x + w / 2 - 10, y + h / 2 + 8, x + w / 2 + 10, y + h / 2 + 8], stroke: COLORS.frameDark, strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6, opacity: 0.85, listening: false }));
       g.add(new Konva.Line({ points: [x + w / 2, y + h / 2 - 2, x + w / 2, y + h / 2 + 18], stroke: COLORS.frameDark, strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6, opacity: 0.85, listening: false }));
 
-      g.on("mousedown touchstart", () => {
-        setSelectedId(leaf.id);
-        setSelectedSlidingPanelIndex(null);
-      });
-
       layer.add(g);
     });
 
@@ -2628,23 +2673,28 @@ export default function WindowDoorConfigurator({
     }, -1);
 
     const hierarchyOffset = 34;
+    const hasLeafPanelLabels = leaves.some((leaf) => (leaf.panelFractions?.length ?? 0) >= 2);
+    const splitBaseOffset = 18;
+    const panelRowBand = hasLeafPanelLabels ? 40 : 0;
+    const verticalGuideBase = splitBaseOffset + panelRowBand;
+    const horizontalGuideBase = splitBaseOffset;
     const mainHeightGuideX =
-      fx - 18 - (maxHorizontalLevel >= 0 ? (maxHorizontalLevel + 1) * hierarchyOffset : 26);
+      fx - horizontalGuideBase - (maxHorizontalLevel >= 0 ? (maxHorizontalLevel + 1) * hierarchyOffset : 26);
     const mainWidthGuideY =
-      fy + fh + 18 + (maxVerticalLevel >= 0 ? (maxVerticalLevel + 1) * hierarchyOffset : 26);
+      fy + fh + verticalGuideBase + (maxVerticalLevel >= 0 ? (maxVerticalLevel + 1) * hierarchyOffset : 26);
 
     addDimensionLine(layer, mainHeightGuideX, fy, mainHeightGuideX, fy + fh, "");
     addDimensionLine(layer, fx, mainWidthGuideY, fx + fw, mainWidthGuideY, "");
 
     if (root.split === "vertical" && (root.children?.length ?? 0) >= 2) {
-      const y2 = fy + fh + 18;
+      const y2 = fy + fh + verticalGuideBase;
       root.children!.forEach((c) => {
         addDimensionLine(layer, fx + c.x * fw, y2, fx + (c.x + c.w) * fw, y2, "");
       });
     }
 
     if (root.split === "horizontal" && (root.children?.length ?? 0) >= 2) {
-      const x2 = fx - 18;
+      const x2 = fx - horizontalGuideBase;
       root.children!.forEach((c) => {
         addDimensionLine(layer, x2, fy + c.y * fh, x2, fy + (c.y + c.h) * fh, "");
       });
@@ -2663,7 +2713,7 @@ export default function WindowDoorConfigurator({
     }
 
     layer.draw();
-  }, [heightMm, hideSelectionForExport, push, root, selectedId, selectedSlidingPanelIndex, setDirect, stageSize.h, stageSize.w, view, widthMm]);
+  }, [heightMm, hideSelectionForExport, panOffset, push, root, selectedId, selectedSlidingPanelIndex, setDirect, stageSize.h, stageSize.w, view, widthMm]);
 
   // create stage
   useEffect(() => {
@@ -2677,12 +2727,33 @@ export default function WindowDoorConfigurator({
     const layer = new Konva.Layer();
     stage.add(layer);
 
+    const handlePanMove = () => {
+      if (!isPanningRef.current) return;
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+      setPanOffset({
+        x: panOriginRef.current.x + (pointer.x - panStartRef.current.x),
+        y: panOriginRef.current.y + (pointer.y - panStartRef.current.y),
+      });
+    };
+
+    const stopPanning = () => {
+      if (!isPanningRef.current) return;
+      isPanningRef.current = false;
+      stage.container().style.cursor = "grab";
+    };
+
+    stage.on("mousemove touchmove", handlePanMove);
+    stage.on("mouseup touchend touchcancel mouseleave", stopPanning);
+
     stageRef.current = stage;
     layerRef.current = layer;
 
     renderCanvas();
 
     return () => {
+      stage.off("mousemove touchmove", handlePanMove);
+      stage.off("mouseup touchend touchcancel mouseleave", stopPanning);
       stage.destroy();
       stageRef.current = null;
       layerRef.current = null;
@@ -2698,10 +2769,8 @@ export default function WindowDoorConfigurator({
     const ro = new ResizeObserver(() => {
       const rect = el.getBoundingClientRect();
       const w = Math.max(420, Math.floor(rect.width));
-      const viewportH =
-        typeof window !== "undefined" ? window.innerHeight : 900;
-      const maxAllowed = Math.max(600, viewportH - 220);
-      const h = Math.max(540, Math.floor(Math.min(maxAllowed, 980, rect.width * 0.92)));
+      const fallbackH = typeof window !== "undefined" ? window.innerHeight - 240 : 760;
+      const h = Math.max(620, Math.floor(rect.height > 0 ? rect.height : fallbackH));
 
       setStageSize({ w, h });
       if (stageRef.current) {
@@ -2859,12 +2928,42 @@ export default function WindowDoorConfigurator({
   ]);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
+    <div className="relative h-full w-full">
 
       {/* LEFT */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm min-w-0">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="h-full rounded-2xl border border-gray-200 bg-white p-2 shadow-sm min-w-0">
+      <div
+        ref={canvasWrapRef}
+        className="relative h-full min-h-[520px] w-full min-w-0"
+      >
+        <div
+          ref={containerRef}
+          className="rounded-xl border border-gray-200 bg-[#F9FBFD] w-full overflow-hidden"
+          style={{ width: "100%", height: stageSize.h }}
+        />
+        <div className="pointer-events-none absolute inset-0">
+          {dimensionLabels.map((label) => (
+            <input
+              key={label.id}
+              type="number"
+              value={label.value}
+              onChange={(e) => label.onChange(Number(e.target.value))}
+              onFocus={() => {
+                setSelectedId(label.selectId);
+                setSelectedSlidingPanelIndex(label.panelIndex ?? null);
+              }}
+              data-dim-input="true"
+              className="pointer-events-auto absolute h-7 w-[88px] rounded-sm border border-gray-400 bg-white text-center text-sm text-gray-900 shadow-sm focus:border-[#124657] focus:outline-none focus:ring-2 focus:ring-[#124657]"
+              style={{ left: label.x, top: label.y }}
+            />
+          ))}
+        </div>
+        <div className="pointer-events-none absolute right-4 top-4 z-10 text-xs text-gray-500">
+          Use the dimension boxes to edit sizes
+        </div>
+
+        <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-col gap-2">
+          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 p-2 shadow">
             <button
               type="button"
               onClick={undo}
@@ -2889,90 +2988,64 @@ export default function WindowDoorConfigurator({
               <RotateCcw className="h-4 w-4" />
             </button>
           </div>
-        <div className="text-xs text-gray-400">
-          Use the dimension boxes to edit sizes
-        </div>
-      </div>
 
-      <div ref={canvasWrapRef} className="relative w-full min-w-0">
-        <div
-          ref={containerRef}
-          className="rounded-xl border border-gray-200 bg-[#F9FBFD] w-full overflow-hidden"
-          style={{ width: "100%", height: stageSize.h }}
-        />
-        <div className="pointer-events-none absolute inset-0">
-          {dimensionLabels.map((label) => (
-            <input
-              key={label.id}
-              type="number"
-              value={label.value}
-              onChange={(e) => label.onChange(Number(e.target.value))}
-              onFocus={() => {
-                setSelectedId(label.selectId);
-                setSelectedSlidingPanelIndex(label.panelIndex ?? null);
-              }}
-              data-dim-input="true"
-              className="pointer-events-auto absolute h-7 w-[88px] rounded-sm border border-gray-400 bg-white text-center text-sm text-gray-900 shadow-sm focus:border-[#124657] focus:outline-none focus:ring-2 focus:ring-[#124657]"
-              style={{ left: label.x, top: label.y }}
-            />
-          ))}
-        </div>
-      </div>
+          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 p-2 shadow">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <span>Split Count</span>
+              <select
+                value={splitCount}
+                onChange={(e) => setSplitCount(Number(e.target.value) || 2)}
+                className="rounded-md border border-gray-400 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+              >
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+                <option value={5}>5</option>
+              </select>
+            </label>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
-            Split Count
-            <select
-              value={splitCount}
-              onChange={(e) => setSplitCount(Number(e.target.value) || 2)}
-              className="rounded-md border border-gray-400 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <span>Direction</span>
+              <select
+                value={splitDirection}
+                onChange={(e) => setSplitDirection(e.target.value as SplitDirection)}
+                className="rounded-md border border-gray-400 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+              >
+                <option value="vertical">Vertical</option>
+                <option value="horizontal">Horizontal</option>
+              </select>
+            </label>
+
+            <button
+              type="button"
+              onClick={() => splitSelected(splitDirection)}
+              disabled={selectedNode.systemType === "Sliding"}
+              className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-              <option value={5}>5</option>
-            </select>
-          </label>
+              {splitDirection === "vertical" ? (
+                <SplitSquareVertical className="h-4 w-4" />
+              ) : (
+                <SplitSquareHorizontal className="h-4 w-4" />
+              )}
+              Split
+            </button>
 
-          <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
-            Direction
-            <select
-              value={splitDirection}
-              onChange={(e) => setSplitDirection(e.target.value as SplitDirection)}
-              className="rounded-md border border-gray-400 px-2 py-1 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+            <button
+              type="button"
+              onClick={mergeSelected}
+              className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
-              <option value="vertical">Vertical</option>
-              <option value="horizontal">Horizontal</option>
-            </select>
-          </label>
-
-          <button
-            type="button"
-            onClick={() => splitSelected(splitDirection)}
-            disabled={selectedNode.systemType === "Sliding"}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {splitDirection === "vertical" ? (
-              <SplitSquareVertical className="h-4 w-4" />
-            ) : (
-              <SplitSquareHorizontal className="h-4 w-4" />
-            )}
-            Split
-          </button>
-
-          <button
-            type="button"
-            onClick={mergeSelected}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            <Square className="h-4 w-4" />
-            Merge Section
-          </button>
+              <Square className="h-4 w-4" />
+              Merge
+            </button>
+          </div>
         </div>
       </div>
+      </div>
 
-      {/* RIGHT */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm min-w-0">
+      {/* SUMMARY */}
+      {showSummaryPopup && (
+      <div className="absolute right-4 top-16 z-20 max-h-[calc(100%-140px)] w-[360px] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl min-w-0">
         <h4 className="text-base font-semibold text-gray-900 mb-4">Summary</h4>
 
         <div className="mb-5 rounded-lg border border-gray-200 p-3">
@@ -3462,6 +3535,29 @@ export default function WindowDoorConfigurator({
           </div>
         </div>
       </div>
+      )}
+
+      {!showSummaryPopup && (
+        <div className="pointer-events-none absolute bottom-4 right-4 z-30">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
+            <button
+              type="button"
+              onClick={handleSaveItem}
+              disabled={isSaving}
+              className="rounded-lg bg-[#124657] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0b3642] disabled:opacity-60"
+            >
+              {isSaving ? "Saving..." : initialItem ? "Update Item" : "Add to Quotation"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

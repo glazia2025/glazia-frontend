@@ -391,8 +391,8 @@ function CreateQuotationContent() {
 
         <div className="space-y-8">
           {isConfiguratorOpen && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4 py-6">
-              <div className="h-full w-full overflow-y-auto bg-white p-6">
+            <div className="fixed inset-0 z-[60] bg-black/50">
+              <div className="h-full w-full bg-white p-4 md:p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">Window &amp; Door Configurator</h2>
@@ -409,15 +409,17 @@ function CreateQuotationContent() {
                     Close
                   </button>
                 </div>
-                <WindowDoorConfigurator
-                  onSaveItem={handleSaveDesignItem}
-                  onClose={() => {
-                    setIsConfiguratorOpen(false);
-                    setEditingItemId(null);
-                  }}
-                  initialItem={items.find((item) => item.id === editingItemId) ?? null}
-                  profitPercentage={profitPercentage}
-                />
+                <div className="h-[calc(100%-56px)] min-h-0">
+                  <WindowDoorConfigurator
+                    onSaveItem={handleSaveDesignItem}
+                    onClose={() => {
+                      setIsConfiguratorOpen(false);
+                      setEditingItemId(null);
+                    }}
+                    initialItem={items.find((item) => item.id === editingItemId) ?? null}
+                    profitPercentage={profitPercentage}
+                  />
+                </div>
               </div>
             </div>
           )}
