@@ -71,7 +71,46 @@ export class ProfileApiService {
       throw error;
     }
   }
+  // add new for size and products
+  /**
+ * Get sizes by category ID
+ */
+async getSizesByCategory(categoryId: string): Promise<any> {
+  try {
+    const url = `${API_BASE_URL}/api/profile/sizes/category/${categoryId}`;
+    const response = await fetch(url);
+    const rawData = await response.json();
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return rawData; // returning direct array
+  } catch (error) {
+    console.error('Error fetching sizes by category:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get products by size ID
+ */
+async getProductsForSize(sizeId: string): Promise<any> {
+  try {
+    const url = `${API_BASE_URL}/api/profile/size/${sizeId}/products`;
+    const response = await fetch(url);
+    const rawData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return rawData; // returning direct array
+  } catch (error) {
+    console.error('Error fetching products for size:', error);
+    throw error;
+  }
+}
   /**
    * Get products for a specific category
    */
@@ -84,7 +123,6 @@ export class ProfileApiService {
       query: params,
     });
   }
-
   /**
    * Get rates for a specific category
    */

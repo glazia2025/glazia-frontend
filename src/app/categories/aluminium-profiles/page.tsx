@@ -50,13 +50,17 @@ interface CategoryFullData {
 export default function AluminiumProfilesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [categoryData, setCategoryData] = useState<CategoryFullData | null>(null);
+  const [sizes, setSizes] = useState<Size[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingCategoryData, setLoadingCategoryData] = useState(false);
+  const [loadingSizes, setLoadingSizes] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const { isAuthenticated } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -66,13 +70,13 @@ export default function AluminiumProfilesPage() {
   const profileApi = useMemo(() => new ProfileApiService(), []);
 
   useEffect(() => {
-      if (window.localStorage) {
-        const temp = window.localStorage.getItem('nalcoPrice');
-        if (temp) {
-          setNalcoPrice(parseFloat(temp)); // Use parseFloat to preserve decimal values
-        }
+    if (window.localStorage) {
+      const temp = window.localStorage.getItem('nalcoPrice');
+      if (temp) {
+        setNalcoPrice(parseFloat(temp)); // Use parseFloat to preserve decimal values
       }
-    }, []);
+    }
+  }, []);
 
   // Load categories on component mount
   useEffect(() => {
@@ -130,41 +134,59 @@ export default function AluminiumProfilesPage() {
   }, []);
 
   // Load category data when a category is selected
+  // new useeffect for size 
   useEffect(() => {
-    const loadCategoryData = async () => {
-      if (!selectedCategory) return;
+    if (!selectedCategory) return;
 
+    const loadSizes = async () => {
       try {
-        setLoadingCategoryData(true);
-        console.log('Loading category data for:', selectedCategory._id);
-        const response = await profileApi.getCategoryFullData(selectedCategory._id);
-        console.log('Category data response:', response);
+        setLoadingSizes(true);
+        const response = await profileApi.getSizesByCategory(selectedCategory._id);
+        if (response && Array.isArray(response)) {
+          const enabledSizes = response.filter((s: Size) => s.enabled);
+          setSizes(enabledSizes);
 
-        if (response.success && response.data) {
-          setCategoryData(response.data);
-          console.log('Category data loaded:', response.data);
-          // Auto-select first size
-          if (response.data.sizes && response.data.sizes.length > 0) {
-            setSelectedSize(response.data.sizes[0].size.label);
+          if (enabledSizes.length > 0) {
+            setSelectedSize(enabledSizes[0]._id);
           }
         }
       } catch (error) {
-        console.error('Error loading category data:', error);
+        console.error("Error loading sizes:", error);
       } finally {
-        setLoadingCategoryData(false);
+        setLoadingSizes(false);
+
+      }
+    };
+    loadSizes();
+  }, [selectedCategory]);
+  // add new useffect for products
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!selectedSize) return;
+      try {
+        setLoadingProducts(true);
+        setProductsLoaded(false);
+        const response = await profileApi.getProductsForSize(selectedSize);
+        if (Array.isArray(response)) {
+          setProducts(response); // no filtering
+        }
+        setProductsLoaded(true);
+
+      } catch (error) {
+        console.error("Error loading products:", error);
+      } finally {
+        setLoadingProducts(false);
+
       }
     };
 
-    loadCategoryData();
-  }, [selectedCategory, profileApi]);
+    loadProducts();
+  }, [selectedSize]);
+
 
   // Get current products based on selected size
   const getCurrentProducts = (): Product[] => {
-    if (!categoryData || !selectedSize) return [];
-
-    const sizeData = categoryData.sizes.find(s => s.size.label === selectedSize && s.size.enabled);
-    const products = sizeData?.products.filter(p => p.enabled) || [];
-    return sizeData ? products : [];
+    return products;
   };
 
   // Filter products based on search query
@@ -209,7 +231,8 @@ export default function AluminiumProfilesPage() {
     if (quantity <= 0) {
       return;
     }
-    const rate = categoryData?.sizes.find(s => s.size.label === selectedSize)?.size.rate || 0;
+    const selectedSizeData = sizes.find(s => s._id === selectedSize);
+    const rate = selectedSizeData?.rate || 0;
 
     const cartItem = {
       id: product.sapCode,
@@ -243,10 +266,10 @@ export default function AluminiumProfilesPage() {
 
   const rateAdjustment = selectedCategory && selectedSize
     ? getAdjustedItemPrice({
-        category: `${selectedCategory.name} - ${selectedSize}`,
-        subCategory: selectedCategory.name,
-        name: selectedCategory.name,
-      })
+      category: `${selectedCategory.name} - ${selectedSize}`,
+      subCategory: selectedCategory.name,
+      name: selectedCategory.name,
+    })
     : 0;
 
   const productsToDisplay = getFilteredProducts();
@@ -287,47 +310,47 @@ export default function AluminiumProfilesPage() {
       </div>
 
       <div className="block md:hidden bg-white w-full lg:w-[20%] rounded-lg p-4 sm:p-6">
-          <div className="flex flex-row items-start gap-2">
-            {categories.map((category) => (category.name === 'Railings' || category.enabled === false) ? null : (
-              <div
-                key={category._id}
-                onClick={() => setSelectedCategory(category)}
-                className={`text-[14px] px-3 py-1 border border-1 rounded-lg border-[#2F3A4F] font-[500] ${
-                  selectedCategory?._id === category._id
-                    ? 'text-[#FFFFFF] bg-[#2F3A4F]'
-                    : 'text-[#1F2933]'
+        <div className="flex flex-row items-start gap-2">
+          {categories.map((category) => (category.name === 'Railings' || category.enabled === false) ? null : (
+            <div
+              key={category._id}
+              onClick={() => setSelectedCategory(category)}
+              className={`text-[14px] px-3 py-1 border border-1 rounded-lg border-[#2F3A4F] font-[500] ${selectedCategory?._id === category._id
+                ? 'text-[#FFFFFF] bg-[#2F3A4F]'
+                : 'text-[#1F2933]'
                 }`}
-              >
-                <div className="font-medium">{category.name}</div>
-              </div>
-            ))}
-          </div>
-          {categoryData && (
-            <div className="mt-3">
-              {loadingCategoryData ? (
-                <div className="space-y-3">
-                  <div className="text-center text-sm text-gray-600">Loading sub category...</div>
-                </div>
-              ) : (
-                <div className="flex flex-row items-start gap-2">
-                  {categoryData.sizes.map((sizeData) => sizeData.size.enabled && (
-                    <div
-                      key={sizeData.size._id}
-                      onClick={() => setSelectedSize(sizeData.size.label)}
-                      className={`text-[10px] text-[#444E61] font-[500] px-3 py-1 border border-1 rounded-lg ${
-                        selectedSize === sizeData.size.label
-                          ? 'bg-[#B2B2B2]'
-                          : 'bg-[#FFFFFF]'
-                      }`}
-                    >
-                      <div className="font-medium">{sizeData.size.label}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            >
+              <div className="font-medium">{category.name}</div>
             </div>
-          )}
+          ))}
         </div>
+        {sizes.length > 0 && (
+          <div className="mt-3">
+            {loadingSizes ? (
+              <div className="space-y-3">
+                <div className="text-center text-sm text-gray-600">
+                  Loading sub category...
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-row items-start gap-2">
+                {sizes.map((size) => size.enabled && (
+                  <div
+                    key={size._id}
+                    onClick={() => setSelectedSize(size._id)}
+                    className={`text-[10px] text-[#444E61] font-[500] px-3 py-1 border rounded-lg ${selectedSize === size._id
+                      ? 'bg-[#B2B2B2]'
+                      : 'bg-[#FFFFFF]'
+                      }`}
+                  >
+                    <div className="font-medium">{size.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-col lg:flex-row justify-between items-start border-[3px] border-[#D6DADE] bg-white mx-4 my-6 sm:my-8">
         {/* Category Selection */}
@@ -337,78 +360,54 @@ export default function AluminiumProfilesPage() {
               <div
                 key={category._id}
                 onClick={() => setSelectedCategory(category)}
-                className={`text-[18px] text-left font-[500] ${
-                  selectedCategory?._id === category._id
-                    ? 'text-[#EE1C25]'
-                    : 'text-[#1F2933]'
-                }`}
+                className={`text-[18px] text-left font-[500] ${selectedCategory?._id === category._id
+                  ? 'text-[#EE1C25]'
+                  : 'text-[#1F2933]'
+                  }`}
               >
                 <div className="font-medium">{category.name}</div>
-                {(selectedCategory === category) && categoryData && (
-                  <div style={{borderLeft: '1px solid #979CA7'}} className="m-3 pl-3">
-                    {loadingCategoryData ? (
-                      <div className="space-y-3">
-                        <div className="text-center text-sm text-gray-600">Loading sub category...</div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-start gap-4">
-                        {categoryData.sizes.map((sizeData) => sizeData.size.enabled && (
-                          <div
-                            key={sizeData.size._id}
-                            onClick={() => setSelectedSize(sizeData.size.label)}
-                            className={`text-[16px] font-[500] ${
-                              selectedSize === sizeData.size.label
+                {(selectedCategory?._id === category._id) && sizes.length > 0 && (
+                  <div style={{ borderLeft: '1px solid #979CA7' }} className="m-3 pl-3">
+                    {loadingCategoryData
+                      ? (
+                        <div className="space-y-3">
+                          <div className="text-center text-sm text-gray-600">Loading sub category...</div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-start gap-4">
+                          {sizes.map((size) => size.enabled && (
+                            <div
+                              key={size._id}
+                              onClick={() => setSelectedSize(size._id)}
+                              className={`text-[16px] font-[500] ${selectedSize === size._id
                                 ? 'text-[#EE1C25]'
                                 : 'text-[#979CA7]'
-                            }`}
-                          >
-                            <div className="font-medium">{sizeData.size.label}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                                }`}
+                            >
+                              <div className="font-medium">{size.label}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 )}
               </div>
             ))}
           </div>
         </div>
-        
-
-        {/* Search */}
-        {/* {selectedSize && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              {searchQuery && (
-                <button
-                  onClick={handleClearSearch}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-          </div>
-        )} */}
 
         {/* Products */}
         {(selectedSize || loadingCategoryData) && (
           <div className="bg-white w-full p-4 sm:p-6 border-t-[3px] border-[#D6DADE] lg:border-t-0 lg:border-l-[3px]">
             <h2 className="text-xl font-semibold mb-4">
-              Products - {selectedCategory?.name} {selectedSize ? `(${selectedSize})` : ''} 
+              
+              Products - {selectedCategory?.name}{' '}
+              {sizes.find(s => s._id === selectedSize)?.label
+                ? `(${sizes.find(s => s._id === selectedSize)?.label})`
+                : ''}
             </h2>
-            <h3 style={{marginBottom: '12px'}}>
-              Rate: {isAuthenticated  ? `₹${((nalcoPrice / 1000) + rateAdjustment).toFixed(2)} /Kg` : 'Login to view rate'}
+            <h3 style={{ marginBottom: '12px' }}>
+              Rate: {isAuthenticated ? `₹${((nalcoPrice / 1000) + rateAdjustment).toFixed(2)} /Kg` : 'Login to view rate'}
             </h3>
 
             {loadingCategoryData ? (
@@ -432,11 +431,11 @@ export default function AluminiumProfilesPage() {
                   Clear search
                 </button>
               </div>
-              ) : productsToDisplay.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-gray-600">No products available for this size</div>
-                </div>
-              ) : (
+            ) : !loadingCategoryData && productsLoaded && productsToDisplay.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-600">No products available for this size</div>
+              </div>
+            ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {visibleProducts.map((product) => {
                   const cartQuantity = getCartQuantityForProduct(product);
@@ -444,9 +443,9 @@ export default function AluminiumProfilesPage() {
                   const displayQuantity = cartQuantity + localQuantity;
 
                   return (
-                  <div key={product._id} className="bg-white border border-1 border-[#D6DADE] overflow-hidden hover:shadow-md transition-shadow">
+                    <div key={product._id} className="bg-white border border-1 border-[#D6DADE] overflow-hidden hover:shadow-md transition-shadow">
 
-                    <div className="flex justify-center">
+                      <div className="flex justify-center">
                         {product.image ? (
                           <img
                             src={product.image}
@@ -462,55 +461,55 @@ export default function AluminiumProfilesPage() {
                         )}
                       </div>
 
-                    <div className='bg-[#D6DADE] p-3'>
-                      <h3 className="font-[18px] flex flex-row justify-between font-[600] text-[#1a1e22] mb-4">
-                        <div>{product.description}</div>
-                        <div className='text-[10px] text-[#EE1C25] font-[500]'>
-                          {cartQuantity > 0 && `${cartQuantity} Item already added to cart`}
+                      <div className='bg-[#D6DADE] p-3'>
+                        <h3 className="font-[18px] flex flex-row justify-between font-[600] text-[#1a1e22] mb-4">
+                          <div>{product.description}</div>
+                          <div className='text-[10px] text-[#EE1C25] font-[500]'>
+                            {cartQuantity > 0 && `${cartQuantity} Item already added to cart`}
+                          </div>
+                        </h3>
+                        <div className='grid grid-cols-2 text-[#1a1e22] text-[13px]'>
+                          <div className="">Kg/m</div>
+                          <div className="text-right">{product.kgm || '40.0'}</div>
+                          <div className="">Length(mm)</div>
+                          <div className="text-right">{product.length || '1.673'}</div>
+                          <p className="">SAP Code</p>
+                          <div className="text-right">{product.sapCode}</div>
                         </div>
-                      </h3>
-                      <div className='grid grid-cols-2 text-[#1a1e22] text-[13px]'>
-                        <div className="">Kg/m</div>
-                        <div className="text-right">{product.kgm || '40.0'}</div>
-                        <div className="">Length(mm)</div>
-                        <div className="text-right">{product.length || '1.673'}</div>
-                        <p className="">SAP Code</p>
-                        <div className="text-right">{product.sapCode}</div>
                       </div>
-                    </div>
-                    <div className="px-3 py-1  bg-[#2F3A4F]">
-                      {isAuthenticated && <div className="flex items-center text-white justify-between">
-                        <div className="flex items-center gap-8">
+                      <div className="px-3 py-1  bg-[#2F3A4F]">
+                        {isAuthenticated && <div className="flex items-center text-white justify-between">
+                          <div className="flex items-center gap-8">
+                            <button
+                              onClick={() => handleQuantityChange(product._id, Math.max(0, localQuantity - 1))}
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            <span className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#2F3A4F] text-center">{displayQuantity}</span>
+                            <button
+                              onClick={() => handleQuantityChange(product._id, localQuantity + 1)}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
                           <button
-                            onClick={() => handleQuantityChange(product._id, Math.max(0, localQuantity - 1))}
+                            onClick={() => handleAddToCart(product)}
+                            disabled={localQuantity === 0}
+                            className="px-4 py-2 bg-[#EE1C25] text-white rounded-lg hover:bg-[#0f3a4a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                           >
-                            <Minus className="w-4 h-4" />
+                            <ShoppingCart className="w-4 h-4" />
+                            <span>Add to Cart</span>
                           </button>
-                          <span className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#2F3A4F] text-center">{displayQuantity}</span>
-                          <button
-                            onClick={() => handleQuantityChange(product._id, localQuantity + 1)}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          disabled={localQuantity === 0}
-                          className="px-4 py-2 bg-[#EE1C25] text-white rounded-lg hover:bg-[#0f3a4a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                        >
-                          <ShoppingCart className="w-4 h-4" />
-                          <span>Add to Cart</span>
-                        </button>
-                      </div>}
-                      {
-                        !isAuthenticated && <div className="text-center">
-                          <p className="text-xs text-gray-600">Login to add to cart</p>
-                        </div>
-                      }
+                        </div>}
+                        {
+                          !isAuthenticated && <div className="text-center">
+                            <p className="text-xs text-gray-600">Login to add to cart</p>
+                          </div>
+                        }
+                      </div>
+
                     </div>
-                    
-                  </div>
-                );
+                  );
                 })}
               </div>
             )}
