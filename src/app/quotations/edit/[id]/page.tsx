@@ -611,7 +611,7 @@ export default function EditQuotationPage() {
             </div>
           )}
           {/* Quotation Details */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-black-200 p-6">
               <button
                 type="button"
                 onClick={() => toggleSection("quotationDetails")}
@@ -669,7 +669,7 @@ export default function EditQuotationPage() {
             </div>
 
           {/* Customer Details */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-black-200 p-6">
               <button
                 type="button"
                 onClick={() => toggleSection("customerDetails")}
@@ -768,7 +768,7 @@ export default function EditQuotationPage() {
               )}
             </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-black-200 p-6">
             <button
               type="button"
               onClick={() => toggleSection("globalConfig")}
@@ -1013,7 +1013,7 @@ export default function EditQuotationPage() {
           </div>
 
           {/* Items Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-black-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">Items</h2>
               <button

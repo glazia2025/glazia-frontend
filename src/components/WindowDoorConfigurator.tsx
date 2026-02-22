@@ -329,48 +329,120 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
     : normalizeSystemType(item.systemType);
 
   const root = createRoot(sourceSystem);
-  root.glass = yesNoFromValue(hasSubItems ? subItems[0]?.glassSpec : item.glassSpec);
+  root.glass = yesNoFromValue(
+    hasSubItems
+      ? subItems.some((sub) => Boolean(sub.glassSpec && sub.glassSpec.trim()))
+      : item.glassSpec
+  );
   root.mesh = yesNoFromValue(hasSubItems ? subItems[0]?.meshPresent : item.meshPresent);
 
+  const applySlidingPatternFromDescription = (node: SectionNode) => {
+    if (node.systemType !== "Sliding") return;
+    const pattern = parsePanelPattern(node.description || "");
+    if (!pattern) {
+      node.panelFractions = undefined;
+      node.panelMeshCount = undefined;
+      node.panelSashes = undefined;
+      return;
+    }
+    node.panelFractions = pattern.fractions;
+    node.panelMeshCount = pattern.meshCount;
+    node.panelSashes = buildDefaultSlidingPanelSashes(pattern.fractions.length);
+    node.mesh = (pattern.meshCount ?? 0) > 0 ? "Yes" : node.mesh;
+  };
+
   if (hasSubItems) {
-    const totalWidth = subItems.reduce((sum, sub) => sum + (sub.width || 0), 0) || width;
-    let cursor = 0;
-    root.split = "vertical";
-    root.children = subItems.map((sub, idx) => {
-      const frac = (sub.width || width / subItems.length) / totalWidth;
-      const safeFrac = Number.isFinite(frac) && frac > 0 ? frac : 1 / subItems.length;
-      const child = createLeaf(
-        cursor,
-        0,
-        safeFrac,
-        1,
-        sub.systemType === "Sliding" ? (idx % 2 === 0 ? "left" : "right") : "fixed",
-        normalizeSystemType(sub.systemType),
-        yesNoFromValue(sub.glassSpec),
-        yesNoFromValue(sub.meshPresent)
-      );
-      child.series = sub.series || "";
-      child.description = sub.description || "";
-      cursor += safeFrac;
-      return child;
-    });
-    const sum = root.children.reduce((acc, child) => acc + child.w, 0) || 1;
-    let normalizedCursor = 0;
-    root.children.forEach((child, idx) => {
-      const w = child.w / sum;
-      child.w = w;
-      child.x = normalizedCursor;
-      if (idx === root.children!.length - 1) {
-        child.w = 1 - normalizedCursor;
-      }
-      normalizedCursor += child.w;
-    });
+    // Infer split direction from persisted sub-item geometry.
+    // Vertical split: each child tends to match frame height.
+    // Horizontal split: each child tends to match frame width.
+    const avgHeightMatch =
+      subItems.reduce((sum, sub) => sum + ((sub.height || 0) / Math.max(height, 1)), 0) /
+      subItems.length;
+    const avgWidthMatch =
+      subItems.reduce((sum, sub) => sum + ((sub.width || 0) / Math.max(width, 1)), 0) /
+      subItems.length;
+    const inferredDirection: SplitDirection =
+      avgWidthMatch > avgHeightMatch ? "horizontal" : "vertical";
+
+    const ordered = [...subItems];
+    root.split = inferredDirection;
+
+    if (inferredDirection === "vertical") {
+      const totalWidth = ordered.reduce((sum, sub) => sum + (sub.width || 0), 0) || width;
+      let cursor = 0;
+      root.children = ordered.map((sub, idx) => {
+        const frac = (sub.width || width / ordered.length) / totalWidth;
+        const safeFrac = Number.isFinite(frac) && frac > 0 ? frac : 1 / ordered.length;
+        const child = createLeaf(
+          cursor,
+          0,
+          safeFrac,
+          1,
+          sub.systemType === "Sliding" ? (idx % 2 === 0 ? "left" : "right") : "fixed",
+          normalizeSystemType(sub.systemType),
+          yesNoFromValue(sub.glassSpec),
+          yesNoFromValue(sub.meshPresent)
+        );
+        child.series = sub.series || "";
+        child.description = sub.description || "";
+        applySlidingPatternFromDescription(child);
+        cursor += safeFrac;
+        return child;
+      });
+
+      const sum = root.children.reduce((acc, child) => acc + child.w, 0) || 1;
+      let normalizedCursor = 0;
+      root.children.forEach((child, idx) => {
+        const w = child.w / sum;
+        child.w = w;
+        child.x = normalizedCursor;
+        if (idx === root.children!.length - 1) {
+          child.w = 1 - normalizedCursor;
+        }
+        normalizedCursor += child.w;
+      });
+    } else {
+      const totalHeight = ordered.reduce((sum, sub) => sum + (sub.height || 0), 0) || height;
+      let cursor = 0;
+      root.children = ordered.map((sub, idx) => {
+        const frac = (sub.height || height / ordered.length) / totalHeight;
+        const safeFrac = Number.isFinite(frac) && frac > 0 ? frac : 1 / ordered.length;
+        const child = createLeaf(
+          0,
+          cursor,
+          1,
+          safeFrac,
+          sub.systemType === "Sliding" ? (idx % 2 === 0 ? "left" : "right") : "fixed",
+          normalizeSystemType(sub.systemType),
+          yesNoFromValue(sub.glassSpec),
+          yesNoFromValue(sub.meshPresent)
+        );
+        child.series = sub.series || "";
+        child.description = sub.description || "";
+        applySlidingPatternFromDescription(child);
+        cursor += safeFrac;
+        return child;
+      });
+
+      const sum = root.children.reduce((acc, child) => acc + child.h, 0) || 1;
+      let normalizedCursor = 0;
+      root.children.forEach((child, idx) => {
+        const h = child.h / sum;
+        child.h = h;
+        child.y = normalizedCursor;
+        if (idx === root.children!.length - 1) {
+          child.h = 1 - normalizedCursor;
+        }
+        normalizedCursor += child.h;
+      });
+    }
   } else {
     root.systemType = sourceSystem;
     root.series = item.series || "";
     root.description = item.description || "";
     root.glass = yesNoFromValue(item.glassSpec);
     root.mesh = yesNoFromValue(item.meshPresent);
+    applySlidingPatternFromDescription(root);
   }
 
   const meta: ProductMeta = {
@@ -1963,7 +2035,7 @@ export default function WindowDoorConfigurator({
             area: itemArea,
             description,
             colorFinish: meta.colorFinish,
-            glassSpec: leaf.glass === "Yes" ? meta.glassSpec : "",
+            glassSpec: leaf.glass === "Yes" ? (meta.glassSpec || "Yes") : "",
             handleType: meta.handleType,
             handleColor: meta.handleColor,
             meshPresent: leaf.mesh,
@@ -1986,7 +2058,7 @@ export default function WindowDoorConfigurator({
           series,
           description,
           colorFinish: meta.colorFinish,
-          glassSpec: leaf.glass === "Yes" ? meta.glassSpec : "",
+          glassSpec: leaf.glass === "Yes" ? (meta.glassSpec || "Yes") : "",
           handleType: meta.handleType,
           handleColor: meta.handleColor,
           handleCount: calc.handleCount,
@@ -2025,7 +2097,7 @@ export default function WindowDoorConfigurator({
             area: areaSqft,
             description,
             colorFinish: meta.colorFinish,
-            glassSpec: meta.glassSpec,
+            glassSpec: singleLeaf.glass === "Yes" ? (meta.glassSpec || "Yes") : "",
             handleType: meta.handleType,
             handleColor: meta.handleColor,
             meshPresent: singleLeaf.mesh,
@@ -2061,7 +2133,11 @@ export default function WindowDoorConfigurator({
           ? ""
           : singleLeaf?.description || `${singleLeaf?.systemType || baseSystemType} ${meta.productType}`,
         colorFinish: isCombination ? "" : meta.colorFinish,
-        glassSpec: isCombination ? "" : meta.glassSpec || (anyGlass ? "Yes" : ""),
+        glassSpec: isCombination
+          ? ""
+          : singleLeaf?.glass === "Yes"
+            ? (meta.glassSpec || "Yes")
+            : "",
         handleType: isCombination ? "" : meta.handleType,
         handleColor: isCombination ? "" : meta.handleColor,
         handleCount,
@@ -2523,8 +2599,10 @@ export default function WindowDoorConfigurator({
         }));
       }
 
+      const parsedPattern = parsePanelPattern(leaf.description || "");
+      const hasPatternMesh = (leaf.panelMeshCount ?? parsedPattern?.meshCount ?? 0) > 0;
       // mesh marker (small bottom-right triangular wedge)
-      if (leaf.mesh === "Yes") {
+      if (leaf.mesh === "Yes" && !hasPatternMesh) {
         const triX = x + w - inset - 6;
         const triY = y + h - inset - 6;
         drawMeshTriangle(g, triX, triY, Math.min(w, h) * 0.5);
@@ -2889,7 +2967,7 @@ export default function WindowDoorConfigurator({
                 area,
                 description,
                 colorFinish: meta.colorFinish,
-                glassSpec: leaf.glass === "Yes" ? meta.glassSpec : "",
+                glassSpec: leaf.glass === "Yes" ? (meta.glassSpec || "Yes") : "",
                 handleType: meta.handleType,
                 handleColor: meta.handleColor,
                 meshPresent: leaf.mesh,
@@ -3239,6 +3317,7 @@ export default function WindowDoorConfigurator({
                     value={selectedNode.description}
                     onChange={(e) => {
                       const nextDescription = e.target.value;
+                      setMeta((prev) => ({ ...prev, meshType: "" }));
                       if (selectedNode.systemType === "Sliding") {
                         updateSelectedNode((target) => {
                           target.description = nextDescription;
@@ -3248,6 +3327,7 @@ export default function WindowDoorConfigurator({
                           if (pattern) {
                             target.panelFractions = pattern.fractions;
                             target.panelMeshCount = pattern.meshCount;
+                            target.mesh = (pattern.meshCount ?? 0) > 0 ? "Yes" : "No";
                             target.panelSashes =
                               target.panelSashes && target.panelSashes.length === pattern.fractions.length
                                 ? target.panelSashes
@@ -3255,6 +3335,7 @@ export default function WindowDoorConfigurator({
                           } else {
                             target.panelFractions = undefined;
                             target.panelMeshCount = undefined;
+                            target.mesh = "No";
                             target.panelSashes = undefined;
                           }
                         });
@@ -3285,43 +3366,45 @@ export default function WindowDoorConfigurator({
                   </select>
                 </label>
 
-                {!isCombinationChildSelection && (
-                  <label className="text-xs text-gray-600">
-                    Section Glass
-                    <select
-                      value={selectedNode.glass}
-                      onChange={(e) => {
-                        const value = e.target.value as YesNo;
-                        updateSelectedLeaves((target) => {
-                          target.glass = value;
-                        });
-                      }}
-                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                    >
-                      <option value="Yes">Yes</option>
-                      <option value="No">No</option>
-                    </select>
-                  </label>
-                )}
+                <label className="text-xs text-gray-600">
+                  Section Glass
+                  <select
+                    value={selectedNode.glass}
+                    onChange={(e) => {
+                      const value = e.target.value as YesNo;
+                      updateSelectedLeaves((target) => {
+                        target.glass = value;
+                      });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                  >
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                </label>
 
                 <label className="text-xs text-gray-600">
                   Section Mesh
                   <select
                     value={selectedNode.mesh}
                     onChange={(e) => {
+                      if (selectedNode.systemType === "Sliding") return;
                       const value = e.target.value as YesNo;
                       updateSelectedLeaves((target) => {
                         target.mesh = value;
                       });
                     }}
                     className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    disabled={selectedNode.systemType === "Sliding"}
                   >
                     <option value="No">No</option>
                     <option value="Yes">Yes</option>
                   </select>
                 </label>
 
-                {selectedNode.systemType === "Sliding" && !selectedNode.children?.length && (
+                {selectedNode.systemType === "Sliding" &&
+                  selectedNode.id !== "root" &&
+                  !selectedNode.children?.length && (
                   <label className="text-xs text-gray-600">
                     Sliding Movement
                     <select
@@ -3406,7 +3489,7 @@ export default function WindowDoorConfigurator({
                   </select>
                 </label>
 
-                {!isCombinationChildSelection && (
+                {(!isCombinationChildSelection || selectedNode.systemType === "Sliding") && (
                   <label className="text-xs text-gray-600">
                     Mesh Type
                     <select

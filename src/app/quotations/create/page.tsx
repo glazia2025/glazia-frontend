@@ -323,14 +323,14 @@ function CreateQuotationContent() {
   };
 
   const handleDownloadPDF = async () => {
-    const savedData = await handleSave(false);
-    console.log(savedData, 'savedData');
+    // const savedData = await handleSave(false);
+    // console.log(savedData, 'savedData');
     const finalQuotationNumber = quotationDetails.quotationNumber || getNextQuotationNumber();
     const quotation = {
       id: Date.now().toString(),
       ...quotationDetails,
       quotationNumber: finalQuotationNumber,
-      generatedId: savedData.generatedId,
+      generatedId: '111',
       contactPhone: quotationDetails.contactPhone,
       customerDetails,
       items,
@@ -423,7 +423,7 @@ function CreateQuotationContent() {
               </div>
             </div>
           )}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-black-200 p-6">
             <button
               type="button"
               onClick={() => toggleSection("quotationDetails")}
@@ -479,7 +479,7 @@ function CreateQuotationContent() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-black-200 p-6">
             <button
               type="button"
               onClick={() => toggleSection("customerDetails")}
@@ -564,7 +564,7 @@ function CreateQuotationContent() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-black-200 p-6">
             <button
               type="button"
               onClick={() => toggleSection("globalConfig")}
@@ -809,7 +809,7 @@ function CreateQuotationContent() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-black-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">Items</h2>
               <button
