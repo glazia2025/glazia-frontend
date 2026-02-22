@@ -58,6 +58,11 @@ type ProductMeta = {
   rate: number;
 };
 
+type SectionOptionMeta = Pick<
+  ProductMeta,
+  "colorFinish" | "glassSpec" | "handleType" | "handleColor" | "meshType"
+>;
+
 const DEFAULT_META: ProductMeta = {
   productType: "Window",
   systemType: "Casement",
@@ -74,6 +79,14 @@ const DEFAULT_META: ProductMeta = {
   refCode: "",
   remarks: "",
   rate: 0,
+};
+
+const DEFAULT_SECTION_OPTION_META: SectionOptionMeta = {
+  colorFinish: "",
+  glassSpec: "",
+  handleType: "",
+  handleColor: "",
+  meshType: "",
 };
 
 const AREA_SLABS = [
@@ -1632,6 +1645,8 @@ export default function WindowDoorConfigurator({
   const [hideSelectionForExport, setHideSelectionForExport] = useState(false);
   const [manualChildRates, setManualChildRates] = useState<Record<string, number>>({});
   const [autoChildRates, setAutoChildRates] = useState<Record<string, number>>({});
+  const [childSectionMeta, setChildSectionMeta] = useState<Record<string, SectionOptionMeta>>({});
+  const [isManualRate, setIsManualRate] = useState(false);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
 
   const [stageSize, setStageSize] = useState({ w: 1200, h: 780 });
@@ -1655,8 +1670,6 @@ export default function WindowDoorConfigurator({
   const selectedDescriptionsQuery = useDescriptionsQuery(selectedNode.systemType, selectedNode.series);
   const optionsSystemType = selectedNode.systemType || baseSystemType;
   const metaOptionsQuery = useOptionsQuery(optionsSystemType);
-  const metaHandleOption =
-    metaOptionsQuery.data?.handleOptions.find((option) => option.name === meta.handleType) ?? null;
   const systemOptions = systemsQuery.data?.systems ?? ["Casement", "Sliding", "Slide N Fold"];
   const selectableSystemOptions = systemOptions.filter(
     (sys): sys is SystemType => sys === "Casement" || sys === "Sliding" || sys === "Slide N Fold"
@@ -1973,6 +1986,11 @@ export default function WindowDoorConfigurator({
 
   const handleSaveItem = async () => {
     if (isSaving) return;
+    const trimmedRefCode = meta.refCode.trim();
+    if (!trimmedRefCode) {
+      alert("Ref Code is required.");
+      return;
+    }
     setIsSaving(true);
     try {
       setHideSelectionForExport(true);
@@ -2024,6 +2042,7 @@ export default function WindowDoorConfigurator({
       };
 
       const buildSubItem = async (leaf: SectionNode, idx: number): Promise<QuotationSubItem> => {
+        const leafMeta = getLeafSectionMeta(leaf.id);
         const systemType = leaf.systemType;
         const series = leaf.series || "";
         const description = leaf.description || `${systemType} ${meta.productType}`;
@@ -2034,12 +2053,12 @@ export default function WindowDoorConfigurator({
           {
             area: itemArea,
             description,
-            colorFinish: meta.colorFinish,
-            glassSpec: leaf.glass === "Yes" ? (meta.glassSpec || "Yes") : "",
-            handleType: meta.handleType,
-            handleColor: meta.handleColor,
+            colorFinish: leafMeta.colorFinish,
+            glassSpec: leaf.glass === "Yes" ? (leafMeta.glassSpec || "Yes") : "",
+            handleType: leafMeta.handleType,
+            handleColor: leafMeta.handleColor,
             meshPresent: leaf.mesh,
-            meshType: leaf.mesh === "Yes" ? meta.meshType : "",
+            meshType: leaf.mesh === "Yes" ? leafMeta.meshType : "",
           },
           descriptions,
           options
@@ -2057,13 +2076,13 @@ export default function WindowDoorConfigurator({
           systemType,
           series,
           description,
-          colorFinish: meta.colorFinish,
-          glassSpec: leaf.glass === "Yes" ? (meta.glassSpec || "Yes") : "",
-          handleType: meta.handleType,
-          handleColor: meta.handleColor,
+          colorFinish: leafMeta.colorFinish,
+          glassSpec: leaf.glass === "Yes" ? (leafMeta.glassSpec || "Yes") : "",
+          handleType: leafMeta.handleType,
+          handleColor: leafMeta.handleColor,
           handleCount: calc.handleCount,
           meshPresent: leaf.mesh,
-          meshType: leaf.mesh === "Yes" ? meta.meshType : "",
+          meshType: leaf.mesh === "Yes" ? leafMeta.meshType : "",
           rate: roundToTwo(resolvedRate),
           quantity,
           amount: roundToTwo(quantity * roundToTwo(resolvedRate) * itemArea),
@@ -2109,7 +2128,7 @@ export default function WindowDoorConfigurator({
         baseRate = calc.baseRate;
         areaSlabIndex = calc.areaSlabIndex;
         handleCount = calc.handleCount;
-        rate = meta.rate > 0 ? meta.rate : applyProfitToRate(calc.rate, profitPercentage);
+        rate = isManualRate ? meta.rate : applyProfitToRate(calc.rate, profitPercentage);
         amount = roundToTwo(Math.max(1, meta.quantity || 1) * rate * areaSqft);
       } else {
         const parentQuantity = Math.max(1, meta.quantity || 1);
@@ -2122,7 +2141,7 @@ export default function WindowDoorConfigurator({
 
       const nextItem: QuotationItem = {
         id: initialItem?.id ?? crypto.randomUUID(),
-        refCode: meta.refCode || "",
+        refCode: trimmedRefCode,
         location: meta.location || "",
         width: widthMm,
         height: heightMm,
@@ -2876,19 +2895,34 @@ export default function WindowDoorConfigurator({
     setBaseMesh(mapped.baseMesh);
     setMeta(mapped.meta);
     reset(mapped.root);
-    setSelectedId("root");
+    const mappedLeaves: SectionNode[] = [];
+    mapLeafNodes(mapped.root, (leaf) => mappedLeaves.push(leaf));
+    setSelectedId(mappedLeaves.length > 1 ? mappedLeaves[0].id : "root");
+    setSelectedSlidingPanelIndex(null);
+    setIsManualRate(false);
     const leaves: SectionNode[] = [];
     mapLeafNodes(mapped.root, (leaf) => leaves.push(leaf));
     const sortedLeaves = leaves.sort((a, b) => (a.y - b.y) || (a.x - b.x));
     const subItems = initialItem.subItems ?? [];
     const nextManualRates: Record<string, number> = {};
+    const nextChildSectionMeta: Record<string, SectionOptionMeta> = {};
     sortedLeaves.forEach((leaf, idx) => {
       if (subItems[idx]?.rate !== undefined) {
         nextManualRates[leaf.id] = Number(subItems[idx].rate) || 0;
       }
+      if (subItems[idx]) {
+        nextChildSectionMeta[leaf.id] = {
+          colorFinish: subItems[idx].colorFinish || "",
+          glassSpec: subItems[idx].glassSpec || "",
+          handleType: subItems[idx].handleType || "",
+          handleColor: subItems[idx].handleColor || "",
+          meshType: subItems[idx].meshType || "",
+        };
+      }
     });
     setManualChildRates(nextManualRates);
     setAutoChildRates({});
+    setChildSectionMeta(nextChildSectionMeta);
   }, [initialItem, reset]);
 
   // apply base preset
@@ -2898,7 +2932,27 @@ export default function WindowDoorConfigurator({
     setSelectedId(null);
     setManualChildRates({});
     setAutoChildRates({});
+    setChildSectionMeta({});
+    setIsManualRate(false);
   }, [baseGlass, baseMesh, baseSystemType, initialItem, reset]);
+
+  useEffect(() => {
+    setIsManualRate(false);
+  }, [
+    selectedNode.systemType,
+    selectedNode.series,
+    selectedNode.description,
+    selectedNode.glass,
+    selectedNode.mesh,
+    meta.colorFinish,
+    meta.glassSpec,
+    meta.handleType,
+    meta.handleColor,
+    meta.meshType,
+    widthMm,
+    heightMm,
+    profitPercentage,
+  ]);
 
   const areaSqft = useMemo(() => mmToSqft(widthMm, heightMm), [widthMm, heightMm]);
   const leafNodesForMode = useMemo(() => {
@@ -2911,6 +2965,35 @@ export default function WindowDoorConfigurator({
   const isCombinationParentSelection = isCombinationDraft && selectedIsWholeFrame;
   const isCombinationChildSelection = isCombinationDraft && !selectedIsWholeFrame;
   const selectedLeafIndex = leafNodesForMode.findIndex((leaf) => leaf.id === selectedNode.id);
+  const selectedSectionMeta: SectionOptionMeta =
+    isCombinationChildSelection && selectedId
+      ? (childSectionMeta[selectedId] ?? DEFAULT_SECTION_OPTION_META)
+      : {
+          colorFinish: meta.colorFinish,
+          glassSpec: meta.glassSpec,
+          handleType: meta.handleType,
+          handleColor: meta.handleColor,
+          meshType: meta.meshType,
+        };
+  const metaHandleOption =
+    metaOptionsQuery.data?.handleOptions.find((option) => option.name === selectedSectionMeta.handleType) ?? null;
+  const updateSelectedSectionMeta = useCallback((patch: Partial<SectionOptionMeta>) => {
+    if (!isCombinationChildSelection || !selectedId) {
+      setMeta((prev) => ({ ...prev, ...patch }));
+      return;
+    }
+    setChildSectionMeta((prev) => ({
+      ...prev,
+      [selectedId]: {
+        ...(prev[selectedId] ?? DEFAULT_SECTION_OPTION_META),
+        ...patch,
+      },
+    }));
+  }, [isCombinationChildSelection, selectedId]);
+  const getLeafSectionMeta = useCallback(
+    (leafId: string): SectionOptionMeta => childSectionMeta[leafId] ?? DEFAULT_SECTION_OPTION_META,
+    [childSectionMeta]
+  );
   const childAutoRef =
     isCombinationChildSelection && meta.refCode && selectedLeafIndex >= 0
       ? `${meta.refCode}-${indexToAlphaLower(selectedLeafIndex)}`
@@ -2949,6 +3032,7 @@ export default function WindowDoorConfigurator({
       const next: Record<string, number> = {};
       await Promise.all(
         leafNodesForMode.map(async (leaf) => {
+          const leafMeta = getLeafSectionMeta(leaf.id);
           const systemType = leaf.systemType;
           const series = leaf.series || "";
           const description = leaf.description || `${systemType} ${meta.productType}`;
@@ -2966,12 +3050,12 @@ export default function WindowDoorConfigurator({
               {
                 area,
                 description,
-                colorFinish: meta.colorFinish,
-                glassSpec: leaf.glass === "Yes" ? (meta.glassSpec || "Yes") : "",
-                handleType: meta.handleType,
-                handleColor: meta.handleColor,
+                colorFinish: leafMeta.colorFinish,
+                glassSpec: leaf.glass === "Yes" ? (leafMeta.glassSpec || "Yes") : "",
+                handleType: leafMeta.handleType,
+                handleColor: leafMeta.handleColor,
                 meshPresent: leaf.mesh,
-                meshType: leaf.mesh === "Yes" ? meta.meshType : "",
+                meshType: leaf.mesh === "Yes" ? leafMeta.meshType : "",
               },
               descriptionsResp.descriptions,
               optionsResp
@@ -2992,14 +3076,10 @@ export default function WindowDoorConfigurator({
       isActive = false;
     };
   }, [
+    getLeafSectionMeta,
     heightMm,
     isCombinationDraft,
     leafNodesForMode,
-    meta.colorFinish,
-    meta.glassSpec,
-    meta.handleColor,
-    meta.handleType,
-    meta.meshType,
     meta.productType,
     profitPercentage,
     widthMm,
@@ -3138,6 +3218,7 @@ export default function WindowDoorConfigurator({
                   <input
                     value={meta.refCode}
                     onChange={(e) => setMeta((prev) => ({ ...prev, refCode: e.target.value }))}
+                    required
                     className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   />
                 </label>
@@ -3210,6 +3291,7 @@ export default function WindowDoorConfigurator({
                       <input
                         value={meta.refCode}
                         onChange={(e) => setMeta((prev) => ({ ...prev, refCode: e.target.value }))}
+                        required
                         className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                       />
                     </label>
@@ -3317,7 +3399,7 @@ export default function WindowDoorConfigurator({
                     value={selectedNode.description}
                     onChange={(e) => {
                       const nextDescription = e.target.value;
-                      setMeta((prev) => ({ ...prev, meshType: "" }));
+                      updateSelectedSectionMeta({ meshType: "" });
                       if (selectedNode.systemType === "Sliding") {
                         updateSelectedNode((target) => {
                           target.description = nextDescription;
@@ -3428,8 +3510,8 @@ export default function WindowDoorConfigurator({
                 <label className="text-xs text-gray-600">
                   Color Finish
                   <select
-                    value={meta.colorFinish}
-                    onChange={(e) => setMeta((prev) => ({ ...prev, colorFinish: e.target.value }))}
+                    value={selectedSectionMeta.colorFinish}
+                    onChange={(e) => updateSelectedSectionMeta({ colorFinish: e.target.value })}
                     className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="">Select</option>
@@ -3444,8 +3526,8 @@ export default function WindowDoorConfigurator({
                 <label className="text-xs text-gray-600">
                   Glass Spec
                   <select
-                    value={meta.glassSpec}
-                    onChange={(e) => setMeta((prev) => ({ ...prev, glassSpec: e.target.value }))}
+                    value={selectedSectionMeta.glassSpec}
+                    onChange={(e) => updateSelectedSectionMeta({ glassSpec: e.target.value })}
                     className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="">Select</option>
@@ -3460,8 +3542,8 @@ export default function WindowDoorConfigurator({
                 <label className="text-xs text-gray-600">
                   Handle Type
                   <select
-                    value={meta.handleType}
-                    onChange={(e) => setMeta((prev) => ({ ...prev, handleType: e.target.value, handleColor: "" }))}
+                    value={selectedSectionMeta.handleType}
+                    onChange={(e) => updateSelectedSectionMeta({ handleType: e.target.value, handleColor: "" })}
                     className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="">Select</option>
@@ -3476,8 +3558,8 @@ export default function WindowDoorConfigurator({
                 <label className="text-xs text-gray-600">
                   Handle Color
                   <select
-                    value={meta.handleColor}
-                    onChange={(e) => setMeta((prev) => ({ ...prev, handleColor: e.target.value }))}
+                    value={selectedSectionMeta.handleColor}
+                    onChange={(e) => updateSelectedSectionMeta({ handleColor: e.target.value })}
                     className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                   >
                     <option value="">Select</option>
@@ -3493,8 +3575,8 @@ export default function WindowDoorConfigurator({
                   <label className="text-xs text-gray-600">
                     Mesh Type
                     <select
-                      value={meta.meshType}
-                      onChange={(e) => setMeta((prev) => ({ ...prev, meshType: e.target.value }))}
+                      value={selectedSectionMeta.meshType}
+                      onChange={(e) => updateSelectedSectionMeta({ meshType: e.target.value })}
                       className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                       disabled={selectedNode.mesh !== "Yes"}
                     >
@@ -3549,7 +3631,10 @@ export default function WindowDoorConfigurator({
                         type="number"
                         min={0}
                         value={meta.rate}
-                        onChange={(e) => setMeta((prev) => ({ ...prev, rate: Number(e.target.value) || 0 }))}
+                        onChange={(e) => {
+                          setIsManualRate(true);
+                          setMeta((prev) => ({ ...prev, rate: Number(e.target.value) || 0 }));
+                        }}
                         className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
                       />
                     </label>
