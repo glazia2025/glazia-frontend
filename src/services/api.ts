@@ -1,8 +1,6 @@
 // API Configuration
-// export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL|| 'https://api.glazia.in';
-export const API_BASE_URL='http://localhost:5555';
+ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL|| 'https://api.glazia.in';
 export const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || 'v1';
-
 // API Endpoints
 export const API_ENDPOINTS = {
   // Profile endpoints (Aluminium Profiles)
