@@ -368,7 +368,7 @@ export default function AluminiumProfilesPage() {
                 <div className="font-medium">{category.name}</div>
                 {(selectedCategory?._id === category._id) && sizes.length > 0 && (
                   <div style={{ borderLeft: '1px solid #979CA7' }} className="m-3 pl-3">
-                    {loadingCategoryData
+                    {loadingSizes
                       ? (
                         <div className="space-y-3">
                           <div className="text-center text-sm text-gray-600">Loading sub category...</div>
@@ -409,8 +409,8 @@ export default function AluminiumProfilesPage() {
             <h3 style={{ marginBottom: '12px' }}>
               Rate: {isAuthenticated ? `₹${((nalcoPrice / 1000) + rateAdjustment).toFixed(2)} /Kg` : 'Login to view rate'}
             </h3>
-
-            {loadingCategoryData ? (
+            {loadingProducts
+            ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {Array.from({ length: 6 }).map((_, index) => (
                   <div
