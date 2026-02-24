@@ -323,14 +323,14 @@ function CreateQuotationContent() {
   };
 
   const handleDownloadPDF = async () => {
-    // const savedData = await handleSave(false);
-    // console.log(savedData, 'savedData');
+    const savedData = await handleSave(false);
+    console.log(savedData, 'savedData');
     const finalQuotationNumber = quotationDetails.quotationNumber || getNextQuotationNumber();
     const quotation = {
       id: Date.now().toString(),
       ...quotationDetails,
       quotationNumber: finalQuotationNumber,
-      generatedId: '111',
+      generatedId: savedData.generatedId,
       contactPhone: quotationDetails.contactPhone,
       customerDetails,
       items,
