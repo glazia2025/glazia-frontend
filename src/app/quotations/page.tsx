@@ -32,8 +32,11 @@ interface QuotationItem {
 }
 
 interface Quotation {
+  _id?: string;
   id: string;
+  generatedId?: string;
   quotationNumber?: string;
+  date?: string;
   createdAt?: string;
   quotationDetails?: {
     id?: string;
@@ -60,6 +63,10 @@ interface Quotation {
 
 export default function QuotationsPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit] = useState(10);
+  const [totalQuotations, setTotalQuotations] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,23 +79,32 @@ export default function QuotationsPage() {
     const getQuotations = async () => {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem("authToken");
       if (!token) {
         setLoading(false);
         return;
       }
       try {
-        const response = await fetch(`${API_BASE_URL}/api/quotations`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/quotations?page=${currentPage}&limit=${pageLimit}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         if (!response.ok) {
           throw new Error(`Failed to fetch quotations (${response.status})`);
         }
         const data = await response.json();
-        const list: Quotation[] = Array.isArray(data) ? data : Array.isArray(data?.quotations) ? data.quotations : [];
+        const list: Quotation[] = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.quotations)
+            ? data.quotations
+            : [];
         setQuotations(list);
+        setTotalQuotations(Number(data?.total) || list.length);
+        setTotalPages(Math.max(1, Number(data?.totalPages) || 1));
       } catch (err: unknown) {
         console.error("Error loading quotations", err);
         setError(err instanceof Error ? err.message : "Failed to load quotations");
@@ -97,11 +113,11 @@ export default function QuotationsPage() {
       }
     };
     getQuotations();
-  }, []);
+  }, [currentPage, pageLimit]);
 
   const enrichedQuotations = useMemo(() => {
     return quotations.map((q) => {
-      const totalAmount = q.breakdown.totalAmount;
+      const totalAmount = q.breakdown?.totalAmount || 0;
       const validUntil = q.validUntil || "";
       const quotationNumber = q.quotationNumber || q.quotationDetails?.id || (q as { _id?: string })._id || "";
       const date = q.quotationDetails?.date || (q as { date?: string }).date || q.createdAt || "";
@@ -139,6 +155,7 @@ export default function QuotationsPage() {
         return backendId !== id && q.id !== id;
       });
       setQuotations(updatedQuotations);
+      setTotalQuotations((prev) => Math.max(0, prev - 1));
     }
   };
 
@@ -283,7 +300,7 @@ export default function QuotationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Quotations</p>
-                <p className="text-2xl font-[500] text-gray-900">{quotations.length}</p>
+                <p className="text-2xl font-[500] text-gray-900">{totalQuotations}</p>
               </div>
               <File size={56} color="#080808" absoluteStrokeWidth />
             </div>
@@ -294,7 +311,7 @@ export default function QuotationsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Value</p>
                 <p className="text-2xl font-[500] text-gray-900">
-                  ₹{quotations.reduce((sum, q) => sum + q.breakdown.totalAmount, 0).toLocaleString('en-IN')}
+                  ₹{quotations.reduce((sum, q) => sum + (q.breakdown?.totalAmount || 0), 0).toLocaleString('en-IN')}
                 </p>
               </div>
               <HandCoins size={56} color="#080808" absoluteStrokeWidth />
@@ -364,24 +381,24 @@ export default function QuotationsPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {sortedQuotations.map((quotation) => (
-                    <tr key={quotation.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={quotation._id || quotation.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {quotation.generatedId}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {quotation.items.length} item{quotation.items.length !== 1 ? 's' : ''}
+                            {(quotation.items?.length || 0)} item{(quotation.items?.length || 0) !== 1 ? 's' : ''}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {quotation.customerDetails.name}
+                            {quotation.customerDetails?.name || "N/A"}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {quotation.customerDetails.company || quotation.customerDetails.email}
+                            {quotation.customerDetails?.company || quotation.customerDetails?.email || "-"}
                           </div>
                         </div>
                       </td>
@@ -389,7 +406,7 @@ export default function QuotationsPage() {
                         {quotation.date ? new Date(quotation.date).toLocaleDateString('en-IN') : "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {quotation?.breakdown?.profitPercentage}%
+                        {quotation?.breakdown?.profitPercentage ?? 0}%
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         ₹{(quotation.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -404,7 +421,7 @@ export default function QuotationsPage() {
                             <Eye className="w-4 h-4" />
                           </button>
                           <Link
-                            href={`/quotations/edit/${quotation._id}`}
+                            href={`/quotations/edit/${quotation._id || quotation.id}`}
                             className="text-gray-600 hover:text-gray-800 transition-colors"
                             title="Edit Quotation"
                           >
@@ -418,7 +435,7 @@ export default function QuotationsPage() {
                             <Download className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => deleteQuotation(quotation.id)}
+                            onClick={() => deleteQuotation(quotation._id || quotation.id)}
                             className="text-red-600 hover:text-red-800 transition-colors"
                             title="Delete Quotation"
                           >
@@ -432,6 +449,30 @@ export default function QuotationsPage() {
               </table>
             </div>
           )}
+        </div>
+
+        <div className="mt-6 flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
+          <div className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage <= 1 || loading}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage >= totalPages || loading}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 

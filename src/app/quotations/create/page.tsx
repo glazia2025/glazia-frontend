@@ -191,6 +191,85 @@ function CreateQuotationContent() {
     setIsConfiguratorOpen(true);
   };
 
+  const recalculateCombinationParent = (item: QuotationItem): QuotationItem => {
+    if (item.systemType !== COMBINATION_SYSTEM || !item.subItems?.length) {
+      return item;
+    }
+    const parentQuantity = Math.max(1, item.quantity || 1);
+    const perFrameAmount = roundToTwo(item.subItems.reduce((sum, sub) => sum + sub.amount, 0));
+    const weightedRateTotal = item.subItems.reduce((sum, sub) => sum + sub.rate * sub.area, 0);
+    const frameArea = item.area;
+    const rate = frameArea > 0 ? roundToTwo(weightedRateTotal / frameArea) : 0;
+    return {
+      ...item,
+      rate,
+      amount: roundToTwo(perFrameAmount * parentQuantity),
+    };
+  };
+
+  const handleInlineItemUpdate = (
+    id: string,
+    patch: Partial<
+      Pick<
+        QuotationItem,
+        | "colorFinish"
+        | "glassSpec"
+        | "handleType"
+        | "handleColor"
+        | "rate"
+        | "baseRate"
+        | "areaSlabIndex"
+        | "handleCount"
+      >
+    >
+  ) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const nextItem = { ...item, ...patch } as QuotationItem;
+        if (patch.rate !== undefined && item.systemType !== COMBINATION_SYSTEM) {
+          const quantity = Math.max(1, nextItem.quantity || 1);
+          nextItem.amount = roundToTwo((Number(patch.rate) || 0) * nextItem.area * quantity);
+        }
+        return nextItem;
+      })
+    );
+  };
+
+  const handleInlineSubItemUpdate = (
+    parentId: string,
+    subItemId: string,
+    patch: Partial<
+      Pick<
+        QuotationItem,
+        | "colorFinish"
+        | "glassSpec"
+        | "handleType"
+        | "handleColor"
+        | "rate"
+        | "baseRate"
+        | "areaSlabIndex"
+        | "handleCount"
+      >
+    >
+  ) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== parentId || !item.subItems?.length) return item;
+        const nextSubItems = item.subItems.map((sub) => {
+          if (sub.id !== subItemId) return sub;
+          const nextSub = { ...sub, ...patch };
+          if (patch.rate !== undefined) {
+            const quantity = Math.max(1, nextSub.quantity || 1);
+            nextSub.amount = roundToTwo((Number(patch.rate) || 0) * nextSub.area * quantity);
+          }
+          return nextSub;
+        });
+        return recalculateCombinationParent({ ...item, subItems: nextSubItems });
+      })
+    );
+  };
+
   const handleSaveDesignItem = (nextItem: QuotationItem) => {
     setItems((prev) => {
       if (!editingItemId) {
@@ -910,6 +989,8 @@ function CreateQuotationContent() {
                       removeItem={removeItem}
                       duplicateItem={duplicateItem}
                       onEdit={handleEditItem}
+                      onInlineUpdate={handleInlineItemUpdate}
+                      onInlineSubItemUpdate={handleInlineSubItemUpdate}
                       canRemove={items.length > 1}
                     />
                   ))}
