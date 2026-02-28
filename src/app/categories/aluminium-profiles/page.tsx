@@ -21,6 +21,7 @@ interface Product {
   kgm: number;
   length: number;
   image?: string;
+  enabled:boolean;
 }
 
 interface Size {
@@ -168,8 +169,9 @@ export default function AluminiumProfilesPage() {
         setProductsLoaded(false);
         const response = await profileApi.getProductsForSize(selectedSize);
         if (Array.isArray(response)) {
-          setProducts(response); // no filtering
-        }
+  const enabledProducts = response.filter((p: Product) => p.enabled);
+  setProducts(enabledProducts);
+}
         setProductsLoaded(true);
 
       } catch (error) {
@@ -182,7 +184,6 @@ export default function AluminiumProfilesPage() {
 
     loadProducts();
   }, [selectedSize]);
-
 
   // Get current products based on selected size
   const getCurrentProducts = (): Product[] => {
