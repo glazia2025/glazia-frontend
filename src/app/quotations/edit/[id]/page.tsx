@@ -98,7 +98,7 @@ export default function EditQuotationPage() {
   const [queryClient] = useState(() => new QueryClient());
   const [loading, setLoading] = useState(true);
   const [quotationFound, setQuotationFound] = useState(false);
-  
+
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
     name: "",
     company: "",
@@ -132,6 +132,7 @@ export default function EditQuotationPage() {
   const [error, setError] = useState<string | null>(null);
   const [isConfiguratorOpen, setIsConfiguratorOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
@@ -261,6 +262,7 @@ export default function EditQuotationPage() {
             },
           ];
         setItems(mappedItems);
+        setIsDirty(false);
         if (data.globalConfig) {
           globalConfigLocked.current = true;
           setGlobalConfig((prev) => ({
@@ -306,6 +308,25 @@ export default function EditQuotationPage() {
   useEffect(() => {
     fetchData();
   }, []);
+  useEffect(() => {
+    if (!loading) {
+      setIsDirty(true);
+    }
+  }, [items, customerDetails, quotationDetails, profitPercentage]);
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("glazia-user");
@@ -521,13 +542,27 @@ export default function EditQuotationPage() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Quotation not found</h3>
             <p className="text-gray-600 mb-6">The quotation you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
-            <Link
-              href="/quotations"
+           
+            <button
+              onClick={async () => {
+                if (isDirty) {
+                  const confirmLeave = window.confirm(
+                    "Do you want to save this quotation?"
+                  );
+
+                  if (confirmLeave) {
+                    await handleUpdate();
+                  }
+                }
+
+                setIsDirty(false);
+                router.push("/quotations");
+              }}
               className="inline-flex items-center space-x-2 px-6 py-3 bg-[#124657] text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Back to Quotations</span>
-            </Link>
+            </button>
           </div>
         </div>
       ) : (
@@ -538,593 +573,606 @@ export default function EditQuotationPage() {
             </div>
           )}
           <div className="px-4 pt-24 pb-8">
-        {/* Fixed Header with Action Buttons */}
-        <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm z-50">
-          <div className="px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Link
-                  href="/quotations"
-                  className="flex items-center space-x-2 text-gray-600 hover:text-[#124657] transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  <span>Back to Quotations</span>
-                </Link>
-                <div className="h-6 w-px bg-gray-300"></div>
-                <div>
-                  <h1 className="text-xl font-bold text-[#124657]">Edit Quotation</h1>
-                  <p className="text-sm text-gray-600">#{quotationDetails.generatedId}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleUpdate}
-                  className="flex items-center space-x-2 px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Update Quotation</span>
-                </button>
-                <button
-                  onClick={handleDownloadPDF}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download PDF</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          {isConfiguratorOpen && (
-            <div className="fixed inset-0 z-[60] bg-black/50">
-              <div className="h-full w-full bg-white p-4 md:p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">Window &amp; Door Configurator</h2>
-                    <p className="text-sm text-gray-500">Design and add to quotation.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsConfiguratorOpen(false);
-                      setEditingItemId(null);
-                    }}
-                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
-                  >
-                    Close
-                  </button>
-                </div>
-                <div className="h-[calc(100%-56px)] min-h-0">
-                  <WindowDoorConfigurator
-                    onSaveItem={handleSaveDesignItem}
-                    onClose={() => {
-                      setIsConfiguratorOpen(false);
-                      setEditingItemId(null);
-                    }}
-                    initialItem={items.find((item) => item.id === editingItemId) ?? null}
-                    profitPercentage={profitPercentage}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-          {/* Quotation Details */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <button
-                type="button"
-                onClick={() => toggleSection("quotationDetails")}
-                className="mb-6 flex w-full items-center justify-between text-left"
-              >
-                <h2 className="text-xl font-bold text-gray-900">Quotation Details</h2>
-                {expandedSections.quotationDetails ? (
-                  <ChevronUp className="h-5 w-5 text-gray-600" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-gray-600" />
-                )}
-              </button>
-              {expandedSections.quotationDetails && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    value={quotationDetails.date}
-                    onChange={(e) => setQuotationDetails({...quotationDetails, date: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Opportunity Stage
-                  </label>
-                  <select
-                    value={quotationDetails.opportunity}
-                    onChange={(e) => setQuotationDetails({...quotationDetails, opportunity: e.target.value})}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
-                  >
-                    <option value="Enquiry">Enquiry</option>
-                    <option value="Quoted">Quoted</option>
-                    <option value="Under Negotiation">Under Negotiation</option>
-                    <option value="Order Confirmed">Order Confirmed</option>
-                    <option value="Order Lost">Order Lost</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact Phone (for PDF)
-                  </label>
-                  <input
-                    type="tel"
-                    value={quotationDetails.contactPhone}
-                    onChange={(e) => setQuotationDetails({ ...quotationDetails, contactPhone: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  />
-                </div>
-              </div>
-              )}
-            </div>
-
-          {/* Customer Details */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <button
-                type="button"
-                onClick={() => toggleSection("customerDetails")}
-                className="mb-6 flex w-full items-center justify-between text-left"
-              >
-                <h2 className="text-xl font-bold text-gray-900">Customer Details</h2>
-                {expandedSections.customerDetails ? (
-                  <ChevronUp className="h-5 w-5 text-gray-600" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-gray-600" />
-                )}
-              </button>
-              {expandedSections.customerDetails && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Customer Name
-                  </label>
-                  <input
-                    type="text"
-                    value={customerDetails.name}
-                    onChange={(e) => setCustomerDetails({...customerDetails, name: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={customerDetails.email}
-                    onChange={(e) => setCustomerDetails({...customerDetails, email: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={customerDetails.phone}
-                    onChange={(e) => setCustomerDetails({...customerDetails, phone: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div className="md:col-span-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address
-                  </label>
-                  <textarea
-                    value={customerDetails.address}
-                    onChange={(e) => setCustomerDetails({...customerDetails, address: e.target.value})}
-                    rows={1}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    value={customerDetails.city}
-                    onChange={(e) => setCustomerDetails({...customerDetails, city: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    value={customerDetails.state}
-                    onChange={(e) => setCustomerDetails({...customerDetails, state: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    PIN Code
-                  </label>
-                  <input
-                    type="text"
-                    value={customerDetails.pincode}
-                    onChange={(e) => setCustomerDetails({...customerDetails, pincode: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  />
-                </div>
-              </div>
-              )}
-            </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <button
-              type="button"
-              onClick={() => toggleSection("globalConfig")}
-              className="mb-6 flex w-full items-center justify-between text-left"
-            >
-              <h2 className="text-xl font-bold text-gray-900">Global Config</h2>
-              {expandedSections.globalConfig ? (
-                <ChevronUp className="h-5 w-5 text-gray-600" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-gray-600" />
-              )}
-            </button>
-            {expandedSections.globalConfig && (
-              <>
-            <div className="mb-6 flex items-center justify-end">
-              <Link
-                href="/quotations/settings"
-                className="text-sm font-medium text-[#124657] hover:underline"
-              >
-                Manage
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo
-                </label>
-                {logoPreview && (
-                  <div className="mb-4 flex items-center gap-4">
-                    <img
-                      src={logoPreview}
-                      alt="Logo preview"
-                      className="h-16 w-auto rounded border border-gray-200 bg-white p-2"
-                    />
+            {/* Fixed Header with Action Buttons */}
+            <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm z-50">
+              <div className="px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
                     <button
-                      type="button"
-                      onClick={() =>
-                        setGlobalConfig((prev) => ({ ...prev, logoUrl: "", logo: "" }))
-                      }
-                      className="text-sm font-medium text-red-600 hover:text-red-700"
+                      onClick={async () => {
+                        if (isDirty) {
+                          const confirmLeave = window.confirm(
+                            "Do you want to save this quotation?"
+                          );
+
+                          if (confirmLeave) {
+                            await handleUpdate();
+                          }
+                        }
+
+                        setIsDirty(false);
+                        router.push("/quotations");
+                      }}
+                      className="flex items-center space-x-2 text-gray-600 hover:text-[#124657] transition-colors"
                     >
-                      Remove logo
+                      <ArrowLeft className="w-5 h-5" />
+                      <span>Back to Quotations</span>
+                    </button>
+                    <div className="h-6 w-px bg-gray-300"></div>
+                    <div>
+                      <h1 className="text-xl font-bold text-[#124657]">Edit Quotation</h1>
+                      <p className="text-sm text-gray-600">#{quotationDetails.generatedId}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={handleUpdate}
+                      className="flex items-center space-x-2 px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>Update Quotation</span>
+                    </button>
+                    <button
+                      onClick={handleDownloadPDF}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Download PDF</span>
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-8">
+              {isConfiguratorOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/50">
+                  <div className="h-full w-full bg-white p-4 md:p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900">Window &amp; Door Configurator</h2>
+                        <p className="text-sm text-gray-500">Design and add to quotation.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsConfiguratorOpen(false);
+                          setEditingItemId(null);
+                        }}
+                        className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="h-[calc(100%-56px)] min-h-0">
+                      <WindowDoorConfigurator
+                        onSaveItem={handleSaveDesignItem}
+                        onClose={() => {
+                          setIsConfiguratorOpen(false);
+                          setEditingItemId(null);
+                        }}
+                        initialItem={items.find((item) => item.id === editingItemId) ?? null}
+                        profitPercentage={profitPercentage}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Quotation Details */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <button
+                  type="button"
+                  onClick={() => toggleSection("quotationDetails")}
+                  className="mb-6 flex w-full items-center justify-between text-left"
+                >
+                  <h2 className="text-xl font-bold text-gray-900">Quotation Details</h2>
+                  {expandedSections.quotationDetails ? (
+                    <ChevronUp className="h-5 w-5 text-gray-600" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-600" />
+                  )}
+                </button>
+                {expandedSections.quotationDetails && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Date
+                      </label>
+                      <input
+                        type="date"
+                        value={quotationDetails.date}
+                        onChange={(e) => setQuotationDetails({ ...quotationDetails, date: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Opportunity Stage
+                      </label>
+                      <select
+                        value={quotationDetails.opportunity}
+                        onChange={(e) => setQuotationDetails({ ...quotationDetails, opportunity: e.target.value })}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
+                      >
+                        <option value="Enquiry">Enquiry</option>
+                        <option value="Quoted">Quoted</option>
+                        <option value="Under Negotiation">Under Negotiation</option>
+                        <option value="Order Confirmed">Order Confirmed</option>
+                        <option value="Order Lost">Order Lost</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Contact Phone (for PDF)
+                      </label>
+                      <input
+                        type="tel"
+                        value={quotationDetails.contactPhone}
+                        onChange={(e) => setQuotationDetails({ ...quotationDetails, contactPhone: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                      />
+                    </div>
+                  </div>
                 )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleLogoUpload(e.target.files?.[0] ?? null)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prerequisites of Installation
-                </label>
-                <textarea
-                  value={globalConfig.prerequisites || ""}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({ ...prev, prerequisites: e.target.value }))
-                  }
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Website
-                </label>
-                <input
-                  type="text"
-                  value={globalConfig.website || ""}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({ ...prev, website: e.target.value }))
-                  }
-                  placeholder="www.example.com"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Terms &amp; Conditions
-              </label>
-              <textarea
-                value={globalConfig.terms || ""}
-                onChange={(e) =>
-                  setGlobalConfig((prev) => ({ ...prev, terms: e.target.value }))
-                }
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-              />
-            </div>
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Installation (₹/sqft)
-                </label>
-                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={globalConfig.additionalCosts.showInstallation ?? true}
-                    onChange={(e) =>
-                      setGlobalConfig((prev) => ({
-                        ...prev,
-                        additionalCosts: {
-                          ...prev.additionalCosts,
-                          showInstallation: e.target.checked,
-                        },
-                      }))
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span>Show in PDF</span>
-                </label>
-                <input
-                  type="number"
-                  value={globalConfig.additionalCosts.installation}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({
-                      ...prev,
-                      additionalCosts: {
-                        ...prev.additionalCosts,
-                        installation: Number(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transport (₹)
-                </label>
-                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={globalConfig.additionalCosts.showTransport ?? true}
-                    onChange={(e) =>
-                      setGlobalConfig((prev) => ({
-                        ...prev,
-                        additionalCosts: {
-                          ...prev.additionalCosts,
-                          showTransport: e.target.checked,
-                        },
-                      }))
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span>Show in PDF</span>
-                </label>
-                <input
-                  type="number"
-                  value={globalConfig.additionalCosts.transport}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({
-                      ...prev,
-                      additionalCosts: {
-                        ...prev.additionalCosts,
-                        transport: Number(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Loading &amp; Unloading (₹)
-                </label>
-                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={globalConfig.additionalCosts.showLoadingUnloading ?? true}
-                    onChange={(e) =>
-                      setGlobalConfig((prev) => ({
-                        ...prev,
-                        additionalCosts: {
-                          ...prev.additionalCosts,
-                          showLoadingUnloading: e.target.checked,
-                        },
-                      }))
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span>Show in PDF</span>
-                </label>
-                <input
-                  type="number"
-                  value={globalConfig.additionalCosts.loadingUnloading}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({
-                      ...prev,
-                      additionalCosts: {
-                        ...prev.additionalCosts,
-                        loadingUnloading: Number(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Discount (%)
-                </label>
-                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={globalConfig.additionalCosts.showDiscount ?? true}
-                    onChange={(e) =>
-                      setGlobalConfig((prev) => ({
-                        ...prev,
-                        additionalCosts: {
-                          ...prev.additionalCosts,
-                          showDiscount: e.target.checked,
-                        },
-                      }))
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span>Show in PDF</span>
-                </label>
-                <input
-                  type="number"
-                  value={globalConfig.additionalCosts.discountPercent}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({
-                      ...prev,
-                      additionalCosts: {
-                        ...prev.additionalCosts,
-                        discountPercent: Number(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-            </div>
-              </>
-            )}
-          </div>
 
-          {/* Items Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Items</h2>
-              <button
-                onClick={addItem}
-                className="flex items-center space-x-2 px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Item</span>
-              </button>
-            </div>
+              {/* Customer Details */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <button
+                  type="button"
+                  onClick={() => toggleSection("customerDetails")}
+                  className="mb-6 flex w-full items-center justify-between text-left"
+                >
+                  <h2 className="text-xl font-bold text-gray-900">Customer Details</h2>
+                  {expandedSections.customerDetails ? (
+                    <ChevronUp className="h-5 w-5 text-gray-600" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-600" />
+                  )}
+                </button>
+                {expandedSections.customerDetails && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Customer Name
+                      </label>
+                      <input
+                        type="text"
+                        value={customerDetails.name}
+                        onChange={(e) => setCustomerDetails({ ...customerDetails, name: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        value={customerDetails.email}
+                        onChange={(e) => setCustomerDetails({ ...customerDetails, email: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={customerDetails.phone}
+                        onChange={(e) => setCustomerDetails({ ...customerDetails, phone: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Address
+                      </label>
+                      <textarea
+                        value={customerDetails.address}
+                        onChange={(e) => setCustomerDetails({ ...customerDetails, address: e.target.value })}
+                        rows={1}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={customerDetails.city}
+                        onChange={(e) => setCustomerDetails({ ...customerDetails, city: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        value={customerDetails.state}
+                        onChange={(e) => setCustomerDetails({ ...customerDetails, state: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        PIN Code
+                      </label>
+                      <input
+                        type="text"
+                        value={customerDetails.pincode}
+                        onChange={(e) => setCustomerDetails({ ...customerDetails, pincode: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
 
-            {/* Totals Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-600">Total Quantity</div>
-                <div className="text-lg font-bold text-gray-900">{calculateTotalQuantity()}</div>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <button
+                  type="button"
+                  onClick={() => toggleSection("globalConfig")}
+                  className="mb-6 flex w-full items-center justify-between text-left"
+                >
+                  <h2 className="text-xl font-bold text-gray-900">Global Config</h2>
+                  {expandedSections.globalConfig ? (
+                    <ChevronUp className="h-5 w-5 text-gray-600" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-gray-600" />
+                  )}
+                </button>
+                {expandedSections.globalConfig && (
+                  <>
+                    <div className="mb-6 flex items-center justify-end">
+                      <Link
+                        href="/quotations/settings"
+                        className="text-sm font-medium text-[#124657] hover:underline"
+                      >
+                        Manage
+                      </Link>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Logo
+                        </label>
+                        {logoPreview && (
+                          <div className="mb-4 flex items-center gap-4">
+                            <img
+                              src={logoPreview}
+                              alt="Logo preview"
+                              className="h-16 w-auto rounded border border-gray-200 bg-white p-2"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setGlobalConfig((prev) => ({ ...prev, logoUrl: "", logo: "" }))
+                              }
+                              className="text-sm font-medium text-red-600 hover:text-red-700"
+                            >
+                              Remove logo
+                            </button>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleLogoUpload(e.target.files?.[0] ?? null)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Prerequisites of Installation
+                        </label>
+                        <textarea
+                          value={globalConfig.prerequisites || ""}
+                          onChange={(e) =>
+                            setGlobalConfig((prev) => ({ ...prev, prerequisites: e.target.value }))
+                          }
+                          rows={4}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Website
+                        </label>
+                        <input
+                          type="text"
+                          value={globalConfig.website || ""}
+                          onChange={(e) =>
+                            setGlobalConfig((prev) => ({ ...prev, website: e.target.value }))
+                          }
+                          placeholder="www.example.com"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Terms &amp; Conditions
+                      </label>
+                      <textarea
+                        value={globalConfig.terms || ""}
+                        onChange={(e) =>
+                          setGlobalConfig((prev) => ({ ...prev, terms: e.target.value }))
+                        }
+                        rows={4}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                      />
+                    </div>
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Installation (₹/sqft)
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                          <input
+                            type="checkbox"
+                            checked={globalConfig.additionalCosts.showInstallation ?? true}
+                            onChange={(e) =>
+                              setGlobalConfig((prev) => ({
+                                ...prev,
+                                additionalCosts: {
+                                  ...prev.additionalCosts,
+                                  showInstallation: e.target.checked,
+                                },
+                              }))
+                            }
+                            className="h-4 w-4"
+                          />
+                          <span>Show in PDF</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={globalConfig.additionalCosts.installation}
+                          onChange={(e) =>
+                            setGlobalConfig((prev) => ({
+                              ...prev,
+                              additionalCosts: {
+                                ...prev.additionalCosts,
+                                installation: Number(e.target.value) || 0,
+                              },
+                            }))
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Transport (₹)
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                          <input
+                            type="checkbox"
+                            checked={globalConfig.additionalCosts.showTransport ?? true}
+                            onChange={(e) =>
+                              setGlobalConfig((prev) => ({
+                                ...prev,
+                                additionalCosts: {
+                                  ...prev.additionalCosts,
+                                  showTransport: e.target.checked,
+                                },
+                              }))
+                            }
+                            className="h-4 w-4"
+                          />
+                          <span>Show in PDF</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={globalConfig.additionalCosts.transport}
+                          onChange={(e) =>
+                            setGlobalConfig((prev) => ({
+                              ...prev,
+                              additionalCosts: {
+                                ...prev.additionalCosts,
+                                transport: Number(e.target.value) || 0,
+                              },
+                            }))
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Loading &amp; Unloading (₹)
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                          <input
+                            type="checkbox"
+                            checked={globalConfig.additionalCosts.showLoadingUnloading ?? true}
+                            onChange={(e) =>
+                              setGlobalConfig((prev) => ({
+                                ...prev,
+                                additionalCosts: {
+                                  ...prev.additionalCosts,
+                                  showLoadingUnloading: e.target.checked,
+                                },
+                              }))
+                            }
+                            className="h-4 w-4"
+                          />
+                          <span>Show in PDF</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={globalConfig.additionalCosts.loadingUnloading}
+                          onChange={(e) =>
+                            setGlobalConfig((prev) => ({
+                              ...prev,
+                              additionalCosts: {
+                                ...prev.additionalCosts,
+                                loadingUnloading: Number(e.target.value) || 0,
+                              },
+                            }))
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Discount (%)
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                          <input
+                            type="checkbox"
+                            checked={globalConfig.additionalCosts.showDiscount ?? true}
+                            onChange={(e) =>
+                              setGlobalConfig((prev) => ({
+                                ...prev,
+                                additionalCosts: {
+                                  ...prev.additionalCosts,
+                                  showDiscount: e.target.checked,
+                                },
+                              }))
+                            }
+                            className="h-4 w-4"
+                          />
+                          <span>Show in PDF</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={globalConfig.additionalCosts.discountPercent}
+                          onChange={(e) =>
+                            setGlobalConfig((prev) => ({
+                              ...prev,
+                              additionalCosts: {
+                                ...prev.additionalCosts,
+                                discountPercent: Number(e.target.value) || 0,
+                              },
+                            }))
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-600">Total Area</div>
-                <div className="text-lg font-bold text-gray-900">{calculateTotalArea().toFixed(2)} sq ft</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-600 mb-1">Profit %</div>
-                <input
-                  type="number"
-                  value={profitPercentage === 0 ? "" : profitPercentage.toString()}
-                  placeholder="0"
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === "") {
-                      setProfitPercentage(0);
-                    } else {
-                      setProfitPercentage(Number(val));
-                    }
-                  }}
-                  className="mt-1 w-20 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-600">Total Amount</div>
-                <div className="text-lg font-bold text-[#124657]">
-                  ₹
-                  {(calculateTotal() + calculateTotal() * (profitPercentage / 100)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-600">Final Amount</div>
-                <div className="text-lg font-bold text-[#124657]">
-                  ₹
-                  {calculateFinalTotal().toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-600">Final Amount with GST</div>
-                <div className="text-lg font-bold text-[#124657]">
-                  ₹
-                  {(calculateFinalTotal() + (calculateFinalTotal() * 0.18)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </div>
-            </div>
 
-            <div className="overflow-x-auto shadow-lg rounded-lg">
-              <table className="w-full border-collapse border border-gray-300 min-w-max">
-                <thead>
-                  {/* Main Header Row */}
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[60px]" rowSpan={2}>S.No</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[120px]" rowSpan={2}>Ref Code</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[120px]" rowSpan={2}>Location</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[100px]" rowSpan={2}>Width</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[100px]" rowSpan={2}>Height</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[120px]" rowSpan={2}>System Type</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[100px]" rowSpan={2}>Series</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[180px]" rowSpan={2}>Description</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[150px]" rowSpan={2}>Color Finish</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[180px]" rowSpan={2}>Glass Spec</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-blue-50 min-w-[200px]" colSpan={2}>Handle</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-green-50 min-w-[160px]" colSpan={2}>Mesh</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[150px]" rowSpan={2}>Rate</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[70px]" rowSpan={2}>Qty</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[100px]" rowSpan={2}>Ref Image</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[150px]" rowSpan={2}>Remarks</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[100px]" rowSpan={2}>Actions</th>
-                  </tr>
-                  {/* Sub Header Row */}
-                  <tr className="bg-gray-50">
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-blue-50 min-w-[100px]">Type</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-blue-50 min-w-[100px]">Color</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-green-50 min-w-[80px]">Present</th>
-                    <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-green-50 min-w-[80px]">Type</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, index) => (
-                    <QuotationItemRow
-                      key={item.id}
-                      item={item}
-                      index={index}
-                      removeItem={removeItem}
-                      duplicateItem={duplicateItem}
-                      onEdit={handleEditItem}
-                      canRemove={items.length > 1}
+              {/* Items Section */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-900">Items</h2>
+                  <button
+                    onClick={addItem}
+                    className="flex items-center space-x-2 px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Item</span>
+                  </button>
+                </div>
+
+                {/* Totals Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-600">Total Quantity</div>
+                    <div className="text-lg font-bold text-gray-900">{calculateTotalQuantity()}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-600">Total Area</div>
+                    <div className="text-lg font-bold text-gray-900">{calculateTotalArea().toFixed(2)} sq ft</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Profit %</div>
+                    <input
+                      type="number"
+                      value={profitPercentage === 0 ? "" : profitPercentage.toString()}
+                      placeholder="0"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") {
+                          setProfitPercentage(0);
+                        } else {
+                          setProfitPercentage(Number(val));
+                        }
+                      }}
+                      className="mt-1 w-20 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                     />
-                  ))}
-                </tbody>
-              </table>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-600">Total Amount</div>
+                    <div className="text-lg font-bold text-[#124657]">
+                      ₹
+                      {(calculateTotal() + calculateTotal() * (profitPercentage / 100)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-600">Final Amount</div>
+                    <div className="text-lg font-bold text-[#124657]">
+                      ₹
+                      {calculateFinalTotal().toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-600">Final Amount with GST</div>
+                    <div className="text-lg font-bold text-[#124657]">
+                      ₹
+                      {(calculateFinalTotal() + (calculateFinalTotal() * 0.18)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto shadow-lg rounded-lg">
+                  <table className="w-full border-collapse border border-gray-300 min-w-max">
+                    <thead>
+                      {/* Main Header Row */}
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[60px]" rowSpan={2}>S.No</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[120px]" rowSpan={2}>Ref Code</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[120px]" rowSpan={2}>Location</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[100px]" rowSpan={2}>Width</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[100px]" rowSpan={2}>Height</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[120px]" rowSpan={2}>System Type</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[100px]" rowSpan={2}>Series</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[180px]" rowSpan={2}>Description</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[150px]" rowSpan={2}>Color Finish</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[180px]" rowSpan={2}>Glass Spec</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-blue-50 min-w-[200px]" colSpan={2}>Handle</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-green-50 min-w-[160px]" colSpan={2}>Mesh</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[150px]" rowSpan={2}>Rate</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 w-[70px]" rowSpan={2}>Qty</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[100px]" rowSpan={2}>Ref Image</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[150px]" rowSpan={2}>Remarks</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 min-w-[100px]" rowSpan={2}>Actions</th>
+                      </tr>
+                      {/* Sub Header Row */}
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-blue-50 min-w-[100px]">Type</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-blue-50 min-w-[100px]">Color</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-green-50 min-w-[80px]">Present</th>
+                        <th className="border border-gray-300 px-3 py-3 text-sm font-semibold text-gray-700 bg-green-50 min-w-[80px]">Type</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((item, index) => (
+                        <QuotationItemRow
+                          key={item.id}
+                          item={item}
+                          index={index}
+                          removeItem={removeItem}
+                          duplicateItem={duplicateItem}
+                          onEdit={handleEditItem}
+                          canRemove={items.length > 1}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
       )}
     </QueryClientProvider>
   );

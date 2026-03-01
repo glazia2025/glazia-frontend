@@ -3321,7 +3321,7 @@ export default function WindowDoorConfigurator({
                   </select>
                 </label>
 
-                {selectedNode.systemType === "Sliding" && !selectedNode.children?.length && (
+                {/* {selectedNode.systemType === "Sliding" && !selectedNode.children?.length && (
                   <label className="text-xs text-gray-600">
                     Sliding Movement
                     <select
@@ -3340,7 +3340,7 @@ export default function WindowDoorConfigurator({
                       <option value="fixed">Fixed</option>
                     </select>
                   </label>
-                )}
+                )} */}
 
                 <label className="text-xs text-gray-600">
                   Color Finish
