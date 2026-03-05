@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ChevronDown, ChevronUp, Download, Plus, Save } from "lucide-react";
@@ -76,7 +76,9 @@ function CreateQuotationContent() {
   const [items, setItems] = useState<QuotationItem[]>([]);
   const [isConfiguratorOpen, setIsConfiguratorOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-
+  const [isDirty, setIsDirty] = useState(false);
+  const initialSnapshotRef = useRef<any>(null);
+  
   const [quotationDetails, setQuotationDetails] = useState({
     quotationNumber: "",
     date: new Date().toISOString().split("T")[0],
@@ -108,11 +110,11 @@ function CreateQuotationContent() {
     const lastNumber =
       existing.length > 0
         ? Math.max(
-            ...existing.map((q: { quotationNumber: string }) => {
-              const match = q.quotationNumber.match(/QUO-(\d+)/);
-              return match ? parseInt(match[1]) : 0;
-            })
-          )
+          ...existing.map((q: { quotationNumber: string }) => {
+            const match = q.quotationNumber.match(/QUO-(\d+)/);
+            return match ? parseInt(match[1]) : 0;
+          })
+        )
         : 0;
     return `QUO-${String(lastNumber + 1).padStart(3, "0")}`;
   };
@@ -139,6 +141,47 @@ function CreateQuotationContent() {
   useEffect(() => {
     fetchData();
   }, []);
+  useEffect(() => {
+  initialSnapshotRef.current = {
+    items,
+    customerDetails,
+    quotationDetails,
+  };
+}, []);
+
+useEffect(() => {
+  const itemHasData = items.some(
+    (item) =>
+      item.refCode ||
+      item.location ||
+      item.width > 0 ||
+      item.height > 0 ||
+      item.rate > 0
+  );
+
+  const hasChanges =
+    itemHasData ||
+    customerDetails.name.trim() !== "" ||
+    customerDetails.email.trim() !== "" ||
+    customerDetails.phone.trim() !== "";
+
+  setIsDirty(hasChanges);
+
+}, [items, customerDetails]);
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("glazia-user");
@@ -155,7 +198,7 @@ function CreateQuotationContent() {
       console.error("Error reading user data from localStorage:", error);
     }
   }, []);
-
+  
   const duplicateItem = (id: string) => {
     setItems((prev) => {
       const sourceIndex = prev.findIndex((it) => it.id === id);
@@ -329,8 +372,6 @@ function CreateQuotationContent() {
     return totalWithProfit + additionalCosts - discount;
   };
 
-
-
   const handleLogoUpload = (file: File | null) => {
     if (!file) return;
     const reader = new FileReader();
@@ -438,19 +479,34 @@ function CreateQuotationContent() {
           <div className="px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <Link
-                  href="/quotations"
+                <button
+                  onClick={async () => {
+                    if (isDirty) {
+                      const confirmLeave = window.confirm(
+                        "Do you want to save this quotation?"
+                      );
+
+                      if (confirmLeave) {
+                        await handleSave(false);
+                      }
+                    }
+
+                    setIsDirty(false);
+                    router.push("/quotations");
+                  }}
                   className="flex items-center space-x-2 text-gray-600 hover:text-[#124657] transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
                   <span>Back to Quotations</span>
-                </Link>
+                </button>
+
                 <div className="h-6 w-px bg-gray-300" />
                 <h1 className="text-xl font-bold text-[#124657]">Create New Quotation</h1>
               </div>
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={handleSave}
+                  
+                  onClick={() => handleSave()}
                   className="flex items-center space-x-2 px-4 py-2 bg-[#124657] text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                 >
                   <Save className="w-4 h-4" />
@@ -517,22 +573,22 @@ function CreateQuotationContent() {
             </button>
             {expandedSections.quotationDetails && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                <input
-                  type="date"
-                  value={quotationDetails.date}
-                  onChange={(e) => setQuotationDetails({ ...quotationDetails, date: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                  <input
+                    type="date"
+                    value={quotationDetails.date}
+                    onChange={(e) => setQuotationDetails({ ...quotationDetails, date: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Opportunity Stage
                   </label>
                   <select
                     value={quotationDetails.opportunity}
-                    onChange={(e) => setQuotationDetails({...quotationDetails, opportunity: e.target.value})}
+                    onChange={(e) => setQuotationDetails({ ...quotationDetails, opportunity: e.target.value })}
                     defaultValue="Enquiry"
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-[#124657] focus:border-[#124657] bg-white"
                   >
@@ -543,17 +599,17 @@ function CreateQuotationContent() {
                     <option value="Order Lost">Order Lost</option>
                   </select>
                 </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contact Phone (for PDF)
-                </label>
-                <input
-                  type="tel"
-                  value={quotationDetails.contactPhone}
-                  onChange={(e) => setQuotationDetails({ ...quotationDetails, contactPhone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contact Phone (for PDF)
+                  </label>
+                  <input
+                    type="tel"
+                    value={quotationDetails.contactPhone}
+                    onChange={(e) => setQuotationDetails({ ...quotationDetails, contactPhone: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -573,72 +629,72 @@ function CreateQuotationContent() {
             </button>
             {expandedSections.customerDetails && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
-                <input
-                  type="text"
-                  value={customerDetails.name}
-                  onChange={(e) => setCustomerDetails({ ...customerDetails, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                <input
-                  type="email"
-                  value={customerDetails.email}
-                  onChange={(e) => setCustomerDetails({ ...customerDetails, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                <input
-                  type="tel"
-                  value={customerDetails.phone}
-                  onChange={(e) => setCustomerDetails({ ...customerDetails, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                  required
-                />
-              </div>
-              <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                <textarea
-                  value={customerDetails.address}
-                  onChange={(e) => setCustomerDetails({ ...customerDetails, address: e.target.value })}
-                  rows={1}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                <input
-                  type="text"
-                  value={customerDetails.city}
-                  onChange={(e) => setCustomerDetails({ ...customerDetails, city: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                <input
-                  type="text"
-                  value={customerDetails.state}
-                  onChange={(e) => setCustomerDetails({ ...customerDetails, state: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">PIN Code</label>
-                <input
-                  type="text"
-                  value={customerDetails.pincode}
-                  onChange={(e) => setCustomerDetails({ ...customerDetails, pincode: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
+                  <input
+                    type="text"
+                    value={customerDetails.name}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                  <input
+                    type="email"
+                    value={customerDetails.email}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, email: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={customerDetails.phone}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, phone: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <textarea
+                    value={customerDetails.address}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, address: e.target.value })}
+                    rows={1}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                  <input
+                    type="text"
+                    value={customerDetails.city}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, city: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                  <input
+                    type="text"
+                    value={customerDetails.state}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, state: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">PIN Code</label>
+                  <input
+                    type="text"
+                    value={customerDetails.pincode}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, pincode: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -658,232 +714,232 @@ function CreateQuotationContent() {
             </button>
             {expandedSections.globalConfig && (
               <>
-            <div className="mb-6 flex items-center justify-end">
-              <Link
-                href="/quotations/settings"
-                className="text-sm font-medium text-[#124657] hover:underline"
-              >
-                Manage
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo
-                </label>
-                {logoPreview && (
-                  <div className="mb-4 flex items-center gap-4">
-                    <img
-                      src={logoPreview}
-                      alt="Logo preview"
-                      className="h-16 w-auto rounded border border-gray-200 bg-white p-2"
+                <div className="mb-6 flex items-center justify-end">
+                  <Link
+                    href="/quotations/settings"
+                    className="text-sm font-medium text-[#124657] hover:underline"
+                  >
+                    Manage
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Logo
+                    </label>
+                    {logoPreview && (
+                      <div className="mb-4 flex items-center gap-4">
+                        <img
+                          src={logoPreview}
+                          alt="Logo preview"
+                          className="h-16 w-auto rounded border border-gray-200 bg-white p-2"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setGlobalConfig((prev) => ({ ...prev, logoUrl: "", logo: "" }))
+                          }
+                          className="text-sm font-medium text-red-600 hover:text-red-700"
+                        >
+                          Remove logo
+                        </button>
+                      </div>
+                    )}
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleLogoUpload(e.target.files?.[0] ?? null)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                     />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setGlobalConfig((prev) => ({ ...prev, logoUrl: "", logo: "" }))
-                      }
-                      className="text-sm font-medium text-red-600 hover:text-red-700"
-                    >
-                      Remove logo
-                    </button>
                   </div>
-                )}
-                
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleLogoUpload(e.target.files?.[0] ?? null)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prerequisites of Installation
-                </label>
-                <textarea
-                  value={globalConfig.prerequisites || ""}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({ ...prev, prerequisites: e.target.value }))
-                  }
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Website
-                </label>
-                <input
-                  type="text"
-                  value={globalConfig.website || ""}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({ ...prev, website: e.target.value }))
-                  }
-                  placeholder="www.example.com"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Terms &amp; Conditions
-              </label>
-              <textarea
-                value={globalConfig.terms || ""}
-                onChange={(e) =>
-                  setGlobalConfig((prev) => ({ ...prev, terms: e.target.value }))
-                }
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-              />
-            </div>
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Installation (₹/sqft)
-                </label>
-                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={globalConfig.additionalCosts.showInstallation ?? true}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prerequisites of Installation
+                    </label>
+                    <textarea
+                      value={globalConfig.prerequisites || ""}
+                      onChange={(e) =>
+                        setGlobalConfig((prev) => ({ ...prev, prerequisites: e.target.value }))
+                      }
+                      rows={4}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Website
+                    </label>
+                    <input
+                      type="text"
+                      value={globalConfig.website || ""}
+                      onChange={(e) =>
+                        setGlobalConfig((prev) => ({ ...prev, website: e.target.value }))
+                      }
+                      placeholder="www.example.com"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Terms &amp; Conditions
+                  </label>
+                  <textarea
+                    value={globalConfig.terms || ""}
                     onChange={(e) =>
-                      setGlobalConfig((prev) => ({
-                        ...prev,
-                        additionalCosts: {
-                          ...prev.additionalCosts,
-                          showInstallation: e.target.checked,
-                        },
-                      }))
+                      setGlobalConfig((prev) => ({ ...prev, terms: e.target.value }))
                     }
-                    className="h-4 w-4"
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                   />
-                  <span>Show in PDF</span>
-                </label>
-                <input
-                  type="number"
-                  value={globalConfig.additionalCosts.installation}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({
-                      ...prev,
-                      additionalCosts: {
-                        ...prev.additionalCosts,
-                        installation: Number(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transport (₹)
-                </label>
-                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={globalConfig.additionalCosts.showTransport ?? true}
-                    onChange={(e) =>
-                      setGlobalConfig((prev) => ({
-                        ...prev,
-                        additionalCosts: {
-                          ...prev.additionalCosts,
-                          showTransport: e.target.checked,
-                        },
-                      }))
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span>Show in PDF</span>
-                </label>
-                <input
-                  type="number"
-                  value={globalConfig.additionalCosts.transport}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({
-                      ...prev,
-                      additionalCosts: {
-                        ...prev.additionalCosts,
-                        transport: Number(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Loading &amp; Unloading (₹)
-                </label>
-                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={globalConfig.additionalCosts.showLoadingUnloading ?? true}
-                    onChange={(e) =>
-                      setGlobalConfig((prev) => ({
-                        ...prev,
-                        additionalCosts: {
-                          ...prev.additionalCosts,
-                          showLoadingUnloading: e.target.checked,
-                        },
-                      }))
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span>Show in PDF</span>
-                </label>
-                <input
-                  type="number"
-                  value={globalConfig.additionalCosts.loadingUnloading}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({
-                      ...prev,
-                      additionalCosts: {
-                        ...prev.additionalCosts,
-                        loadingUnloading: Number(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Discount (%)
-                </label>
-                <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={globalConfig.additionalCosts.showDiscount ?? true}
-                    onChange={(e) =>
-                      setGlobalConfig((prev) => ({
-                        ...prev,
-                        additionalCosts: {
-                          ...prev.additionalCosts,
-                          showDiscount: e.target.checked,
-                        },
-                      }))
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span>Show in PDF</span>
-                </label>
-                <input
-                  type="number"
-                  value={globalConfig.additionalCosts.discountPercent}
-                  onChange={(e) =>
-                    setGlobalConfig((prev) => ({
-                      ...prev,
-                      additionalCosts: {
-                        ...prev.additionalCosts,
-                        discountPercent: Number(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-                />
-              </div>
-            </div>
+                </div>
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Installation (₹/sqft)
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={globalConfig.additionalCosts.showInstallation ?? true}
+                        onChange={(e) =>
+                          setGlobalConfig((prev) => ({
+                            ...prev,
+                            additionalCosts: {
+                              ...prev.additionalCosts,
+                              showInstallation: e.target.checked,
+                            },
+                          }))
+                        }
+                        className="h-4 w-4"
+                      />
+                      <span>Show in PDF</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={globalConfig.additionalCosts.installation}
+                      onChange={(e) =>
+                        setGlobalConfig((prev) => ({
+                          ...prev,
+                          additionalCosts: {
+                            ...prev.additionalCosts,
+                            installation: Number(e.target.value) || 0,
+                          },
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Transport (₹)
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={globalConfig.additionalCosts.showTransport ?? true}
+                        onChange={(e) =>
+                          setGlobalConfig((prev) => ({
+                            ...prev,
+                            additionalCosts: {
+                              ...prev.additionalCosts,
+                              showTransport: e.target.checked,
+                            },
+                          }))
+                        }
+                        className="h-4 w-4"
+                      />
+                      <span>Show in PDF</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={globalConfig.additionalCosts.transport}
+                      onChange={(e) =>
+                        setGlobalConfig((prev) => ({
+                          ...prev,
+                          additionalCosts: {
+                            ...prev.additionalCosts,
+                            transport: Number(e.target.value) || 0,
+                          },
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Loading &amp; Unloading (₹)
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={globalConfig.additionalCosts.showLoadingUnloading ?? true}
+                        onChange={(e) =>
+                          setGlobalConfig((prev) => ({
+                            ...prev,
+                            additionalCosts: {
+                              ...prev.additionalCosts,
+                              showLoadingUnloading: e.target.checked,
+                            },
+                          }))
+                        }
+                        className="h-4 w-4"
+                      />
+                      <span>Show in PDF</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={globalConfig.additionalCosts.loadingUnloading}
+                      onChange={(e) =>
+                        setGlobalConfig((prev) => ({
+                          ...prev,
+                          additionalCosts: {
+                            ...prev.additionalCosts,
+                            loadingUnloading: Number(e.target.value) || 0,
+                          },
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Discount (%)
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={globalConfig.additionalCosts.showDiscount ?? true}
+                        onChange={(e) =>
+                          setGlobalConfig((prev) => ({
+                            ...prev,
+                            additionalCosts: {
+                              ...prev.additionalCosts,
+                              showDiscount: e.target.checked,
+                            },
+                          }))
+                        }
+                        className="h-4 w-4"
+                      />
+                      <span>Show in PDF</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={globalConfig.additionalCosts.discountPercent}
+                      onChange={(e) =>
+                        setGlobalConfig((prev) => ({
+                          ...prev,
+                          additionalCosts: {
+                            ...prev.additionalCosts,
+                            discountPercent: Number(e.target.value) || 0,
+                          },
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                    />
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -926,7 +982,7 @@ function CreateQuotationContent() {
                   className="mt-1 w-20 px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                 />
               </div>
-             <div className="text-center">
+              <div className="text-center">
                 <div className="text-sm font-medium text-gray-600">Total Amount</div>
                 <div className="text-lg font-bold text-[#124657]">
                   ₹
