@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ChevronDown, ChevronUp, Download, Plus, Save } from "lucide-react";
@@ -77,7 +77,8 @@ function CreateQuotationContent() {
   const [isConfiguratorOpen, setIsConfiguratorOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
-
+  const initialSnapshotRef = useRef<any>(null);
+  
   const [quotationDetails, setQuotationDetails] = useState({
     quotationNumber: "",
     date: new Date().toISOString().split("T")[0],
@@ -140,17 +141,33 @@ function CreateQuotationContent() {
   useEffect(() => {
     fetchData();
   }, []);
+  useEffect(() => {
+  initialSnapshotRef.current = {
+    items,
+    customerDetails,
+    quotationDetails,
+  };
+}, []);
 
- useEffect(() => {
-  if (
-    items.length > 0 ||
-    customerDetails.name ||
-    customerDetails.email ||
-    quotationDetails.contactPhone
-  ) {
-    setIsDirty(true);
-  }
-}, [items, customerDetails, quotationDetails]);
+useEffect(() => {
+  const itemHasData = items.some(
+    (item) =>
+      item.refCode ||
+      item.location ||
+      item.width > 0 ||
+      item.height > 0 ||
+      item.rate > 0
+  );
+
+  const hasChanges =
+    itemHasData ||
+    customerDetails.name.trim() !== "" ||
+    customerDetails.email.trim() !== "" ||
+    customerDetails.phone.trim() !== "";
+
+  setIsDirty(hasChanges);
+
+}, [items, customerDetails]);
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!isDirty) return;
@@ -275,8 +292,6 @@ function CreateQuotationContent() {
       (getAdditionalCost("discountPercent") / 100) * (totalWithProfit + additionalCosts);
     return totalWithProfit + additionalCosts - discount;
   };
-
-
 
   const handleLogoUpload = (file: File | null) => {
     if (!file) return;

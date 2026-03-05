@@ -133,6 +133,7 @@ export default function EditQuotationPage() {
   const [isConfiguratorOpen, setIsConfiguratorOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  const initialSnapshotRef = useRef<any>(null);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
@@ -263,6 +264,20 @@ export default function EditQuotationPage() {
           ];
         setItems(mappedItems);
         setIsDirty(false);
+        initialSnapshotRef.current = {
+  items: mappedItems,
+  customerDetails: {
+    name: data.customerDetails?.name || "",
+    email: data.customerDetails?.email || "",
+    phone: data.customerDetails?.phone || ""
+  },
+  quotationDetails: {
+    contactPhone: qbDetails.contactPhone || "",
+    opportunity: qbDetails.opportunity || "",
+    notes: qbDetails.notes || ""
+  },
+  profitPercentage: data.breakdown?.profitPercentage || 0
+};
         if (data.globalConfig) {
           globalConfigLocked.current = true;
           setGlobalConfig((prev) => ({
@@ -308,11 +323,25 @@ export default function EditQuotationPage() {
   useEffect(() => {
     fetchData();
   }, []);
+  
   useEffect(() => {
-    if (!loading) {
-      setIsDirty(true);
-    }
-  }, [items, customerDetails, quotationDetails, profitPercentage]);
+  if (!initialSnapshotRef.current) return;
+
+  const initial = initialSnapshotRef.current;
+
+  const hasChanges =
+    JSON.stringify(initial.items) !== JSON.stringify(items) ||
+    initial.customerDetails.name !== customerDetails.name ||
+    initial.customerDetails.email !== customerDetails.email ||
+    initial.customerDetails.phone !== customerDetails.phone ||
+    initial.quotationDetails.contactPhone !== quotationDetails.contactPhone ||
+    initial.quotationDetails.opportunity !== quotationDetails.opportunity ||
+    initial.quotationDetails.notes !== quotationDetails.notes ||
+    initial.profitPercentage !== profitPercentage;
+
+  setIsDirty(hasChanges);
+
+}, [items, customerDetails, quotationDetails, profitPercentage]);
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!isDirty) return;
