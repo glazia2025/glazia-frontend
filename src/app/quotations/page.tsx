@@ -388,7 +388,7 @@ export default function QuotationsPage() {
                             {quotation.generatedId}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {(quotation.items?.length || 0)} item{(quotation.items?.length || 0) !== 1 ? 's' : ''}
+                            {quotation.items?.length||0} item{quotation.items?.length !== 1 ? 's' : ''}
                           </div>
                         </div>
                       </td>

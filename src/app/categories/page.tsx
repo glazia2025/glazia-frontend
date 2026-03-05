@@ -1,6 +1,13 @@
+import { Metadata } from "next";
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+export const metadata: Metadata = {
+  title: "Product Categories | Aluminium Profiles & Hardware by Glazia",
+  description:
+    "Browse Glazia’s complete range of aluminium profiles and hardware products. Explore premium window and door systems designed for modern fenestration solutions.",
+};
 
 export default function CategoriesPage() {
   const categories = [

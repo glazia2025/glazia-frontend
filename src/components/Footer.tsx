@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Facebook, 
-  Twitter, 
-  Instagram, 
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Facebook,
+  Twitter,
+  Instagram,
   Linkedin,
   Clock,
   Truck,
@@ -22,9 +22,12 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Company Info */}
             <div>
-              <div className="text-4xl font-semibold mb-4">
+              <Link
+                href="/"
+                className="text-4xl font-semibold mb-4 inline-block hover:text-white transition-colors"
+              >
                 GLAZIA
-              </div>
+              </Link>
               <p className="text-gray-300 mb-6 leading-relaxed">
                 Your trusted partner for premium fenestration profiles and hardware solutions with an experience of over 25 years.
               </p>
@@ -53,27 +56,42 @@ export default function Footer() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Get in Touch</h3>
               <div className="space-y-4">
-                <div className="flex items-start space-x-3">
+                <a
+                  href="https://maps.google.com/?q=Near Manesar Toll Plaza, Gurgaon, Haryana 122001"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start space-x-3 text-gray-300 hover:text-white transition-colors"
+                >
                   <MapPin className="w-5 h-5 text-[#EE1C25] mt-1 flex-shrink-0" />
-                  <div>
-                    <p className="text-gray-300">
-                      Near Manesar Toll Plaza, Gurgaon, Haryana - 122001
-                    </p>
+                  <span>
+                    Near Manesar Toll Plaza, Gurgaon, Haryana – 122001
+                  </span>
+                </a>
+                <div className="flex items-start space-x-3">
+                  <Phone className="w-5 h-5 text-[#EE1C25] mt-1 flex-shrink-0" />
+                  <div className="flex flex-col space-y-1">
+                    <a
+                      href="tel:+919958053708"
+                      className="text-gray-300 hover:text-white transition-colors"
+                    >
+                      +91 9958053708
+                    </a>
+                    <a
+                      href="tel:+919354876670"
+                      className="text-gray-300 hover:text-white transition-colors"
+                    >
+                      +91 9354876670
+                    </a>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Phone className="w-5 h-5 text-[#EE1C25]" />
-                  <div>
-                    <p className="text-gray-300">+91 9958053708</p>
-                    <p className="text-gray-300">+91 9354876670</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-5 h-5 text-[#EE1C25]" />
-                  <div>
-                    <p className="text-gray-300">sales@glazia.in</p>
-                  </div>
-                </div>
+                <a
+                  href="mailto:sales@glazia.in"
+                  className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors"
+                  aria-label="Email Glazia"
+                >
+                  <Mail className="w-5 h-5 text-[#EE1C25] flex-shrink-0" />
+                  <span>sales@glazia.in</span>
+                </a>
               </div>
             </div>
           </div>
