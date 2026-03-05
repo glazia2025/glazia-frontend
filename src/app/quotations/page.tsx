@@ -6,6 +6,7 @@ import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, File, Hand
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import PDFViewerModal from "@/components/PDFViewerModal";
 import { API_BASE_URL } from "@/services/api";
+import { apiClient } from "@/services/api";
 
 interface QuotationItem {
   id?: string;
@@ -32,9 +33,7 @@ interface QuotationItem {
 }
 
 interface Quotation {
-  _id?: string;
-  id: string;
-  generatedId?: string;
+   _id: string;
   quotationNumber?: string;
   date?: string;
   createdAt?: string;
@@ -148,16 +147,22 @@ export default function QuotationsPage() {
     return list;
   }, [enrichedQuotations, sortBy]);
 
-  const deleteQuotation = (id: string) => {
-    if (confirm('Are you sure you want to delete this quotation?')) {
-      const updatedQuotations = quotations.filter(q => {
-        const backendId = (q as { _id?: string })._id;
-        return backendId !== id && q.id !== id;
-      });
-      setQuotations(updatedQuotations);
-      setTotalQuotations((prev) => Math.max(0, prev - 1));
-    }
-  };
+  const deleteQuotation = async (id: string) => {
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this quotation?"
+  );
+  if (!confirmDelete) return;
+  try {
+   await apiClient.delete(`/api/quotations/${id}`);
+    setQuotations(prev =>
+      prev.filter(q => q._id !== id)
+    );
+
+  } catch (error) {
+    console.error("Delete failed:", error);
+    alert("Failed to delete quotation");
+  }
+};
 
   const downloadQuotationPDF = (quotation: Quotation) => {
     try {
@@ -435,7 +440,7 @@ export default function QuotationsPage() {
                             <Download className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => deleteQuotation(quotation._id || quotation.id)}
+                            onClick={() => deleteQuotation(quotation._id)}
                             className="text-red-600 hover:text-red-800 transition-colors"
                             title="Delete Quotation"
                           >
