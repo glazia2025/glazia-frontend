@@ -1271,6 +1271,8 @@ export default function EditQuotationPage() {
                           removeItem={removeItem}
                           duplicateItem={duplicateItem}
                           onEdit={handleEditItem}
+                          onInlineUpdate={handleInlineItemUpdate}
+                          onInlineSubItemUpdate={handleInlineSubItemUpdate}
                           canRemove={items.length > 1}
                         />
                       ))}

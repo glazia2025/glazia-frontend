@@ -45,6 +45,7 @@ type InlinePatch = Partial<
     | "glassSpec"
     | "handleType"
     | "handleColor"
+    | "meshType"
     | "rate"
     | "baseRate"
     | "areaSlabIndex"
@@ -149,7 +150,7 @@ function QuotationSubItemEditRow({
   }, [presetImage]);
 
   const updateWithCalculatedRate = (
-    patch: Partial<Pick<QuotationSubItem, "colorFinish" | "glassSpec" | "handleType" | "handleColor">>
+    patch: Partial<Pick<QuotationSubItem, "colorFinish" | "glassSpec" | "handleType" | "handleColor" | "meshType">>
   ) => {
     const next = {
       area: item.area,
@@ -159,7 +160,7 @@ function QuotationSubItemEditRow({
       handleType: patch.handleType ?? item.handleType,
       handleColor: patch.handleColor ?? item.handleColor,
       meshPresent: item.meshPresent,
-      meshType: item.meshType,
+      meshType: patch.meshType ?? item.meshType,
     };
     const calc = calculateRateForItem(next, descriptionsQuery.data?.descriptions, metaOptionsQuery.data);
     onInlineSubItemUpdate(parentId, item.id, {
@@ -239,7 +240,24 @@ function QuotationSubItemEditRow({
         </select>
       </td>
       <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.meshPresent)}</td>
-      <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.meshType)}</td>
+      <td className="border border-gray-200 px-2 py-2 text-xs">
+        {item.meshPresent === "Yes" ? (
+          <select
+            value={item.meshType || ""}
+            onChange={(e) => updateWithCalculatedRate({ meshType: e.target.value })}
+            className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+          >
+            <option value="">Select</option>
+            {metaOptionsQuery.data?.meshTypes.map((opt) => (
+              <option key={opt.name} value={opt.name}>
+                {opt.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="text-gray-500">NA</span>
+        )}
+      </td>
       <td className="border border-gray-200 px-2 py-2 text-xs text-right">
         <input
           type="number"
@@ -293,7 +311,7 @@ export function QuotationItemRow({
   }, [item.refImage]);
 
   const updateWithCalculatedRate = (
-    patch: Partial<Pick<QuotationItem, "colorFinish" | "glassSpec" | "handleType" | "handleColor">>
+    patch: Partial<Pick<QuotationItem, "colorFinish" | "glassSpec" | "handleType" | "handleColor" | "meshType">>
   ) => {
     const next = {
       area: item.area,
@@ -303,7 +321,7 @@ export function QuotationItemRow({
       handleType: patch.handleType ?? item.handleType,
       handleColor: patch.handleColor ?? item.handleColor,
       meshPresent: item.meshPresent,
-      meshType: item.meshType,
+      meshType: patch.meshType ?? item.meshType,
     };
     const calc = calculateRateForItem(next, descriptionsQuery.data?.descriptions, metaOptionsQuery.data);
     onInlineUpdate(item.id, {
@@ -400,7 +418,24 @@ export function QuotationItemRow({
           )}
         </td>
         <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.meshPresent)}</td>
-        <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.meshType)}</td>
+        <td className="border border-gray-300 px-2 py-2 text-sm">
+          {isCombination || item.meshPresent !== "Yes" ? (
+            <span className="text-gray-500">{isCombination ? "NA" : "-"}</span>
+          ) : (
+            <select
+              value={item.meshType || ""}
+              onChange={(e) => updateWithCalculatedRate({ meshType: e.target.value })}
+              className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+            >
+              <option value="">Select</option>
+              {metaOptionsQuery.data?.meshTypes.map((opt) => (
+                <option key={opt.name} value={opt.name}>
+                  {opt.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </td>
         <td className="border border-gray-300 px-2 py-2 text-sm text-right">
           <input
             type="number"

@@ -6,6 +6,14 @@ import {
   fetchSystems,
 } from "./api";
 
+function getQuotationToken(): string {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return localStorage.getItem("adminToken") || localStorage.getItem("authToken") || "";
+}
+
 export function useSystemsQuery() {
   return useQuery({
     queryKey: ["quotations", "systems"],
@@ -26,7 +34,7 @@ export function useSeriesQuery(systemType: string) {
 export function useDescriptionsQuery(systemType: string, series: string) {
   return useQuery({
     queryKey: ["quotations", "systems", systemType, "series", series, "descriptions"],
-    queryFn: () => fetchDescriptions(systemType, series),
+    queryFn: () => fetchDescriptions(systemType, series, getQuotationToken()),
     enabled: Boolean(systemType && series),
     retry: 1,
   });
@@ -35,7 +43,7 @@ export function useDescriptionsQuery(systemType: string, series: string) {
 export function useOptionsQuery(systemType: string) {
   return useQuery({
     queryKey: ["quotations", "options", systemType],
-    queryFn: () => fetchOptions(systemType),
+    queryFn: () => fetchOptions(systemType, getQuotationToken()),
     enabled: Boolean(systemType),
     retry: 1,
   });

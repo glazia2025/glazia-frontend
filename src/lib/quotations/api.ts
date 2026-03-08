@@ -28,19 +28,39 @@ export async function fetchSeries(systemType: string) {
   return data;
 }
 
-export async function fetchDescriptions(systemType: string, series: string) {
+export async function fetchDescriptions(
+  systemType: string,
+  series: string,
+  token?: string
+) {
   const { data } = await apiClient.get<DescriptionsResponse>(
     `/api/quotations/systems/${encodeURIComponent(
       systemType
-    )}/series/${encodeURIComponent(series)}/descriptions`
+    )}/series/${encodeURIComponent(series)}/descriptions`,
+    token
+      ? {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : undefined
   );
   return data;
 }
 
-export async function fetchOptions(systemType: string) {
+export async function fetchOptions(systemType: string, token?: string) {
   const { data } = await apiClient.get<OptionsResponse>(
     `/api/quotations/options`,
-    { params: { systemType } }
+    {
+      params: { systemType },
+      ...(token
+        ? {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        : {}),
+    }
   );
   return data;
 }
