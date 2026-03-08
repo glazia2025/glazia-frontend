@@ -100,7 +100,7 @@ return (
         <div className="w-64 bg-white rounded-2xl shadow-sm border border-gray-200 p-4 h-fit">
           <ul className="space-y-2 text-sm">
             {[
-              { key: "profileStructure", label: "Profile Structure" },
+              { key: "profileStructure", label: "Quotation Structure" },
               { key: "profileRate", label: "Profile Rate" },
               { key: "hardwareRate", label: "Hardware Rate" },
               { key: "meshRate", label: "Mesh Rate" },
