@@ -105,6 +105,8 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
           scale: 2,
           useCORS: true,
           allowTaint: true,
+          windowWidth: document.body.scrollWidth,
+windowHeight: document.body.scrollHeight,
           onclone: (clonedDoc: Document) => {
             if (doc.head && clonedDoc.head) {
               clonedDoc.head.innerHTML = "";
@@ -114,12 +116,12 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
         },
         jsPDF: {
           unit: "mm",
-          format: "a4",
+          format: "a3",
           orientation: "landscape",
         },
         pagebreak: {
-          mode: ["avoid-all", "css", "legacy"] as Array<"avoid-all" | "css" | "legacy">,
-          avoid: ["img", "p", "h1", "h2", "h3", "h4", "h5", "h6", "table", "tr", ".avoid-break"],
+          mode: ["css", "legacy"] as Array<"avoid-all" | "css" | "legacy">,
+          avoid: ["img"],
         },
       };
 
@@ -196,7 +198,7 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
             </div>
           ) : pdfUrl ? (
             <iframe
-              src={pdfUrl}
+               src={pdfUrl}
               className="w-full h-full border border-gray-300 rounded-lg"
               title="PDF Preview"
             />

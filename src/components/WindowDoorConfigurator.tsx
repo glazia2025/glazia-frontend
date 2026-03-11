@@ -1540,6 +1540,7 @@ export default function WindowDoorConfigurator({
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const layerRef = useRef<Konva.Layer | null>(null);
+  const gridGroupRef = useRef<Konva.Group | null>(null);
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const panOriginRef = useRef({ x: 0, y: 0 });
@@ -1909,7 +1910,11 @@ export default function WindowDoorConfigurator({
           requestAnimationFrame(() => resolve());
         });
       });
-      const dataUrl = stageRef.current?.toDataURL({ pixelRatio: 2 }) ?? "";
+    gridGroupRef.current ?.visible(false);
+     layerRef.current?.draw();
+      const dataUrl = stageRef.current?.toDataURL({ pixelRatio: 2}) ?? "";
+       gridGroupRef.current?.visible(true);
+       layerRef.current?.draw();
       setHideSelectionForExport(false);
       const areaSqft = mmToSqft(widthMm, heightMm);
       const leafNodes: SectionNode[] = [];
@@ -2167,14 +2172,32 @@ export default function WindowDoorConfigurator({
     });
     layer.add(panHit);
 
-    // grid
-    const gridSize = 20;
-    for (let x = 0; x <= stageSize.w; x += gridSize) {
-      layer.add(new Konva.Line({ points: [x, 0, x, stageSize.h], stroke: COLORS.grid, strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6, listening: false }));
-    }
-    for (let y = 0; y <= stageSize.h; y += gridSize) {
-      layer.add(new Konva.Line({ points: [0, y, stageSize.w, y], stroke: COLORS.grid, strokeWidth: y % (gridSize * 5) === 0 ? 1.2 : 0.6, listening: false }));
-    }
+    // grid   
+    const gridGroup = new Konva.Group();
+    gridGroupRef.current = gridGroup;
+    layer.add(gridGroup);
+
+const gridSize = 20;
+for (let x = 0; x <= stageSize.w; x += gridSize) {
+  gridGroup.add(
+    new Konva.Line({
+      points: [x, 0, x, stageSize.h],
+      stroke: COLORS.grid,
+      strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+      listening: false
+    })
+  );
+}
+for (let y = 0; y <= stageSize.h; y += gridSize) {
+  gridGroup.add(
+    new Konva.Line({
+      points: [0, y, stageSize.w, y],
+      stroke: COLORS.grid,
+      strokeWidth: y % (gridSize * 5) === 0 ? 1.2 : 0.6,
+      listening: false
+    })
+  );
+}
 
     const fx = view.offsetX;
     const fy = view.offsetY;
@@ -2635,7 +2658,7 @@ export default function WindowDoorConfigurator({
 
       // leaf label (system + size)
       g.add(new Konva.Text({
-        text: `${leaf.systemType}${leaf.series ? ` · ${leaf.series}` : ""}${leaf.description ? ` · ${leaf.description}` : ""}`,
+         text: `${leaf.systemType}${leaf.series ? ` · ${leaf.series}` : ""}`,
         x: x + 8,
         y: y + 8,
         fontSize: 12,
@@ -2682,21 +2705,22 @@ export default function WindowDoorConfigurator({
       fx - horizontalGuideBase - (maxHorizontalLevel >= 0 ? (maxHorizontalLevel + 1) * hierarchyOffset : 26);
     const mainWidthGuideY =
       fy + fh + verticalGuideBase + (maxVerticalLevel >= 0 ? (maxVerticalLevel + 1) * hierarchyOffset : 26);
-
-    addDimensionLine(layer, mainHeightGuideX, fy, mainHeightGuideX, fy + fh, "");
-    addDimensionLine(layer, fx, mainWidthGuideY, fx + fw, mainWidthGuideY, "");
+    
+    addDimensionLine(layer, mainHeightGuideX, fy, mainHeightGuideX, fy + fh, `${heightMm} `);
+    addDimensionLine(layer, fx, mainWidthGuideY, fx + fw, mainWidthGuideY, `${widthMm} `);
 
     if (root.split === "vertical" && (root.children?.length ?? 0) >= 2) {
       const y2 = fy + fh + verticalGuideBase;
+     
       root.children!.forEach((c) => {
-        addDimensionLine(layer, fx + c.x * fw, y2, fx + (c.x + c.w) * fw, y2, "");
+        addDimensionLine(layer, fx + c.x * fw, y2, fx + (c.x + c.w) * fw, y2, `${Math.round(c.w*widthMm)}`);
       });
     }
 
     if (root.split === "horizontal" && (root.children?.length ?? 0) >= 2) {
       const x2 = fx - horizontalGuideBase;
       root.children!.forEach((c) => {
-        addDimensionLine(layer, x2, fy + c.y * fh, x2, fy + (c.y + c.h) * fh, "");
+        addDimensionLine(layer, x2, fy + c.y * fh, x2, fy + (c.y + c.h) * fh, `${Math.round(heightMm * c.h)}`);
       });
     }
 
