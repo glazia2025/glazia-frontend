@@ -22,7 +22,7 @@ const imageToBase64 = (url: string): Promise<string> => {
       if (ctx) {
         ctx.drawImage(img, 0, 0);
         try {
-          const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+          const dataURL = canvas.toDataURL('image/jpeg',0.8);
           resolve(dataURL);
         } catch (error) {
           console.warn('Failed to convert image to base64:', error);
@@ -71,7 +71,7 @@ interface QuotationItemBase {
   remarks?: string;
 }
 
-interface QuotationSubItem extends QuotationItemBase {}
+interface QuotationSubItem extends QuotationItemBase { }
 
 interface QuotationItem extends QuotationItemBase {
   subItems?: QuotationSubItem[];
@@ -340,7 +340,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     baseTotal + visibleTransport + visibleInstallation + visibleLoadingUnloading - visibleDiscount;
   const gstValue = totalProjectCost * 0.18;
   const grandTotal = totalProjectCost + gstValue;
-  
+
   const totalQty = effectiveItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const avgWithoutGst = totalArea ? totalProjectCost / totalArea : 0;
   const avgWithGst = totalArea ? avgWithoutGst * 1.18 : 0;
@@ -361,6 +361,7 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     __rowNumber: item.__isSubRow ? "" : ++rowCounter,
   }));
 
+
   console.log(quotation, 'quotation>>>>');
 
   const quotationDate =
@@ -373,449 +374,688 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
   const customer = quotation.customerDetails || {};
 
   return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Quotation ${quotation.id}</title>
-      <style>
-        @page {
-          size: A3 landscape;
-          margin: 8mm; /* or whatever you want */
-        }
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        html, body {
-          width: 100%;
-        }
-        body {
-          font-family: 'Arial', sans-serif;
-          font-size: 10px;
-          color: #2b2b2b;
-          background: #ffffff;
-        }
-        .container {
-           width: 100%;
-          margin: 0;
-        }
-        .top-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8mm;
-        }
-        .user-logo {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 14px;
-          font-weight: 600;
-          text-transform: uppercase;
-          color: #ffffff;
-          background-color: #6b7280; /* fallback */
-          overflow: hidden;
-          user-select: none;
-        }
+  <!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Quotation ${quotation.id}</title>
 
-        .logo-img {
-          width: 80px;
-          height: 80px;
-          border-radius: 50%;
-        }
+<style>
+ @page {
+  size: A3 landscape;
+  margin: 8mm; /* or whatever you want */
+  }
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+ html, body {
+ width: 100%;
+}
+
+body{
+font-family:Arial, sans-serif;
+font-size:10px;
+color:#2b2b2b;
+background:#fff;
+}
+
+.container{
+width:100%;
+margin:0;
+}
+
+.top-bar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:8mm;
+}
+
+.user-logo{
+width:40px;
+height:40px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:14px;
+font-weight:600;
+ text-transform: uppercase;
+color:#fff;
+background:#6b7280;
+ overflow: hidden;
+user-select: none;
+}
+
+.logo-img{
+width:80px;
+height:80px;
+border-radius:50%
+}
+
+.logo{
+fwidth:60px;
+height:60px;
+overflow:hidden;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+.logo img{
+width:100%;
+height:100%;
+object-fit:cover;
+}
+
+.quotation-label{
+color:#E10E0E;
+font-size:16px;
+font-weight:600;
+ letter-spacing: 1px;
+}
+.contact {
+text-align: right;
+font-size: 12px;
+line-height: 1.4;
+}
+
+.navy-bar{
+background:#2F3A4F;
+color:#fff;
+height:60px;
+padding:8px;
+display:flex;
+text-align:center;
+justify-content:center; 
+font-size:24px;
+ font-weight:500;
+}
+
+.info-container{
+border:1px solid #000;
+padding:12px;
+display: flex;
+flex-direction: column;
+gap: 8px;
+
+}
+
+.info-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:6mm;
+}
+
+.info-title{
+font-size: 10px;
+font-weight: 700;
+color: #2b2b2b;
+margin-bottom:4px;
+}
+
+.info-line{
+font-size: 10px;
+ color: #2f2f2f;
+line-height:1.4;
+}
+
+.meta-card{
+border-left:1px solid #d8d8d8;
+padding:8px;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:4px 8px;
+font-size: 10px;
+}
+
+.meta-label {
+color: #444;
+}
+
+.meta-value{
+font-weight:600;
+color: #000;
+text-align:right;
+}
+
+.window-wrapper{
+margin:0;
+border:none;
+}
+.main-row{
+border-bottom:1px solid #000;
+}
+
+.window-block{
+border:1px solid #000;
+border-bottom:none;
+
+margin:0;
+position:relative;
+}
+
+.window-header{
+width:100%;
+border-collapse:collapse;
+font-size:10px;
+}
+
+.window-header td{
+border:1px solid #e0e0e0;
+padding: 0px 10px 10px 10px ;
+}
+
+.window-header .label{
+background:#f7f7f7;
+font-weight:700;
+width:15%;
+}
+
+table{
+page-break-inside:auto;
+}
+
+.window-body{
+display:flex;
+gap:0;
+padding:0px;
+align-items:stretch;
+}
+
+.window-image{
+width:40%;
+height:200px; 
+display:flex;
+align-items:center;
+justify-content:center;
+border:1px solid #e0e0e0;
+overflow:hidden;
+background:none;
+margin:0;
+}
+
+.window-image img{
+height:120%;
+width:auto;
+object-fit:cover;
+display:cover;
+}
+
+.computed-values{
+width:60%;
+padding:0;
+border:1px solid #e0e0e0;
+}
+.computed-values td[colspan="2"]{
+text-align:right;
+}
+
+.computed-title{
+font-weight:700;
+background:#f7f7f7;
+padding:0px 10px 6px 6px ;
+border:1px solid #e0e0e0;
+border-top:none;
+border-left:none; 
+border-bottom:none;
+font-size:11px;
+}
+
+.computed-values table{
+width:100%;
+border-collapse:collapse;
+font-size:10px;
+border:none;
+}
+.computed-values td{
+border:1px solid #e0e0e0;
+padding: 0px 10px 10px 10px;
+text-align:center;
+vertical-align:middle;
+}
+.computed-values tr{
+height:30px;
+}
+
+.computed-values td:nth-child(1){
+
+background:#fafafa;
+font-weight:600;
+}
+
+.computed-values td:nth-child(2){
+text-align:right;
+}
+
+.computed-values td:nth-child(3){
+text-align:left;
+color:#444;
+}
+
+tr{
+page-break-inside: avoid;
+break-inside: avoid;
+}
+
+.no-image{
+font-size:9px;
+color:#999;
+}
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.no-image {
+ font-size: 7px;
+ color: #999;
+}
+.combo-label {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+  /* SUB ROW DESIGN */
+
+.sub-row{
+margin-top:0px;
+width:100%;
+background:#fafafa;
+border-top:none;
+position:relative;
+padding:0px;
+}
+
+/* subrow table */
+
+.subrow-table{
+width:100%;
+table-layout:fixed;
+border-collapse:collapse;
+font-size:9px;
+border-bottom:1px solid #000;
+border-top:2px dashed #000;
+
+}
+.subrow-table tr:first-child td{
+border-top:none;
+}
+
+.subrow-table td{
+border:1px solid #e0e0e0;
+padding:6px 6px;
+text-align:center;
+vertical-align:middle;
+}
+
+/* header row */
+
+.subrow-header td{
+background:#f5f5f5;
+font-weight:600;
+text-align:center;
+vertical-align:middle;
+}
+
+/* image inside table */
+
+.subrow-table img{
+height:45px;
+object-fit:contain;
+}
+
+.summary{
+display:flex;
+margin:6mm 0;
+}
+
+.total-card{
+width:320px;
+border:1px solid #e5e5e5;
+border-radius:6px;
+padding:14px;
+}
+
+.total-heading{
+color:#d5272b;
+font-size:14px;
+font-weight:600;
+margin-bottom:10px;
+}
+
+.total-row{
+display:grid;
+grid-template-columns:1fr auto;
+padding:6px 0;
+border-bottom:1px solid #eaeaea;
+}
+
+.total-row:last-child{
+border-bottom:none;
+}
+
+.lists{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:6mm;
+margin-top:4mm;
+}
+
+.list-card{
+border:1px solid #d8d8d8;
+padding:10px;
+}
+
+.list-title{
+color:#d5272b;
+font-size:11px;
+font-weight:700;
+margin-bottom:6px;
+}
+
+.signature-row{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20mm;
+margin-top:10mm;
+}
+
+.sig-line{
+border-top:1px solid #000;
+padding-top:6px;
+text-align:center;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="top-bar">
+${logoSrc ? `<img class="logo-img" src="${logoSrc}" />` : `<div class="user-logo">${getInitials(userData.name)}</div>`}
+<div class="quotation-label">QUOTATION</div>
+<div class="logo">
+<img src="/new-ui/logo-sm.svg" alt="logo">
+</div>
+</div>
+
+<div class="navy-bar">${userData.name}</div> 
 
 
-        .logo {
-          font-size: 36px;
-          letter-spacing: 0.5px;
-          font-weight: 500;
-        }
-        .quotation-label {
-          color: #E10E0E;
-          font-size: 16px;
-          font-weight: 600;
-          letter-spacing: 1px;
-        }
-        .contact {
-          text-align: right;
-          font-size: 12px;
-          line-height: 1.4;
-        }
-        .navy-bar {
-          background: #2F3A4F;
-          color: #fff;
-          padding: 8px;
-          text-align: center;
-          font-size: 24px;
-          font-weight: 500;
-        }
+<div class="info-container">
 
-        .info-container {
-          border: 1px solid #000;
-          padding: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
+<div class="info-grid">
 
-        
-        .info-grid {
-          
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 6mm;
-        }
-        .info-card {
-         
-        }
-        .info-title {
-          font-size: 10px;
-          font-weight: 700;
-          color: #2b2b2b;
-          margin-bottom: 4px;
-        }
-        .info-line {
-          font-size: 10px;
-          color: #2f2f2f;
-          line-height: 1.4;
-        }
-        .meta-card {
-          border-left: 1px solid #d8d8d8;
-          padding: 8px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 4px 8px;
-          font-size: 10px;
-        }
-        .meta-label {
-          color: #444;
-        }
-        .meta-value {
-          font-weight: 600;
-          color: #000;
-          text-align: right;
-        }
-        .table-wrapper {
-          border: 1px solid #000;
-          border-radius: 2px;
-          overflow: hidden;
-          margin-bottom: 6mm;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          text-align: center;
-        }
-        .sub-row td {
-          background: #f7f7f7;
-        }
-        thead {
-          background: #f7f7f7;
-          text-align: center;
-        }
-        .head-top th {
-          background: #FFF;
-          color: #222;
-          font-size: 10px;
-          padding: 5px;
-          border: 1px solid #e0e0e0;
-          text-align: center;
-          font-weight: 700;
-        }
-        .head-sub th {
-          background: #FFF;
-          color: #222;
-          font-size: 9px;
-          padding: 4px 3px;
-          border: 1px solid #e0e0e0;
-          text-align: center;
-          font-weight: 700;
-        }
-        tbody td {
-          border: 1px solid #e0e0e0;
-          padding: 4px 3px;
-          font-size: 10px;
-          text-align: center;
-          line-height: 1.35;
-        }
-        tbody tr:nth-child(even) {
-          background: #fafafa;
-        }
-        tr {
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
+<div>
+<div class="info-title">To:</div>
+<div class="info-line"><strong>${customer.name || "-"}</strong></div>
+${customer.company ? `<div class="info-line">${customer.company}</div>` : ""}
+${customer.address ? `<div class="info-line">${customer.address}</div>` : ""}
+<div class="info-line">${[customer.city, customer.state, customer.pincode].filter(Boolean).join(", ")}</div>
+<div class="info-line">Phone: ${customer.phone || "-"}</div>
+<div class="info-line">Email: ${customer.email || "-"}</div>
+</div>
 
-        .main-row {
-          height: 32mm;
-        }
-        .text-left { text-align: left; }
-        .text-right { text-align: right; }
-        .no-image {
-          font-size: 7px;
-          color: #999;
-        }
-        .combo-label {
-          display: inline-block;
-          font-weight: 600;
-          font-size: 9px;
-          letter-spacing: 0.5px;
-        }
-        .ref-image {
-          width: 32mm;
-          object-fit: contain;
-          display: block;
-          margin: 0 auto;
-        }
-        .sub-row-image {
-          width: 22mm;
-          object-fit: contain;
-          display: block;
-          margin: 0 auto;
-        }
-        .summary {
-          display: flex;
-          justify-content: left;
-          margin: 6mm 0;
-        }
-        .total-card {
-          padding: 10px 12px;
-          width: 50%;
-        }
-        .total-heading {
-          color: #d5272b;
-          font-size: 11px;
-          font-weight: 700;
-          margin-bottom: 6px;
-        }
-        .total-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          font-size: 9px;
-          padding-top: 4px;
-          padding-bottom: 12px; 
-          border-bottom: 1px solid #000; 
-        }
-        .total-row span {
-          display: block;
-          line-height: 1.5;
-        }
-        .total-row strong {
-          font-size: 10px;
-        }
-        .lists {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 6mm;
-          margin-top: 4mm;
-        }
-        .page-break {
-          page-break-before: always;
-          break-before: page;
-        }
-        .avoid-break {
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
-        .list-card {
-          border: 1px solid #d8d8d8;
-          padding: 10px 12px;
-        }
-        .list-title {
-          color: #d5272b;
-          font-size: 11px;
-          font-weight: 700;
-          margin-bottom: 6px;
-        }
-        .list-body {
-          font-size: 9px;
-          line-height: 1.5;
-        }
-        .signature-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20mm;
-          margin-top: 10mm;
-          font-size: 9px;
-        }
-        .sig-line {
-          border-top: 1px solid #000;
-          padding-top: 6px;
-          text-align: center;
-        }
-        @media print {
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="top-bar">
-          ${logoSrc ? `<img class='logo-img' src="${logoSrc}" alt="User Logo" />` : `<div class='user-logo'>${getInitials(userData.name)}</div>`}
-          <div class="quotation-label">QUOTATION</div>
-          <div class="logo">GLAZIA</div>
-        </div>
+<div>
+<div class="info-title">From:</div>
+<div class="info-line"><strong>${userData.name}</strong></div>
+<div class="info-line">${userData.completeAddress}</div>
+<div class="info-line">${userData.city}, ${userData.state} - ${userData.pincode}</div>
+<div class="info-line">India</div>
+<div class="info-line">Phone: ${contactPhone || "-"}</div>
+<div class="info-line">GST: ${gstNumber || "-"}</div>
+${website ? `<div class="info-line">Website: ${website}</div>` : ""}
+</div>
 
-        <div class="navy-bar">${userData.name}</div>
+<div class="meta-card">
+<div>Quotation no.</div>
+<div class="meta-value">${quotation.generatedId}</div>
+<div>Date</div>
+<div class="meta-value">${new Date(quotationDate).toLocaleDateString("en-IN")}</div>
+</div>
 
-        <div class="info-container avoid-break">
+</div>
 
-        <div class="info-grid">
-          <div class="info-card">
-            <div class="info-title">To:</div>
-            <div class="info-line"><strong>${customer.name || "-"}</strong></div>
-            ${customer.company ? `<div class="info-line">${customer.company}</div>` : ""}
-            ${customer.address ? `<div class="info-line">${customer.address}</div>` : ""}
-            <div class="info-line">${[customer.city, customer.state, customer.pincode].filter(Boolean).join(", ")}</div>
-            <div class="info-line">Phone: ${customer.phone || "-"}</div>
-            <div class="info-line">Email: ${customer.email || "-"}</div>
-          </div>
-          <div class="info-card">
-            <div class="info-title">From:</div>
-            <div class="info-line"><strong>${userData.name}</strong></div>
-            <div class="info-line">${userData.completeAddress}</div>
-            <div class="info-line">${userData.city}, ${userData.state} - ${userData.pincode}</div>
-            <div class="info-line">India</div>
-            <div class="info-line">Phone: ${contactPhone || "-"}</div>
-            <div class="info-line">GST: ${gstNumber || "-"}</div>
-            ${website ? `<div class="info-line">Website: ${website}</div>` : ""}
-          </div>
-          <div class="meta-card">
-            <div class="meta-label">Quotation no.:</div><div class="meta-value">${quotation.generatedId}</div>
-            <div class="meta-label">Quote Generated on:</div><div class="meta-value">${new Date(quotationDate).toLocaleDateString("en-IN")}</div>
-          </div>
-        </div>
+<div style="margin-top:8px;font-weight:600;">
+We are pleased to submit our quotation of price of products as following :-
+</div>
 
-        <div style="font-size: 10px; font-weight: 600;">We are pleased to submit our quotation of price of products as following :-</div>
+</div>
 
-        </div>
 
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr class="head-top">
-                <th rowspan="2">S.No.</th>
-                <th rowspan="2">Ref</th>
-                <th rowspan="2">Product</th>
-                <th rowspan="2">Series</th>
-                <th rowspan="2">Width\n(mm)</th>
-                <th rowspan="2">Height\n(mm)</th>
-                <th rowspan="2">Area\n(sqft)</th>
-                <th rowspan="2">Color</th>
-                <th rowspan="2">Location</th>
-                <th rowspan="2">Description</th>
-                <th rowspan="2">Glass Spec</th>
-                <th colspan="2">Handle</th>
-                <th colspan="2">Mesh</th>
-                <th rowspan="2">Rate\n(₹/sqft)</th>
-                <th rowspan="2">Qty</th>
-                <th rowspan="2">Amount\n(₹)</th>
-                <th rowspan="2">Image</th>
-                <th rowspan="2">Remarks</th>
-              </tr>
-              <tr class="head-sub">
-                <th>Type</th>
-                <th>Color</th>
-                <th>Present</th>
-                <th>Type</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${adjustedDisplayItems.map((item) => {
-                const isCombinationParent =
-                  !item.__isSubRow && item.systemType === COMBINATION_SYSTEM;
-                const isSubRow = Boolean(item.__isSubRow);
-                const showRef = item.refCode || "-";
-                const showSystem = item.systemType || "-";
-                const showSeries = isCombinationParent ? "-" : item.series || "-";
-                const showWidth = item.width || "-";
-                const showHeight = item.height || "-";
-                const showArea = item.area?.toFixed(2) || "-";
-                const showColor = isCombinationParent ? "-" : item.colorFinish || "-";
-                const showLocation = isSubRow ? "-" : item.location || "-";
-                const showDescription = isCombinationParent ? "-" : item.description || "-";
-                const showGlass = isCombinationParent ? "-" : item.glassSpec || "-";
-                const showHandleType = isCombinationParent ? "-" : item.handleType || "-";
-                const showHandleColor = isCombinationParent ? "-" : item.handleColor || "-";
-                const showMeshPresent = isCombinationParent ? "-" : item.meshPresent || "-";
-                const showMeshType = isCombinationParent ? "-" : item.meshType || "-";
-                const showQty = isSubRow ? "-" : item.quantity || "-";
-                const showAmount = isSubRow ? "-" : formatCurrency(item.amount || 0);
-                const showRemarks = isSubRow ? "-" : item.remarks || "-";
-                return `
-                <tr class="${item.__isSubRow ? "sub-row" : "main-row"}">
-                  <td>${item.__rowNumber || ""}</td>
-                  <td>${showRef}</td>
-                  <td>${showSystem}</td>
-                  <td>${showSeries}</td>
-                  <td>${showWidth}</td>
-                  <td>${showHeight}</td>
-                  <td>${showArea}</td>
-                  <td>${showColor}</td>
-                  <td>${showLocation}</td>
-                  <td>${showDescription}</td>
-                  <td>${showGlass}</td>
-                  <td>${showHandleType}</td>
-                  <td>${showHandleColor}</td>
-                  <td>${showMeshPresent}</td>
-                  <td>${showMeshType}</td>
-                  <td>${formatCurrency(item.rate || 0)}</td>
-                  <td>${showQty}</td>
-                  <td>${showAmount}</td>
-                  <td>
-                    ${item.refImage
-                        ? `<img class="${item.__isSubRow ? "sub-row-image" : "ref-image"}" src="${item.refImage}" alt="Reference image">`
-                        : `<span class="no-image">No image</span>`}
-                  </td>
-                  <td>${showRemarks}</td>
-                </tr>
-              `;
-            }).join("")}
-            </tbody>
-          </table>
-        </div>
+<div class="window-wrapper">
+${adjustedDisplayItems.map((item,index) => {
 
-        <div class="summary avoid-break">
-          <div class="total-card">
-            <div class="total-heading">Quote Total</div>
-            <div class="total-row"><span>No. of Components</span><span class="text-right">${totalQty}</span></div>
-            <div class="total-row"><span>Total Area(sqft)</span><span class="text-right">${totalArea.toFixed(2)}</span></div>
-            <div class="total-row"><span><strong>Basic Value(₹)</strong></span><span class="text-right"><strong>${formatCurrency(baseTotal)}</strong></span></div>
-            ${showTransport && transport > 0 ? `<div class="total-row"><span>Transport(₹)</span><span class="text-right">${formatCurrency(transport)}</span></div>` : "" }
-            ${showInstallation && installation > 0 ? `<div class="total-row"><span>Installation(₹/sqft)</span><span class="text-right">${formatCurrency(installation)}</span></div>` : "" }
-            ${showLoadingUnloading && loadingUnloading > 0 ? `<div class="total-row"><span>Loading & Unloading(₹)</span><span class="text-right">${formatCurrency(loadingUnloading)}</span></div>` : "" }
-            ${showDiscount && discount > 0 ? `<div class="total-row"><span>Discount(%)</span><span class="text-right">${formatCurrency(discount)}</span></div>` : "" }
-            <div class="total-row"><span>Total Project Cost(₹)</span><span class="text-right">${formatCurrency(totalProjectCost)}</span></div>
-            <div class="total-row"><span>GST 18%(₹)</span><span class="text-right">${formatCurrency(gstValue)}</span></div>
-            <div class="total-row"><span><strong>Grand Total(₹)</strong></span><span class="text-right"><strong>${formatCurrency(grandTotal)}</strong></span></div>
-            <div class="total-row"><span>Avg. Price Per Sq. Ft. Without GST</span><span class="text-right">${formatCurrency(avgWithoutGst)}</span></div>
-            <div class="total-row"><span>Avg. Price Per Sq. Ft.</span><span class="text-right">${formatCurrency(avgWithGst)}</span></div>
-          </div>
-        </div>
+const isCombinationParent =
+!item.__isSubRow && item.systemType === COMBINATION_SYSTEM;
 
-        <div class="lists">
-          <div class="list-card avoid-break">
-            <div class="list-title">Terms & Conditions</div>
-            <div class="list-body">${quotationTerms ? nl2br(quotationTerms) : "N/A"}</div>
-          </div>
-          <div class="list-card avoid-break">
-            <div class="list-title">Pre-requisites for Installation of Windows</div>
-            <div class="list-body">${prequisites ? nl2br(prequisites) : "N/A"}</div>
-          </div>
-        </div>
+const showRef = item.refCode || "-";
+const showSystem = item.systemType || "-";
+const showSeries = isCombinationParent ? "-" : item.series || "-";
+const showWidth = item.width || "-";
+const showHeight = item.height || "-";
+const showArea = item.area?.toFixed(2) || "-";
+const showColor = isCombinationParent ? "-" : item.colorFinish || "-";
+const showLocation = item.location || "-";
+const showDescription = isCombinationParent ? "-" : item.description || "-";
+const showGlass = isCombinationParent ? "-" : item.glassSpec || "-";
+const showHandleType = isCombinationParent ? "-" : item.handleType || "-";
+const showHandleColor = isCombinationParent ? "-" : item.handleColor || "-";
+const showMeshPresent = isCombinationParent ? "-" : item.meshPresent || "-";
+const showMeshType = isCombinationParent ? "-" : item.meshType || "-";
+const showQty = item.quantity || "-";
+const showAmount = formatCurrency(item.amount || 0);
+const showRemarks = item.remarks || "-";
+const isFirstSubRow =
+item.__isSubRow && adjustedDisplayItems[index - 1]?.__isSubRow !== true;
+if(item.__isSubRow){
+const isLastSubRow =
+item.__isSubRow && adjustedDisplayItems[index + 1]?.__isSubRow !== true;
+return `
+<div class="window-block sub-row avoid-break">
 
-        <div class="signature-row avoid-break">
-          <div class="sig-line">Authorized Signatory</div>
-          <div class="sig-line">Signature of Customer</div>
-        </div>
-      </div>
-    </body>
-    </html>
+${isFirstSubRow ? `<table class="subrow-table">` : ""}
+
+${isFirstSubRow?`
+<tr class="subrow-header">
+<td rowspan="2">Ref</td>
+<td rowspan="2">Image</td>
+<td rowspan="2">Product</td>
+<td rowspan="2">Series</td>
+<td rowspan="2">Width (mm)</td>
+<td rowspan="2">Height (mm)</td>
+<td rowspan="2">Area (Sqft)</td>
+<td rowspan="2">Color</td>
+<td rowspan="2">Location</td>
+<td rowspan="2">Description</td>
+<td rowspan="2">Glass</td>
+<td colspan="2">Handle</td>
+<td colspan="2">Mesh</td>
+<td rowspan="2">Rate</td>
+<td rowspan="2">Qty</td>
+<td rowspan="2">Amount</td>
+<td rowspan="2">Remarks</td>
+</tr>
+
+<tr class="subrow-header">
+<td>Type</td>
+<td>Color</td>
+<td>Present</td>
+<td>Type</td>
+</tr>
+`:""}
+
+<tr class="subrow-data">
+<td>${showRef}</td>
+<td>
+${item.refImage ? `<img src="${item.refImage}" style="height:40px;">` : "-"}
+</td>
+<td>${showSystem}</td>
+<td>${showSeries}</td>
+<td>${showWidth}</td>
+<td>${showHeight}</td>
+<td>${showArea}</td>
+<td>${showColor}</td>
+<td>${showLocation}</td>
+<td>${showDescription}</td>
+<td>${showGlass}</td>
+<td>${showHandleType}</td>
+<td>${showHandleColor}</td>
+<td>${showMeshPresent}</td>
+<td>${showMeshType}</td>
+<td>${formatCurrency(item.rate || 0)}</td>
+<td>${showQty}</td>
+<td>${showAmount}</td>
+<td>${showRemarks}</td>
+</tr>
+${isLastSubRow ? `</table>` : ""}
+</div>
+`;
+}
+
+return `
+
+<div class="window-block avoid-break main-row">
+
+<!-- HEADER TABLE -->
+
+<table class="window-header">
+<tr>
+<td class="label"> Ref-Code :</td>
+<td>
+${showRef}
+</td>
+<td class="label">Size :</td>
+<td>W = ${showWidth}; H = ${showHeight}</td>
+<td class="label">Color :</td>
+<td>${showColor}</td
+</tr>
+<tr>
+<td class="label">Product :</td>
+<td>${showSystem}</td>
+
+<td class="label">Handle type/color :</td>
+<td>${showHandleType} - ${showHandleColor}</td>
+<td class="label">Description:</td>
+<td>${showDescription}</td>
+</tr>
+<tr>
+<td class="label">Location :</td>
+<td>${showLocation}</td>
+
+<td class="label">Glass :</td>
+<td>${showGlass}</td>
+<td class="label">Mesh type/color:</td>
+<td>${showMeshPresent} ${showMeshType}</td>
+</tr>
+</table>
+
+<!-- BODY -->
+
+<div class="window-body">
+<div class="window-image">
+${
+item.refImage
+? `<img src="${item.refImage}" alt="Window Image">`
+: `<span class="no-image">No image</span>`
+}
+
+</div>
+<div class="computed-values">
+<div class="computed-title">Computed Values</div>
+<table>
+<tr>
+<td>Series</td>
+<td colspan="2" style="text-align:center;">${showSeries}</td>
+</tr>
+
+<tr>
+<td>Area</td>
+<td>${showArea}</td>
+<td>Sqft </td>
+</tr>
+
+<tr>
+<td>Rate per Sqft</td>
+<td>${formatCurrency(item.rate || 0)}</td>
+<td>INR</td>
+</tr>
+
+<tr>
+<td>Quantity</td>
+<td>${showQty}</td>
+<td>pcs</td>
+</tr>
+
+<tr>
+<td>Amount</td>
+<td>${showAmount}</td>
+<td>INR</td>
+</tr>
+
+<tr>
+<td>Remarks</td>
+<td colspan="2" style="text-align:center;">${showRemarks}</td>
+
+</tr>
+</table>
+</div>
+</div>
+</div>
+`;
+}).join("")}
+</div>
+
+<div class="summary">
+
+<div class="total-card">
+
+<div class="total-heading">Quote Total</div>
+
+<div class="total-row"><span>No. of Components</span><span>${totalQty}</span></div>
+<div class="total-row"><span>Total Area(sqft)</span><span>${totalArea.toFixed(2)}</span></div>
+<div class="total-row"><span><strong>Basic Value</strong></span><span><strong>${formatCurrency(baseTotal)}</strong></span></div>
+
+<div class="total-row"><span>Total Project Cost</span><span>${formatCurrency(totalProjectCost)}</span></div>
+<div class="total-row"><span>GST 18%</span><span>${formatCurrency(gstValue)}</span></div>
+
+<div class="total-row"><span><strong>Grand Total</strong></span><span><strong>${formatCurrency(grandTotal)}</strong></span></div>
+
+</div>
+
+</div>
+
+
+<div class="lists">
+
+<div class="list-card">
+<div class="list-title">Terms & Conditions</div>
+<div>${quotationTerms ? nl2br(quotationTerms) : "N/A"}</div>
+</div>
+
+<div class="list-card">
+<div class="list-title">Pre-requisites for Installation of Windows</div>
+<div>${prequisites ? nl2br(prequisites) : "N/A"}</div>
+</div>
+
+</div>
+
+
+<div class="signature-row">
+
+<div class="sig-line">Authorized Signatory</div>
+<div class="sig-line">Signature of Customer</div>
+
+</div>
+
+</div>
+
+</body>
+</html>
+   
   `;
 };
 
@@ -825,15 +1065,17 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
     (quotation.items || []).map(async (item) => ({
       ...item,
       refImage: item.refImage ? await imageToBase64(item.refImage) : "",
+      
       subItems: item.subItems
         ? await Promise.all(
-            item.subItems.map(async (sub) => ({
-              ...sub,
-              refImage: sub.refImage
-                ? await imageToBase64(sub.refImage)
-                : await imageToBase64(getPresetImagePath(sub.description)),
-            }))
-          )
+          item.subItems.map(async (sub) => ({
+            ...sub,
+            refImage: sub.refImage
+              ? await imageToBase64(sub.refImage)
+              : await imageToBase64(getPresetImagePath(sub.description)),
+            //         
+          }))
+        )
         : undefined,
     }))
   );
@@ -858,13 +1100,18 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
     filename: `${quotation.generatedId}_${quotation.customerDetails?.name}.pdf`,
     image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {
-      scale: 2,
+      scale: 3,
       useCORS: true,
       allowTaint: true,
       letterRendering: true,
       logging: false,
       imageTimeout: 15000,
-      removeContainer: true,
+      backgroundColor: "#ffffff",
+      windowWidth: document.body.scrollWidth,
+      windowHeight: document.body.scrollHeight,
+
+      scrollX: 0,
+      scrollY: 0,
       onclone: (clonedDoc: Document) => {
         if (doc.head && clonedDoc.head) {
           clonedDoc.head.innerHTML = "";
@@ -873,13 +1120,14 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
       }
     },
     pagebreak: {
-      mode: ['avoid-all', 'css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
-      avoid: ['img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', '.avoid-break']
+      mode: ['css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
+       avoid: ['img']
     },
     jsPDF: {
       unit: 'mm',
       format: 'a3',
       orientation: 'portrait' as const // Use landscape for better table fit
+
     }
   };
 
