@@ -16,8 +16,12 @@ type RateRow = {
   rates: number[];
 };
 
-type OptionSetType = "meshType" | "glassSpec" | "colorFinish";
+type OptionSetType = "meshType" | "glassSpec" | "colorFinish" | "handle";
 type RateSectionType = OptionSetType;
+type FlatRateSectionType = Exclude<RateSectionType, "handle">;
+type GroupedRows = Record<string, RateRow[]>;
+type NewItemDraft = { name: string; rate: string };
+type NewHardwareDrafts = Record<string, NewItemDraft>;
 
 const SETTINGS_PREFIXES = [
   process.env.NEXT_PUBLIC_QUOTATION_SETTINGS_PATH,
@@ -104,13 +108,59 @@ function normalizeRateRow(item: unknown): RateRow {
   };
 }
 
-function normalizeOptionSetRows(data: unknown): { meshType: RateRow[]; glassSpec: RateRow[]; colorFinish: RateRow[] } {
+function extractOptionSetItems(items: unknown): RateRow[] {
+  if (Array.isArray(items)) {
+    return items.map(normalizeRateRow);
+  }
+
+  if (items && typeof items === "object") {
+    const values = Object.values(items as Record<string, unknown>);
+    return values.flatMap((value) => (Array.isArray(value) ? value.map(normalizeRateRow) : []));
+  }
+
+  return [];
+}
+
+function normalizeHandleRowsBySystem(items: unknown): GroupedRows {
+  if (!items || typeof items !== "object" || Array.isArray(items)) {
+    return {};
+  }
+
+  const rowsBySystem: GroupedRows = {};
+  Object.entries(items as Record<string, unknown>).forEach(([system, rawRows]) => {
+    if (!Array.isArray(rawRows)) {
+      return;
+    }
+
+    rowsBySystem[system] = rawRows.map((item) => {
+      const row = normalizeRateRow(item);
+      return {
+        ...row,
+        id: `${system}::${row.id || row.name}`,
+      };
+    });
+  });
+
+  return rowsBySystem;
+}
+
+function formatSystemLabel(value: string): string {
+  return value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function normalizeOptionSetRows(data: unknown): { meshType: RateRow[]; glassSpec: RateRow[]; colorFinish: RateRow[]; handle: GroupedRows } {
   const sets = extractArray(data);
 
-  const byType: Record<OptionSetType, RateRow[]> = {
+  const byType: { meshType: RateRow[]; glassSpec: RateRow[]; colorFinish: RateRow[]; handle: GroupedRows } = {
     meshType: [],
     glassSpec: [],
     colorFinish: [],
+    handle: {},
   };
 
   sets.forEach((setItem) => {
@@ -123,6 +173,7 @@ function normalizeOptionSetRows(data: unknown): { meshType: RateRow[]; glassSpec
       glassspec: "glassSpec",
       colorFinish: "colorFinish",
       colorfinish: "colorFinish",
+      handle: "handle",
     };
     const type = typeMap[rawType] ?? typeMap[rawType.toLowerCase()];
 
@@ -130,7 +181,12 @@ function normalizeOptionSetRows(data: unknown): { meshType: RateRow[]; glassSpec
       return;
     }
 
-    const rows = extractArray(setRecord.items).map(normalizeRateRow);
+    if (type === "handle") {
+      byType.handle = normalizeHandleRowsBySystem(setRecord.items);
+      return;
+    }
+
+    const rows = extractOptionSetItems(setRecord.items);
     byType[type] = rows;
   });
 
@@ -200,7 +256,7 @@ async function listOptionSetRates() {
   return normalizeOptionSetRows(data);
 }
 
-async function addOptionSetItem(type: OptionSetType, payload: { name: string; rate: number }) {
+async function addOptionSetItem(type: OptionSetType, payload: { name: string; rate: number; system?: string }) {
   return requestWithFallback("post", `/option-sets/${encodeURIComponent(type)}/items`, payload);
 }
 
@@ -351,6 +407,150 @@ function RateSection({
   );
 }
 
+type HardwareSectionProps = {
+  groupedRows: GroupedRows;
+  search: string;
+  isLoading: boolean;
+  isSaving: boolean;
+  newItems: NewHardwareDrafts;
+  onSearchChange: (value: string) => void;
+  onNewNameChange: (system: string, value: string) => void;
+  onNewRateChange: (system: string, value: string) => void;
+  onAdd: (system: string) => void;
+  onRowRateChange: (system: string, id: string, rate: number) => void;
+  onSave: () => void;
+  onReset: () => void;
+};
+
+function HardwareSection({
+  groupedRows,
+  search,
+  isLoading,
+  isSaving,
+  newItems,
+  onSearchChange,
+  onNewNameChange,
+  onNewRateChange,
+  onAdd,
+  onRowRateChange,
+  onSave,
+  onReset,
+}: HardwareSectionProps) {
+  const systems = Object.entries(groupedRows);
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-[#124657]">Hardware</h2>
+
+      <div className="bg-gray-100 rounded-lg px-4 py-3 flex justify-end">
+        <div className="relative w-full max-w-sm">
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#124657] focus:outline-none"
+          />
+        </div>
+      </div>
+
+      {isLoading && (
+        <div className="bg-white rounded-xl border border-gray-200 px-4 py-6 text-center text-gray-500">Loading...</div>
+      )}
+
+      {!isLoading && systems.length === 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 px-4 py-6 text-center text-gray-500">
+          No hardware items found.
+        </div>
+      )}
+
+      {!isLoading &&
+        systems.map(([system, rows]) => (
+          <div key={system} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+              <h3 className="text-base font-semibold text-[#124657]">{formatSystemLabel(system)}</h3>
+            </div>
+
+            <div className="px-4 py-3 border-b border-gray-100 bg-white">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_140px_auto] gap-2">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={newItems[system]?.name || ""}
+                  onChange={(e) => onNewNameChange(system, e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#124657] focus:outline-none"
+                />
+                <input
+                  type="number"
+                  placeholder="Rate"
+                  value={newItems[system]?.rate || ""}
+                  onChange={(e) => onNewRateChange(system, e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#124657] focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => onAdd(system)}
+                  disabled={isSaving}
+                  className="flex items-center justify-center gap-2 border border-[#124657] text-[#124657] px-4 py-2 rounded-md text-sm hover:bg-[#124657] hover:text-white transition disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Item
+                </button>
+              </div>
+            </div>
+
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-600">
+                <tr>
+                  <th className="px-4 py-3 text-left">Handle Name</th>
+                  <th className="px-4 py-3 text-left">Price Level</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={2} className="px-4 py-4 text-center text-gray-500">
+                      No items found.
+                    </td>
+                  </tr>
+                )}
+                {rows.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">{item.name}</td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        value={item.rate}
+                        onChange={(e) => onRowRateChange(system, item.id, asNumber(e.target.value))}
+                        className="w-28 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#124657] focus:outline-none"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+
+      <div className="flex justify-end items-center gap-4 pt-4">
+        <button type="button" onClick={onReset} className="text-gray-600 text-sm hover:text-[#124657]">
+          Reset
+        </button>
+
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={isSaving || isLoading}
+          className="bg-[#124657] text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition disabled:opacity-50"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  );
+}
+
 type ProfileRateSectionProps = {
   rows: RateRow[];
   search: string;
@@ -467,20 +667,24 @@ export default function QuotationSettingsPage() {
   const [meshSearch, setMeshSearch] = useState("");
   const [glassSearch, setGlassSearch] = useState("");
   const [colorFinishSearch, setColorFinishSearch] = useState("");
+  const [hardwareSearch, setHardwareSearch] = useState("");
 
   const [profileRows, setProfileRows] = useState<RateRow[]>([]);
   const [meshRows, setMeshRows] = useState<RateRow[]>([]);
   const [glassRows, setGlassRows] = useState<RateRow[]>([]);
   const [colorFinishRows, setColorFinishRows] = useState<RateRow[]>([]);
+  const [hardwareRows, setHardwareRows] = useState<GroupedRows>({});
 
   const [initialProfileRows, setInitialProfileRows] = useState<RateRow[]>([]);
   const [initialMeshRows, setInitialMeshRows] = useState<RateRow[]>([]);
   const [initialGlassRows, setInitialGlassRows] = useState<RateRow[]>([]);
   const [initialColorFinishRows, setInitialColorFinishRows] = useState<RateRow[]>([]);
+  const [initialHardwareRows, setInitialHardwareRows] = useState<GroupedRows>({});
 
   const [newMesh, setNewMesh] = useState({ name: "", code: "", unit: "", rate: "" });
   const [newGlass, setNewGlass] = useState({ name: "", code: "", unit: "", rate: "" });
   const [newColorFinish, setNewColorFinish] = useState({ name: "", code: "", unit: "", rate: "" });
+  const [newHardwareBySystem, setNewHardwareBySystem] = useState<NewHardwareDrafts>({});
 
   const [isRatesLoading, setIsRatesLoading] = useState(false);
   const [isRatesSaving, setIsRatesSaving] = useState(false);
@@ -511,6 +715,9 @@ export default function QuotationSettingsPage() {
 
       setColorFinishRows(optionSets.colorFinish);
       setInitialColorFinishRows(optionSets.colorFinish);
+
+      setHardwareRows(optionSets.handle);
+      setInitialHardwareRows(optionSets.handle);
     } catch (error) {
       const message =
         (error as AxiosError<{ message?: string }>)?.response?.data?.message ||
@@ -566,6 +773,21 @@ export default function QuotationSettingsPage() {
     [colorFinishRows, colorFinishSearch]
   );
 
+  const filteredHardware = useMemo(() => {
+    const query = hardwareSearch.toLowerCase().trim();
+    if (!query) {
+      return hardwareRows;
+    }
+
+    return Object.entries(hardwareRows).reduce<GroupedRows>((acc, [system, rows]) => {
+      const filtered = rows.filter((item) => item.name.toLowerCase().includes(query));
+      if (filtered.length > 0) {
+        acc[system] = filtered;
+      }
+      return acc;
+    }, {});
+  }, [hardwareRows, hardwareSearch]);
+
   const updateProfileRateValue = (id: string, index: number, value: number) => {
     setProfileRows((prev) =>
       prev.map((row) => {
@@ -594,8 +816,62 @@ export default function QuotationSettingsPage() {
     setColorFinishRows((prev) => updater(prev));
   };
 
-  const addItem = async (type: RateSectionType) => {
-    const source = type === "meshType" ? newMesh : type === "glassSpec" ? newGlass : newColorFinish;
+  const updateHardwareRate = (system: string, id: string, rate: number) => {
+    setHardwareRows((prev) => ({
+      ...prev,
+      [system]: (prev[system] || []).map((row) => (row.id === id ? { ...row, rate } : row)),
+    }));
+  };
+
+  const updateNewHardwareDraft = (system: string, field: keyof NewItemDraft, value: string) => {
+    setNewHardwareBySystem((prev) => ({
+      ...prev,
+      [system]: {
+        name: prev[system]?.name || "",
+        rate: prev[system]?.rate || "",
+        [field]: value,
+      },
+    }));
+  };
+
+  const addHardwareItem = async (system: string) => {
+    const draft = newHardwareBySystem[system] || { name: "", rate: "" };
+    const name = draft.name.trim();
+    const rate = asNumber(draft.rate);
+
+    if (!name) {
+      setStatus("Name is required.");
+      return;
+    }
+
+    setIsRatesSaving(true);
+    try {
+      await addOptionSetItem("handle", { name, rate, system });
+      await fetchRates();
+      setNewHardwareBySystem((prev) => ({
+        ...prev,
+        [system]: { name: "", rate: "" },
+      }));
+      setStatus("Item added.");
+    } catch (error) {
+      const message =
+        (error as AxiosError<{ message?: string }>)?.response?.data?.message ||
+        (error as Error).message ||
+        "Failed to add item.";
+      setStatus(message);
+    } finally {
+      setIsRatesSaving(false);
+      window.setTimeout(() => setStatus(""), 2200);
+    }
+  };
+
+  const addItem = async (type: FlatRateSectionType) => {
+    const source =
+      type === "meshType"
+        ? newMesh
+        : type === "glassSpec"
+          ? newGlass
+          : newColorFinish;
 
     const name = source.name.trim();
     const rate = asNumber(source.rate);
@@ -654,7 +930,32 @@ export default function QuotationSettingsPage() {
   };
 
   const saveSectionRates = async (type: RateSectionType) => {
-    const rows = type === "meshType" ? meshRows : type === "glassSpec" ? glassRows : colorFinishRows;
+    if (type === "handle") {
+      setIsRatesSaving(true);
+      try {
+        const allHandleRows = Object.values(hardwareRows).flat();
+        await Promise.all(allHandleRows.map((row) => setOptionSetRate("handle", row.name, row.rate)));
+        await fetchRates();
+        setStatus("Rates updated.");
+      } catch (error) {
+        const message =
+          (error as AxiosError<{ message?: string }>)?.response?.data?.message ||
+          (error as Error).message ||
+          "Failed to update rates.";
+        setStatus(message);
+      } finally {
+        setIsRatesSaving(false);
+        window.setTimeout(() => setStatus(""), 2200);
+      }
+      return;
+    }
+
+    const rows =
+      type === "meshType"
+        ? meshRows
+        : type === "glassSpec"
+          ? glassRows
+          : colorFinishRows;
 
     setIsRatesSaving(true);
     try {
@@ -685,6 +986,10 @@ export default function QuotationSettingsPage() {
     }
     if (type === "glassSpec") {
       setGlassRows(initialGlassRows);
+      return;
+    }
+    if (type === "handle") {
+      setHardwareRows(initialHardwareRows);
       return;
     }
     setColorFinishRows(initialColorFinishRows);
@@ -733,6 +1038,7 @@ export default function QuotationSettingsPage() {
                 { key: "colorFinishRate", label: "Colour Finish Rate" },
                 { key: "meshRate", label: "Mesh Rate" },
                 { key: "glassRate", label: "Glass Rate" },
+                { key: "hardwareRate", label: "Hardware" },
               ].map((item) => (
                 <li
                   key={item.key}
@@ -974,6 +1280,23 @@ export default function QuotationSettingsPage() {
                 onAdd={() => void addItem("colorFinish")}
                 onSave={() => void saveSectionRates("colorFinish")}
                 onReset={() => resetSectionRates("colorFinish")}
+              />
+            )}
+
+            {activeTab === "hardwareRate" && (
+              <HardwareSection
+                groupedRows={filteredHardware}
+                search={hardwareSearch}
+                isLoading={isRatesLoading}
+                isSaving={isRatesSaving}
+                newItems={newHardwareBySystem}
+                onSearchChange={setHardwareSearch}
+                onNewNameChange={(system, value) => updateNewHardwareDraft(system, "name", value)}
+                onNewRateChange={(system, value) => updateNewHardwareDraft(system, "rate", value)}
+                onAdd={(system) => void addHardwareItem(system)}
+                onRowRateChange={updateHardwareRate}
+                onSave={() => void saveSectionRates("handle")}
+                onReset={() => resetSectionRates("handle")}
               />
             )}
           </div>
