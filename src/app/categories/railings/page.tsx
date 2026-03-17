@@ -217,6 +217,36 @@ export default function RailingsPage() {
 
 
   return (
+    <>
+    <script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: "https://glazia.in"
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Categories",
+          item: "https://glazia.in/categories"
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: "Railings",
+          item: "https://glazia.in/categories/railings"
+        }
+      ]
+    })
+  }}
+/>
       <div className="" style={{ backgroundColor: '#FFF' }}>
         <Header />
   
@@ -447,5 +477,6 @@ export default function RailingsPage() {
           onClose={() => setIsLoginModalOpen(false)}
         />
       </div>
+      </>
     );
 }

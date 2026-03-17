@@ -123,9 +123,61 @@ export default function TechnicalSpecs() {
   };
 
   return (
+    <>
+    <script
+type="application/ld+json"
+dangerouslySetInnerHTML={{
+__html: JSON.stringify({
+"@context": "https://schema.org",
+"@type": "Product",
+"name": "Glazia Aluminium Systems",
+"review": [
+{
+"@type": "Review",
+"author": {
+"@type": "Person",
+"name": "Sunil Vashisht"
+},
+"reviewRating": {
+"@type": "Rating",
+"ratingValue": "5",
+"bestRating": "5"
+},
+"reviewBody": "In this industry, consistency matters more than promises. With Glazia, what is committed is exactly what is delivered. The aluminium profiles, finishes, and overall system quality have helped us reduce rework on site and improve customer satisfaction."
+},
+{
+"@type": "Review",
+"author": {
+"@type": "Person",
+"name": "Saurabh Passi"
+},
+"reviewRating": {
+"@type": "Rating",
+"ratingValue": "5",
+"bestRating": "5"
+},
+"reviewBody": "What stood out for us with Glazia is their structured approach. From product selection to pricing transparency and timely material availability, everything is streamlined. It has helped us quote faster and execute projects smoothly."
+},
+{
+"@type": "Review",
+"author": {
+"@type": "Person",
+"name": "Brajanrayan Mishara"
+},
+"reviewRating": {
+"@type": "Rating",
+"ratingValue": "5",
+"bestRating": "5"
+},
+"reviewBody": "Good systems are rare in the aluminium window business. Glazia brings clarity with standardised profiles, dependable quality, and responsive support. Since working with them, our execution timelines have improved and client confidence has gone up."
+}
+]
+})
+}}
+/>
     <section className="py-8 bg-white">
       <div className="container mx-auto px-4">
-       
+
 
         {/* Performance Features */}
         <div className="mb-16">
@@ -139,7 +191,8 @@ export default function TechnicalSpecs() {
               <li>Valued for smooth operation and clean detailing across everyday usage</li>
               <li>Relied on for long-term reliability in residential and large-scale projects</li>
             </ul>
-            <img src="/new-ui/why.svg" alt="Why Glazia" />
+            <Image src="/new-ui/why.svg" alt="Why Glazia aluminium system" width={600}
+              height={400} />
           </div>
         </div>
 
@@ -149,7 +202,7 @@ export default function TechnicalSpecs() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+
             <div className="mx-auto w-full rounded-2xl bg-white p-10 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
               <div className="flex justify-center gap-2">
                 {[...Array(5)].map((_, i) => (
@@ -163,7 +216,7 @@ export default function TechnicalSpecs() {
                 In this industry, consistency matters more than promises. With Glazia, what is committed is exactly what is delivered. The aluminium profiles, finishes, and overall system quality have helped us reduce rework on site and improve customer satisfaction. Their team understands a fabricator’s challenges and works like a true partner rather than just a supplier.
               </p>
               <div className="mt-8 flex items-center gap-4">
-                
+
 
                 <div className="leading-tight">
                   <div className="text-lg font-extrabold text-slate-900">
@@ -189,7 +242,7 @@ export default function TechnicalSpecs() {
                 What stood out for us with Glazia is their structured approach. From product selection to pricing transparency and timely material availability, everything is streamlined. It has helped us quote faster, execute projects smoothly, and maintain better margins. Glazia is building something very relevant for serious fabricators who want to scale professionally.
               </p>
               <div className="mt-8 flex items-center gap-4">
-                
+
 
                 <div className="leading-tight">
                   <div className="text-lg font-extrabold text-slate-900">
@@ -234,41 +287,41 @@ export default function TechnicalSpecs() {
         {/* Technical Data Sheet Download */}
       </div>
       <div className="bg-[#D6DADE] mt-12 text-center p-12">
-          <h3 className="text-3xl font-[500] text-gray-900 text-center mb-2">
-            Need Detailed Technical Information?
-          </h3>
+        <h3 className="text-3xl font-[500] text-gray-900 text-center mb-2">
+          Need Detailed Technical Information?
+        </h3>
 
-          <h5 className="text-[#606060] text-sm mb-8">
-            Everything you need to evaluate, specify, or implement Glazia systems.
-          </h5>
+        <h5 className="text-[#606060] text-sm mb-8">
+          Everything you need to evaluate, specify, or implement Glazia systems.
+        </h5>
 
-          <div className="bg-[#F7F8F8] grid grid-cols-1 md:grid-cols-2 gap-8 rounded-xl p-8 max-w-3xl mx-auto">
+        <div className="bg-[#F7F8F8] grid grid-cols-1 md:grid-cols-2 gap-8 rounded-xl p-8 max-w-3xl mx-auto">
 
-            <div className="flex flex-col items-start text-left gap-12">
-              <div className="flex gap-2 justify-start items-center">
-                <div className="h-2 w-2 bg-[#EE1C25]" />
-                <div className="text-black font-semibold text-[18px]">Talk to Our Team</div>
-              </div>
-              <div  className="text-[#444E61] text-[18px]">Get expert assistance for product selection, technical queries, or project-specific requirements.</div>
-               <Link href="/contact">
-                <button className="bg-[#EE1C25] text-white font-medium py-3 px-6 rounded-lg transition-colors">
-                  Contact Us
-                </button>
-              </Link>
+          <div className="flex flex-col items-start text-left gap-12">
+            <div className="flex gap-2 justify-start items-center">
+              <div className="h-2 w-2 bg-[#EE1C25]" />
+              <div className="text-black font-semibold text-[18px]">Talk to Our Team</div>
             </div>
+            <div className="text-[#444E61] text-[18px]">Get expert assistance for product selection, technical queries, or project-specific requirements.</div>
+            <Link href="/contact">
+              <button className="bg-[#EE1C25] text-white font-medium py-3 px-6 rounded-lg transition-colors">
+                Contact Us
+              </button>
+            </Link>
+          </div>
 
-            <div className="flex flex-col items-start text-left gap-12">
-              <div className="flex gap-2 justify-start items-center">
-                <div className="h-2 w-2 bg-[#EE1C25]" />
-                <div className="text-black font-semibold text-[18px]">Download Technical Brochure</div>
-              </div>
-              <div className="text-[#444E61] text-[18px]">Access detailed specifications, performance data, and installation guidelines for Glazia products.</div>
-               <button  onClick={handleDownloadCatalogue}className="bg-[#EE1C25] text-white font-medium py-3 px-6 rounded-lg transition-colors">
-                  Download Catalogue
-                </button>
+          <div className="flex flex-col items-start text-left gap-12">
+            <div className="flex gap-2 justify-start items-center">
+              <div className="h-2 w-2 bg-[#EE1C25]" />
+              <div className="text-black font-semibold text-[18px]">Download Technical Brochure</div>
             </div>
+            <div className="text-[#444E61] text-[18px]">Access detailed specifications, performance data, and installation guidelines for Glazia products.</div>
+            <button onClick={handleDownloadCatalogue} className="bg-[#EE1C25] text-white font-medium py-3 px-6 rounded-lg transition-colors">
+              Download Catalogue
+            </button>
           </div>
         </div>
+      </div>
 
       <PhoneTrackModal
         isOpen={isPhoneModalOpen}
@@ -279,5 +332,6 @@ export default function TechnicalSpecs() {
         description="Please share your phone number to download the technical catalogue."
       />
     </section>
+    </>
   );
 }

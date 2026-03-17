@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const slides = [
@@ -10,7 +11,8 @@ const slides = [
     title: "Premium Aluminium Profiles",
     subtitle: "High performance System Aluminium",
     description: "Discover our extensive range of Aluminium. Create energy-efficient and durable Aluminium fenestration products with Glazia's premium profile systems.",
-    image: "/new-ui/hero.png",
+    image: "/new-ui/hero.webp",
+    alt: "Premium aluminium window profiles by Glazia",
     cta: "Explore Profiles",
     link: "/categories/aluminium-profiles"
   },
@@ -19,7 +21,8 @@ const slides = [
     title: "Professional Hardware",
     subtitle: "Complete Hardware Solutions for Aluminium",
     description: "From hinges and handles to locking systems and operators, find everything you need for professional windoors installation and operation.",
-    image: "/new-ui/hero.png",
+    image: "/new-ui/hardware.webp",
+    alt: "High quality window and door hardware by Glazia",
     cta: "Shop Hardware",
     link: "/categories/hardware"
   },
@@ -28,7 +31,8 @@ const slides = [
     title: "Premium Railings",
     subtitle: "Elegant Aluminum Railing Systems",
     description: "Explore our comprehensive range of aluminum railings for balconies, staircases, and architectural applications. Combining safety, durability, and aesthetic appeal.",
-    image: "/new-ui/hero.png",
+    image: "/new-ui/Railing.webp",
+    alt: "Modern glass railing systems by Glazia",
     cta: "View Railings",
     link: "/categories/railings"
   }
@@ -64,10 +68,12 @@ export default function Hero() {
           }`}
         >
           <div className="absolute inset-0">
-            <img
+            <Image
               src={slide.image}
-              alt={slide.title}
-              className="w-full h-full object-cover"
+              alt={slide.alt}
+              fill
+              priority={index===0}
+              className="object-cover"
             />
 
             {/* Dark Overlay */}
@@ -100,12 +106,14 @@ export default function Hero() {
       {/* Navigation Arrows */}
       <button
         onClick={prevSlide}
+        aria-label="Previous slide"
         className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors z-20"
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
       <button
         onClick={nextSlide}
+         aria-label="Next slide"
         className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors z-20"
       >
         <ChevronRight className="w-6 h-6" />
@@ -117,6 +125,7 @@ export default function Hero() {
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}
+             aria-label={`Go to slide ${index + 1}`}
             className={`w-3 h-3 rounded-full transition-colors ${
               index === currentSlide ? 'bg-white' : 'bg-white/50'
             }`}
