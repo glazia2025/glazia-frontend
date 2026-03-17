@@ -28,6 +28,10 @@ interface QuotationItemBase {
   amount: number;
   refImage: string;
   remarks: string;
+  hasExhaustFan?: boolean;
+  exhaustFanX?: number;
+  exhaustFanY?: number;
+  exhaustFanSize?: number;
   baseRate?: number;
   areaSlabIndex?: number;
 }
@@ -65,6 +69,7 @@ interface Props {
 }
 
 const COMBINATION_SYSTEM = "Combination";
+const CATALOG_SYSTEMS = new Set(["Casement", "Sliding", "Slide N Fold"]);
 const AREA_SLABS = [
   { max: 20, index: 0 },
   { max: 40, index: 1 },
@@ -139,9 +144,10 @@ function QuotationSubItemEditRow({
 }) {
   const [imageError, setImageError] = useState(false);
   const presetImage = getPresetImagePath(item.description);
-  const optionsSystemType = item.systemType || "Casement";
+  const supportsCatalogOptions = CATALOG_SYSTEMS.has(item.systemType || "");
+  const optionsSystemType = supportsCatalogOptions ? item.systemType || "Casement" : "";
   const metaOptionsQuery = useOptionsQuery(optionsSystemType);
-  const descriptionsQuery = useDescriptionsQuery(optionsSystemType, item.series || "");
+  const descriptionsQuery = useDescriptionsQuery(optionsSystemType, supportsCatalogOptions ? item.series || "" : "");
   const selectedHandleOption =
     metaOptionsQuery.data?.handleOptions.find((opt) => opt.name === item.handleType) ?? null;
 
@@ -183,65 +189,81 @@ function QuotationSubItemEditRow({
       <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.series)}</td>
       <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.description)}</td>
       <td className="border border-gray-200 px-2 py-2 text-xs">
-        <select
-          value={item.colorFinish || ""}
-          onChange={(e) => updateWithCalculatedRate({ colorFinish: e.target.value })}
-          className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-        >
-          <option value="">Select</option>
-          {metaOptionsQuery.data?.colorFinishes.map((opt) => (
-            <option key={opt.name} value={opt.name}>
-              {opt.name}
-            </option>
-          ))}
-        </select>
+        {supportsCatalogOptions ? (
+          <select
+            value={item.colorFinish || ""}
+            onChange={(e) => updateWithCalculatedRate({ colorFinish: e.target.value })}
+            className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+          >
+            <option value="">Select</option>
+            {metaOptionsQuery.data?.colorFinishes.map((opt) => (
+              <option key={opt.name} value={opt.name}>
+                {opt.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="text-gray-500">NA</span>
+        )}
       </td>
       <td className="border border-gray-200 px-2 py-2 text-xs">
-        <select
-          value={item.glassSpec || ""}
-          onChange={(e) => updateWithCalculatedRate({ glassSpec: e.target.value })}
-          className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-        >
-          <option value="">Select</option>
-          {metaOptionsQuery.data?.glassSpecs.map((opt) => (
-            <option key={opt.name} value={opt.name}>
-              {opt.name}
-            </option>
-          ))}
-        </select>
+        {supportsCatalogOptions ? (
+          <select
+            value={item.glassSpec || ""}
+            onChange={(e) => updateWithCalculatedRate({ glassSpec: e.target.value })}
+            className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+          >
+            <option value="">Select</option>
+            {metaOptionsQuery.data?.glassSpecs.map((opt) => (
+              <option key={opt.name} value={opt.name}>
+                {opt.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="text-gray-500">NA</span>
+        )}
       </td>
       <td className="border border-gray-200 px-2 py-2 text-xs">
-        <select
-          value={item.handleType || ""}
-          onChange={(e) => updateWithCalculatedRate({ handleType: e.target.value, handleColor: "" })}
-          className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-        >
-          <option value="">Select</option>
-          {metaOptionsQuery.data?.handleOptions.map((opt) => (
-            <option key={opt.name} value={opt.name}>
-              {opt.name}
-            </option>
-          ))}
-        </select>
+        {supportsCatalogOptions ? (
+          <select
+            value={item.handleType || ""}
+            onChange={(e) => updateWithCalculatedRate({ handleType: e.target.value, handleColor: "" })}
+            className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+          >
+            <option value="">Select</option>
+            {metaOptionsQuery.data?.handleOptions.map((opt) => (
+              <option key={opt.name} value={opt.name}>
+                {opt.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="text-gray-500">NA</span>
+        )}
       </td>
       <td className="border border-gray-200 px-2 py-2 text-xs">
-        <select
-          value={item.handleColor || ""}
-          onChange={(e) => updateWithCalculatedRate({ handleColor: e.target.value })}
-          disabled={!item.handleType}
-          className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-2 focus:ring-[#124657] focus:border-transparent"
-        >
-          <option value="">Select</option>
-          {(selectedHandleOption?.colors ?? []).map((opt) => (
-            <option key={opt.name} value={opt.name}>
-              {opt.name}
-            </option>
-          ))}
-        </select>
+        {supportsCatalogOptions ? (
+          <select
+            value={item.handleColor || ""}
+            onChange={(e) => updateWithCalculatedRate({ handleColor: e.target.value })}
+            disabled={!item.handleType}
+            className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+          >
+            <option value="">Select</option>
+            {(selectedHandleOption?.colors ?? []).map((opt) => (
+              <option key={opt.name} value={opt.name}>
+                {opt.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="text-gray-500">NA</span>
+        )}
       </td>
       <td className="border border-gray-200 px-2 py-2 text-xs">{formatValue(item.meshPresent)}</td>
       <td className="border border-gray-200 px-2 py-2 text-xs">
-        {item.meshPresent === "Yes" ? (
+        {supportsCatalogOptions && item.meshPresent === "Yes" ? (
           <select
             value={item.meshType || ""}
             onChange={(e) => updateWithCalculatedRate({ meshType: e.target.value })}
@@ -300,9 +322,10 @@ export function QuotationItemRow({
 }: Props) {
   const [imageError, setImageError] = useState(false);
   const isCombination = item.systemType === COMBINATION_SYSTEM;
-  const optionsSystemType = isCombination ? "" : item.systemType || "Casement";
+  const supportsCatalogOptions = !isCombination && CATALOG_SYSTEMS.has(item.systemType || "");
+  const optionsSystemType = supportsCatalogOptions ? item.systemType || "Casement" : "";
   const metaOptionsQuery = useOptionsQuery(optionsSystemType);
-  const descriptionsQuery = useDescriptionsQuery(optionsSystemType, isCombination ? "" : item.series || "");
+  const descriptionsQuery = useDescriptionsQuery(optionsSystemType, supportsCatalogOptions ? item.series || "" : "");
   const selectedHandleOption =
     metaOptionsQuery.data?.handleOptions.find((opt) => opt.name === item.handleType) ?? null;
 
@@ -345,7 +368,7 @@ export function QuotationItemRow({
         <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.series)}</td>
         <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.description)}</td>
         <td className="border border-gray-300 px-2 py-2 text-sm">
-          {isCombination ? (
+          {isCombination || !supportsCatalogOptions ? (
             <span className="text-gray-500">NA</span>
           ) : (
             <select
@@ -363,7 +386,7 @@ export function QuotationItemRow({
           )}
         </td>
         <td className="border border-gray-300 px-2 py-2 text-sm">
-          {isCombination ? (
+          {isCombination || !supportsCatalogOptions ? (
             <span className="text-gray-500">NA</span>
           ) : (
             <select
@@ -381,7 +404,7 @@ export function QuotationItemRow({
           )}
         </td>
         <td className="border border-gray-300 px-2 py-2 text-sm">
-          {isCombination ? (
+          {isCombination || !supportsCatalogOptions ? (
             <span className="text-gray-500">NA</span>
           ) : (
             <select
@@ -399,7 +422,7 @@ export function QuotationItemRow({
           )}
         </td>
         <td className="border border-gray-300 px-2 py-2 text-sm">
-          {isCombination ? (
+          {isCombination || !supportsCatalogOptions ? (
             <span className="text-gray-500">NA</span>
           ) : (
             <select
@@ -419,7 +442,7 @@ export function QuotationItemRow({
         </td>
         <td className="border border-gray-300 px-2 py-2 text-sm">{formatValue(item.meshPresent)}</td>
         <td className="border border-gray-300 px-2 py-2 text-sm">
-          {isCombination || item.meshPresent !== "Yes" ? (
+          {isCombination || !supportsCatalogOptions || item.meshPresent !== "Yes" ? (
             <span className="text-gray-500">{isCombination ? "NA" : "-"}</span>
           ) : (
             <select

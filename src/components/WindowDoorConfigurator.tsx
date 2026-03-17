@@ -16,7 +16,7 @@ import type { Description, HandleOption, OptionWithRate, OptionsResponse } from 
 import type { QuotationItem, QuotationSubItem } from "@/components/QuotationItemRow";
 
 type SplitDirection = "none" | "vertical" | "horizontal";
-type SystemType = "Casement" | "Sliding" | "Slide N Fold";
+type SystemType = "Casement" | "Sliding" | "Slide N Fold" | "Louvers" | "Exhaust Fan";
 type SashType = "fixed" | "left" | "right" | "double" | "top" | "bottom";
 type YesNo = "Yes" | "No";
 
@@ -32,6 +32,10 @@ type SectionNode = {
   systemType: SystemType;
   series: string;
   description: string;
+  hasExhaustFan?: boolean;
+  exhaustFanX?: number;
+  exhaustFanY?: number;
+  exhaustFanSize?: number;
   panelFractions?: number[];
   panelMeshCount?: number;
   panelSashes?: SashType[];
@@ -95,6 +99,7 @@ const AREA_SLABS = [
   { max: Infinity, index: 2 },
 ];
 const COMBINATION_SYSTEM = "Combination";
+const CATALOG_SYSTEMS = new Set<SystemType>(["Casement", "Sliding", "Slide N Fold"]);
 const roundToTwo = (value: number) => Number(value.toFixed(2));
 const applyProfitToRate = (rate: number, profitPercentage: number) =>
   profitPercentage > 0 ? roundToTwo(rate + (rate * profitPercentage) / 100) : roundToTwo(rate);
@@ -111,6 +116,28 @@ const indexToAlphaLower = (index: number): string => {
 const buildDefaultSlidingPanelSashes = (count: number): SashType[] =>
   Array.from({ length: count }, (_, idx) => (idx % 2 === 0 ? "left" : "right"));
 
+const isCatalogSystem = (systemType: string): systemType is Extract<SystemType, "Casement" | "Sliding" | "Slide N Fold"> =>
+  CATALOG_SYSTEMS.has(systemType as SystemType);
+
+const isLouverSystem = (systemType: string) => systemType === "Louvers";
+const isExhaustSystem = (systemType: string) => systemType === "Exhaust Fan";
+
+const getDefaultLeafDescription = (
+  systemType: SystemType,
+  productType: ProductMeta["productType"],
+  hasExhaustFan = false
+) => {
+  if (isLouverSystem(systemType)) return "Louvers";
+  if (isExhaustSystem(systemType)) return "Exhaust Fan";
+  if (hasExhaustFan && systemType === "Casement") return "Fix + Exhaust Fan";
+  return `${systemType} ${productType}`;
+};
+
+const DEFAULT_EXHAUST_FAN_X = 0.5;
+const DEFAULT_EXHAUST_FAN_Y = 0.5;
+const DEFAULT_EXHAUST_FAN_SIZE = 0.48;
+const clampValue = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+
 const createRoot = (baseSystem: SystemType): SectionNode => ({
   id: "root",
   x: 0,
@@ -122,8 +149,12 @@ const createRoot = (baseSystem: SystemType): SectionNode => ({
   sash: "fixed",
   systemType: baseSystem,
   series: "",
-  description: "",
-  glass: "No",
+  description: isLouverSystem(baseSystem) ? "Louvers" : isExhaustSystem(baseSystem) ? "Exhaust Fan" : "",
+  hasExhaustFan: isExhaustSystem(baseSystem),
+  exhaustFanX: DEFAULT_EXHAUST_FAN_X,
+  exhaustFanY: DEFAULT_EXHAUST_FAN_Y,
+  exhaustFanSize: DEFAULT_EXHAUST_FAN_SIZE,
+  glass: isExhaustSystem(baseSystem) || isLouverSystem(baseSystem) ? "Yes" : "No",
   mesh: "No",
 });
 
@@ -147,8 +178,12 @@ const createLeaf = (
   sash,
   systemType,
   series: "",
-  description: "",
-  glass,
+  description: isLouverSystem(systemType) ? "Louvers" : isExhaustSystem(systemType) ? "Exhaust Fan" : "",
+  hasExhaustFan: isExhaustSystem(systemType),
+  exhaustFanX: DEFAULT_EXHAUST_FAN_X,
+  exhaustFanY: DEFAULT_EXHAUST_FAN_Y,
+  exhaustFanSize: DEFAULT_EXHAUST_FAN_SIZE,
+  glass: isExhaustSystem(systemType) ? "Yes" : glass,
   mesh,
 });
 
@@ -171,6 +206,23 @@ const buildPreset = (systemType: SystemType, glass: YesNo, mesh: YesNo): Section
       createLeaf(1 / 3, 0, 1 / 3, 1, "right", "Slide N Fold", glass, mesh),
       createLeaf(2 / 3, 0, 1 / 3, 1, "right", "Slide N Fold", glass, mesh),
     ];
+    return root;
+  }
+
+  if (systemType === "Louvers") {
+    root.description = "Louvers";
+    root.glass = "Yes";
+    root.mesh = "No";
+    root.sash = "fixed";
+    return root;
+  }
+
+  if (systemType === "Exhaust Fan") {
+    root.description = "Exhaust Fan";
+    root.hasExhaustFan = true;
+    root.glass = "Yes";
+    root.mesh = "No";
+    root.sash = "fixed";
     return root;
   }
 
@@ -244,6 +296,10 @@ const buildSplitChildren = (
       if (idx === 0) {
         leaf.series = node.series;
         leaf.description = node.description;
+        leaf.hasExhaustFan = node.hasExhaustFan;
+        leaf.exhaustFanX = node.exhaustFanX;
+        leaf.exhaustFanY = node.exhaustFanY;
+        leaf.exhaustFanSize = node.exhaustFanSize;
         leaf.panelFractions = node.panelFractions;
         leaf.panelMeshCount = node.panelMeshCount;
       }
@@ -269,6 +325,10 @@ const buildSplitChildren = (
     if (idx === 0) {
       leaf.series = node.series;
       leaf.description = node.description;
+      leaf.hasExhaustFan = node.hasExhaustFan;
+      leaf.exhaustFanX = node.exhaustFanX;
+      leaf.exhaustFanY = node.exhaustFanY;
+      leaf.exhaustFanSize = node.exhaustFanSize;
       leaf.panelFractions = node.panelFractions;
       leaf.panelMeshCount = node.panelMeshCount;
     }
@@ -283,7 +343,13 @@ const mmToSqft = (wMm: number, hMm: number) => {
 };
 
 const normalizeSystemType = (value?: string): SystemType => {
-  if (value === "Sliding" || value === "Slide N Fold" || value === "Casement") {
+  if (
+    value === "Sliding" ||
+    value === "Slide N Fold" ||
+    value === "Casement" ||
+    value === "Louvers" ||
+    value === "Exhaust Fan"
+  ) {
     return value;
   }
   return "Casement";
@@ -364,6 +430,13 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
     node.mesh = (pattern.meshCount ?? 0) > 0 ? "Yes" : node.mesh;
   };
 
+  const normalizeLeafDescription = (systemType: SystemType, description: string, hasExhaustFan?: boolean) => {
+    if (isLouverSystem(systemType)) return "Louvers";
+    if (isExhaustSystem(systemType)) return "Exhaust Fan";
+    if (hasExhaustFan && systemType === "Casement") return "Fix";
+    return description;
+  };
+
   if (hasSubItems) {
     // Infer split direction from persisted sub-item geometry.
     // Vertical split: each child tends to match frame height.
@@ -384,6 +457,9 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
       const totalWidth = ordered.reduce((sum, sub) => sum + (sub.width || 0), 0) || width;
       let cursor = 0;
       root.children = ordered.map((sub, idx) => {
+        const childHasExhaustFan =
+          Boolean(sub.hasExhaustFan) || sub.systemType === "Exhaust Fan" || (sub.description || "").includes("Exhaust Fan");
+        const normalizedSystemType = normalizeSystemType(sub.systemType);
         const frac = (sub.width || width / ordered.length) / totalWidth;
         const safeFrac = Number.isFinite(frac) && frac > 0 ? frac : 1 / ordered.length;
         const child = createLeaf(
@@ -392,12 +468,16 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
           safeFrac,
           1,
           sub.systemType === "Sliding" ? (idx % 2 === 0 ? "left" : "right") : "fixed",
-          normalizeSystemType(sub.systemType),
-          yesNoFromValue(sub.glassSpec),
+          normalizedSystemType,
+          normalizedSystemType === "Exhaust Fan" ? "Yes" : yesNoFromValue(sub.glassSpec),
           yesNoFromValue(sub.meshPresent)
         );
         child.series = sub.series || "";
-        child.description = sub.description || "";
+        child.hasExhaustFan = childHasExhaustFan;
+        child.exhaustFanX = typeof sub.exhaustFanX === "number" ? sub.exhaustFanX : DEFAULT_EXHAUST_FAN_X;
+        child.exhaustFanY = typeof sub.exhaustFanY === "number" ? sub.exhaustFanY : DEFAULT_EXHAUST_FAN_Y;
+        child.exhaustFanSize = typeof sub.exhaustFanSize === "number" ? sub.exhaustFanSize : DEFAULT_EXHAUST_FAN_SIZE;
+        child.description = normalizeLeafDescription(normalizedSystemType, sub.description || "", childHasExhaustFan);
         applySlidingPatternFromDescription(child);
         cursor += safeFrac;
         return child;
@@ -418,6 +498,9 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
       const totalHeight = ordered.reduce((sum, sub) => sum + (sub.height || 0), 0) || height;
       let cursor = 0;
       root.children = ordered.map((sub, idx) => {
+        const childHasExhaustFan =
+          Boolean(sub.hasExhaustFan) || sub.systemType === "Exhaust Fan" || (sub.description || "").includes("Exhaust Fan");
+        const normalizedSystemType = normalizeSystemType(sub.systemType);
         const frac = (sub.height || height / ordered.length) / totalHeight;
         const safeFrac = Number.isFinite(frac) && frac > 0 ? frac : 1 / ordered.length;
         const child = createLeaf(
@@ -426,12 +509,16 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
           1,
           safeFrac,
           sub.systemType === "Sliding" ? (idx % 2 === 0 ? "left" : "right") : "fixed",
-          normalizeSystemType(sub.systemType),
-          yesNoFromValue(sub.glassSpec),
+          normalizedSystemType,
+          normalizedSystemType === "Exhaust Fan" ? "Yes" : yesNoFromValue(sub.glassSpec),
           yesNoFromValue(sub.meshPresent)
         );
         child.series = sub.series || "";
-        child.description = sub.description || "";
+        child.hasExhaustFan = childHasExhaustFan;
+        child.exhaustFanX = typeof sub.exhaustFanX === "number" ? sub.exhaustFanX : DEFAULT_EXHAUST_FAN_X;
+        child.exhaustFanY = typeof sub.exhaustFanY === "number" ? sub.exhaustFanY : DEFAULT_EXHAUST_FAN_Y;
+        child.exhaustFanSize = typeof sub.exhaustFanSize === "number" ? sub.exhaustFanSize : DEFAULT_EXHAUST_FAN_SIZE;
+        child.description = normalizeLeafDescription(normalizedSystemType, sub.description || "", childHasExhaustFan);
         applySlidingPatternFromDescription(child);
         cursor += safeFrac;
         return child;
@@ -452,8 +539,13 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
   } else {
     root.systemType = sourceSystem;
     root.series = item.series || "";
-    root.description = item.description || "";
-    root.glass = yesNoFromValue(item.glassSpec);
+    root.hasExhaustFan =
+      Boolean(item.hasExhaustFan) || item.systemType === "Exhaust Fan" || (item.description || "").includes("Exhaust Fan");
+    root.exhaustFanX = typeof item.exhaustFanX === "number" ? item.exhaustFanX : DEFAULT_EXHAUST_FAN_X;
+    root.exhaustFanY = typeof item.exhaustFanY === "number" ? item.exhaustFanY : DEFAULT_EXHAUST_FAN_Y;
+    root.exhaustFanSize = typeof item.exhaustFanSize === "number" ? item.exhaustFanSize : DEFAULT_EXHAUST_FAN_SIZE;
+    root.description = normalizeLeafDescription(sourceSystem, item.description || "", root.hasExhaustFan);
+    root.glass = sourceSystem === "Exhaust Fan" ? "Yes" : yesNoFromValue(item.glassSpec);
     root.mesh = yesNoFromValue(item.meshPresent);
     applySlidingPatternFromDescription(root);
   }
@@ -1314,6 +1406,136 @@ const drawSlideNFoldSixPanelOnePlusFiveGuide = (
   );
 };
 
+const drawLouversGuide = (
+  group: Konva.Group,
+  x: number,
+  y: number,
+  w: number,
+  h: number
+) => {
+  const slatCount = Math.max(5, Math.min(8, Math.floor(h / 42)));
+  const gap = h / (slatCount + 1);
+  for (let idx = 0; idx < slatCount; idx += 1) {
+    const topY = y + gap * (idx + 0.6);
+    const bottomY = topY + Math.max(10, gap * 0.34);
+    group.add(
+      new Konva.Line({
+        points: [x + w * 0.06, topY, x + w * 0.94, topY],
+        stroke: "#0F172A",
+        strokeWidth: 2.2,
+        listening: false,
+      })
+    );
+    group.add(
+      new Konva.Line({
+        points: [x + w * 0.12, bottomY, x + w * 0.94, topY],
+        stroke: "#0F172A",
+        strokeWidth: 2.2,
+        listening: false,
+      })
+    );
+  }
+};
+
+const getExhaustFanGeometry = (
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  centerXRatio = DEFAULT_EXHAUST_FAN_X,
+  centerYRatio = DEFAULT_EXHAUST_FAN_Y,
+  sizeRatio = DEFAULT_EXHAUST_FAN_SIZE
+) => {
+  const fanSize = clampValue(sizeRatio, 0.2, 0.9);
+  const centerX = x + w * clampValue(centerXRatio, 0.18, 0.82);
+  const centerY = y + h * clampValue(centerYRatio, 0.18, 0.82);
+  const radius = Math.min(w, h) * fanSize * 0.5;
+  const outerRadius = radius * 1.18;
+  return {
+    centerX,
+    centerY,
+    radius,
+    outerRadius,
+    diameter: outerRadius * 2,
+  };
+};
+
+const drawExhaustFanGuide = (
+  group: Konva.Group,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  centerXRatio = DEFAULT_EXHAUST_FAN_X,
+  centerYRatio = DEFAULT_EXHAUST_FAN_Y,
+  sizeRatio = DEFAULT_EXHAUST_FAN_SIZE
+) => {
+  const { centerX, centerY, radius, outerRadius } = getExhaustFanGeometry(
+    x,
+    y,
+    w,
+    h,
+    centerXRatio,
+    centerYRatio,
+    sizeRatio
+  );
+
+  group.add(
+    new Konva.Circle({
+      x: centerX,
+      y: centerY,
+      radius: outerRadius,
+      stroke: "#111111",
+      strokeWidth: 3,
+      listening: false,
+    })
+  );
+  group.add(
+    new Konva.Circle({
+      x: centerX,
+      y: centerY,
+      radius: radius * 0.32,
+      fill: "#FFFFFF",
+      stroke: "#111111",
+      strokeWidth: 2,
+      listening: false,
+    })
+  );
+
+  for (let idx = 0; idx < 4; idx += 1) {
+    const startAngle = (-90 + idx * 90) * (Math.PI / 180);
+    const endAngle = startAngle + Math.PI / 3;
+    const bladePoints = [
+      centerX + Math.cos(startAngle) * (radius * 0.42),
+      centerY + Math.sin(startAngle) * (radius * 0.42),
+      centerX + Math.cos(endAngle - 0.18) * radius,
+      centerY + Math.sin(endAngle - 0.18) * radius,
+      centerX + Math.cos(endAngle) * (radius * 0.54),
+      centerY + Math.sin(endAngle) * (radius * 0.54),
+    ];
+    group.add(
+      new Konva.Line({
+        points: bladePoints,
+        closed: true,
+        fill: "#FFFFFF",
+        stroke: "#111111",
+        strokeWidth: 2,
+        listening: false,
+      })
+    );
+  }
+
+  group.add(
+    new Konva.Line({
+      points: [centerX, y + h * 0.1, centerX, y + h * 0.36],
+      stroke: "#111111",
+      strokeWidth: 1.5,
+      listening: false,
+      opacity: 0.45,
+    })
+  );
+};
+
 const parsePanelPattern = (desc: string): { fractions: number[]; meshCount?: number } | null => {
   const panelGroup = desc.match(/(\d+)\s*Panel\s*\((\d+)\+(\d+)\)/i);
   if (panelGroup) {
@@ -1658,6 +1880,11 @@ export default function WindowDoorConfigurator({
 
   const root = present;
   const selectedNode = (selectedId ? findNode(root, selectedId) : null) ?? root;
+  const selectedSystemSupportsCatalog = isCatalogSystem(selectedNode.systemType);
+  const canInsertExhaustFan =
+    selectedNode.systemType === "Casement" && selectedNode.description === "Fix" && !selectedNode.children?.length;
+  const hasAdjustableExhaustFan =
+    !selectedNode.children?.length && (selectedNode.systemType === "Exhaust Fan" || Boolean(selectedNode.hasExhaustFan));
   const isSlidingPanelSelection =
     selectedNode.systemType === "Sliding" &&
     !selectedNode.children?.length &&
@@ -1667,13 +1894,19 @@ export default function WindowDoorConfigurator({
     selectedSlidingPanelIndex < (selectedNode.panelFractions?.length ?? 0);
   const showSummaryPopup = selectedId !== null;
   const systemsQuery = useSystemsQuery();
-  const selectedSeriesQuery = useSeriesQuery(selectedNode.systemType);
-  const selectedDescriptionsQuery = useDescriptionsQuery(selectedNode.systemType, selectedNode.series);
-  const optionsSystemType = selectedNode.systemType || baseSystemType;
+  const selectedSeriesQuery = useSeriesQuery(selectedSystemSupportsCatalog ? selectedNode.systemType : "");
+  const selectedDescriptionsQuery = useDescriptionsQuery(
+    selectedSystemSupportsCatalog ? selectedNode.systemType : "",
+    selectedSystemSupportsCatalog ? selectedNode.series : ""
+  );
+  const optionsSystemType = selectedSystemSupportsCatalog ? selectedNode.systemType || baseSystemType : "";
   const metaOptionsQuery = useOptionsQuery(optionsSystemType);
-  const systemOptions = systemsQuery.data?.systems ?? ["Casement", "Sliding", "Slide N Fold"];
+  const systemOptions = Array.from(
+    new Set([...(systemsQuery.data?.systems ?? ["Casement", "Sliding", "Slide N Fold"]), "Louvers", "Exhaust Fan"])
+  );
   const selectableSystemOptions = systemOptions.filter(
-    (sys): sys is SystemType => sys === "Casement" || sys === "Sliding" || sys === "Slide N Fold"
+    (sys): sys is SystemType =>
+      sys === "Casement" || sys === "Sliding" || sys === "Slide N Fold" || sys === "Louvers" || sys === "Exhaust Fan"
   );
   const seriesOptions = selectedSeriesQuery.data?.series ?? [];
   const descriptionOptions = selectedDescriptionsQuery.data?.descriptions ?? [];
@@ -2050,7 +2283,7 @@ export default function WindowDoorConfigurator({
         const leafMeta = getLeafSectionMeta(leaf.id);
         const systemType = leaf.systemType;
         const series = leaf.series || "";
-        const description = leaf.description || `${systemType} ${meta.productType}`;
+        const description = leaf.description || getDefaultLeafDescription(systemType, meta.productType, leaf.hasExhaustFan);
         const itemArea = mmToSqft(leaf.w * widthMm, leaf.h * heightMm);
         const descriptions = await getDescriptions(systemType, series);
         const options = await getOptions(systemType);
@@ -2093,6 +2326,10 @@ export default function WindowDoorConfigurator({
           amount: roundToTwo(quantity * roundToTwo(resolvedRate) * itemArea),
           refImage: "",
           remarks: meta.remarks || "",
+          hasExhaustFan: Boolean(leaf.hasExhaustFan),
+          exhaustFanX: leaf.exhaustFanX ?? DEFAULT_EXHAUST_FAN_X,
+          exhaustFanY: leaf.exhaustFanY ?? DEFAULT_EXHAUST_FAN_Y,
+          exhaustFanSize: leaf.exhaustFanSize ?? DEFAULT_EXHAUST_FAN_SIZE,
           baseRate: calc.baseRate,
           areaSlabIndex: calc.areaSlabIndex,
         };
@@ -2113,7 +2350,8 @@ export default function WindowDoorConfigurator({
       if (!isCombination && singleLeaf) {
         const systemType = singleLeaf.systemType;
         const series = singleLeaf.series || "";
-        const description = singleLeaf.description || `${systemType} ${meta.productType}`;
+        const description =
+          singleLeaf.description || getDefaultLeafDescription(systemType, meta.productType, singleLeaf.hasExhaustFan);
         const descriptions = await getDescriptions(systemType, series);
         const options = await getOptions(systemType);
         const calc = calculateRateForItem(
@@ -2155,7 +2393,8 @@ export default function WindowDoorConfigurator({
         series: isCombination ? "" : singleLeaf?.series || "",
         description: isCombination
           ? ""
-          : singleLeaf?.description || `${singleLeaf?.systemType || baseSystemType} ${meta.productType}`,
+          : singleLeaf?.description ||
+            getDefaultLeafDescription(singleLeaf?.systemType || baseSystemType, meta.productType, singleLeaf?.hasExhaustFan),
         colorFinish: isCombination ? "" : meta.colorFinish,
         glassSpec: isCombination
           ? ""
@@ -2172,6 +2411,10 @@ export default function WindowDoorConfigurator({
         amount,
         refImage: dataUrl,
         remarks: meta.remarks || "",
+        hasExhaustFan: isCombination ? false : Boolean(singleLeaf?.hasExhaustFan),
+        exhaustFanX: isCombination ? undefined : singleLeaf?.exhaustFanX ?? DEFAULT_EXHAUST_FAN_X,
+        exhaustFanY: isCombination ? undefined : singleLeaf?.exhaustFanY ?? DEFAULT_EXHAUST_FAN_Y,
+        exhaustFanSize: isCombination ? undefined : singleLeaf?.exhaustFanSize ?? DEFAULT_EXHAUST_FAN_SIZE,
         baseRate,
         areaSlabIndex,
         subItems: isCombination ? subItems : [],
@@ -2505,6 +2748,27 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
 
         const isOneOf = (...variants: string[]) => variants.includes(desc);
 
+        if (leaf.systemType === "Louvers" || desc === "Louvers") {
+          fixedPanel(innerX, innerY, innerW, innerH);
+          drawLouversGuide(g, innerX, innerY, innerW, innerH);
+          return true;
+        }
+
+        if (leaf.systemType === "Exhaust Fan" || leaf.hasExhaustFan || desc === "Exhaust Fan" || desc === "Fix + Exhaust Fan") {
+          fixedPanel(innerX, innerY, innerW, innerH);
+          drawExhaustFanGuide(
+            g,
+            innerX,
+            innerY,
+            innerW,
+            innerH,
+            leaf.exhaustFanX,
+            leaf.exhaustFanY,
+            leaf.exhaustFanSize
+          );
+          return true;
+        }
+
         if (desc === "Fix") {
           fixedPanel(innerX, innerY, innerW, innerH);
           return true;
@@ -2655,6 +2919,8 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
       const isSliding = leaf.systemType === "Sliding";
       const hasSlidingPanels = isSliding && (leaf.panelFractions?.length ?? 0) > 1;
       const isSlideFold = leaf.systemType === "Slide N Fold";
+      const isLouver = leaf.systemType === "Louvers";
+      const isExhaust = leaf.systemType === "Exhaust Fan" || Boolean(leaf.hasExhaustFan);
       const isCustomSlideNFoldPattern =
         isSlideFold &&
         (isSlideNFoldTwoPanelOnePlusOne(leaf.description || "") ||
@@ -2662,7 +2928,7 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
           isSlideNFoldFourPanelOnePlusThree(leaf.description || "") ||
           isSlideNFoldFivePanelOnePlusFour(leaf.description || "") ||
           isSlideNFoldSixPanelOnePlusFive(leaf.description || ""));
-      const isOpenable = !isSliding && !isSlideFold && leaf.sash !== "fixed";
+      const isOpenable = !isSliding && !isSlideFold && !isLouver && !isExhaust && leaf.sash !== "fixed";
       const isSlidingMove = isSliding && (leaf.sash === "left" || leaf.sash === "right" || leaf.sash === "double");
 
       if (isOpenable) {
@@ -2751,6 +3017,42 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
           opacity: 0.65,
           listening: false,
         }));
+      }
+
+      if (isExhaust) {
+        const fanGeometry = getExhaustFanGeometry(
+          x + inset,
+          y + inset,
+          w - inset * 2,
+          h - inset * 2,
+          leaf.exhaustFanX,
+          leaf.exhaustFanY,
+          leaf.exhaustFanSize
+        );
+        const fanDiameterMm = Math.round(
+          Math.min(leaf.w * widthMm, leaf.h * heightMm) *
+            clampValue(leaf.exhaustFanSize ?? DEFAULT_EXHAUST_FAN_SIZE, 0.2, 0.9) *
+            1.18
+        );
+        const dimOffset = 22;
+
+        addDimensionLine(
+          g,
+          fanGeometry.centerX - fanGeometry.outerRadius,
+          fanGeometry.centerY - fanGeometry.outerRadius - dimOffset,
+          fanGeometry.centerX + fanGeometry.outerRadius,
+          fanGeometry.centerY - fanGeometry.outerRadius - dimOffset,
+          `${fanDiameterMm} mm`
+        );
+
+        addDimensionLine(
+          g,
+          fanGeometry.centerX + fanGeometry.outerRadius + dimOffset,
+          fanGeometry.centerY - fanGeometry.outerRadius,
+          fanGeometry.centerX + fanGeometry.outerRadius + dimOffset,
+          fanGeometry.centerY + fanGeometry.outerRadius,
+          `${fanDiameterMm} mm`
+        );
       }
 
       // leaf label (system + size)
@@ -2942,6 +3244,9 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
           handleColor: subItems[idx].handleColor || "",
           meshType: subItems[idx].meshType || "",
         };
+        leaf.exhaustFanX = typeof subItems[idx].exhaustFanX === "number" ? subItems[idx].exhaustFanX : leaf.exhaustFanX;
+        leaf.exhaustFanY = typeof subItems[idx].exhaustFanY === "number" ? subItems[idx].exhaustFanY : leaf.exhaustFanY;
+        leaf.exhaustFanSize = typeof subItems[idx].exhaustFanSize === "number" ? subItems[idx].exhaustFanSize : leaf.exhaustFanSize;
       }
     });
     setManualChildRates(nextManualRates);
@@ -3059,14 +3364,16 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
           const leafMeta = getLeafSectionMeta(leaf.id);
           const systemType = leaf.systemType;
           const series = leaf.series || "";
-          const description = leaf.description || `${systemType} ${meta.productType}`;
-          if (!systemType || !description || !series) {
+          const description = leaf.description || getDefaultLeafDescription(systemType, meta.productType, leaf.hasExhaustFan);
+          if (!systemType || !description || (isCatalogSystem(systemType) && !series)) {
             next[leaf.id] = 0;
             return;
           }
           try {
             const [descriptionsResp, optionsResp] = await Promise.all([
-              fetchDescriptions(systemType, series),
+              isCatalogSystem(systemType)
+                ? fetchDescriptions(systemType, series)
+                : Promise.resolve({ descriptions: [] }),
               fetchOptions(systemType),
             ]);
             const area = mmToSqft(leaf.w * widthMm, leaf.h * heightMm);
@@ -3375,8 +3682,20 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
                       updateSelectedLeaves((target) => {
                         target.systemType = nextSystem;
                         target.series = "";
-                        target.description = "";
+                        target.description = isLouverSystem(nextSystem)
+                          ? "Louvers"
+                          : isExhaustSystem(nextSystem)
+                            ? "Exhaust Fan"
+                            : "";
+                        target.hasExhaustFan = isExhaustSystem(nextSystem);
                         target.panelSashes = undefined;
+                        target.panelFractions = undefined;
+                        target.panelMeshCount = undefined;
+                        target.mesh = isLouverSystem(nextSystem) || isExhaustSystem(nextSystem) ? "No" : target.mesh;
+                        target.glass = isExhaustSystem(nextSystem) || isLouverSystem(nextSystem) ? "Yes" : target.glass;
+                        target.exhaustFanX = DEFAULT_EXHAUST_FAN_X;
+                        target.exhaustFanY = DEFAULT_EXHAUST_FAN_Y;
+                        target.exhaustFanSize = DEFAULT_EXHAUST_FAN_SIZE;
                         if (nextSystem !== "Sliding" && (target.sash === "left" || target.sash === "right" || target.sash === "double")) {
                           target.sash = "fixed";
                         }
@@ -3392,121 +3711,222 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
                   </select>
                 </label>
 
-                <label className="text-xs text-gray-600">
-                  Section Series
-                  <select
-                    value={selectedNode.series}
-                    onChange={(e) => {
-                      const nextSeries = e.target.value;
-                      updateSelectedLeaves((target) => {
-                        target.series = nextSeries;
-                        target.description = "";
-                        target.panelFractions = undefined;
-                        target.panelMeshCount = undefined;
-                        target.panelSashes = undefined;
-                      });
-                    }}
-                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                  >
-                    <option value="">Select</option>
-                    {seriesOptions.map((series) => (
-                      <option key={series} value={series}>
-                        {series}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="text-xs text-gray-600">
-                  Section Description
-                  <select
-                    value={selectedNode.description}
-                    onChange={(e) => {
-                      const nextDescription = e.target.value;
-                      updateSelectedSectionMeta({ meshType: "" });
-                      if (selectedNode.systemType === "Sliding") {
-                        updateSelectedNode((target) => {
-                          target.description = nextDescription;
-                          target.split = "none";
-                          target.children = undefined;
-                          const pattern = parsePanelPattern(nextDescription);
-                          if (pattern) {
-                            target.panelFractions = pattern.fractions;
-                            target.panelMeshCount = pattern.meshCount;
-                            target.mesh = (pattern.meshCount ?? 0) > 0 ? "Yes" : "No";
-                            target.panelSashes =
-                              target.panelSashes && target.panelSashes.length === pattern.fractions.length
-                                ? target.panelSashes
-                                : buildDefaultSlidingPanelSashes(pattern.fractions.length);
-                          } else {
+                {selectedSystemSupportsCatalog && (
+                  <>
+                    <label className="text-xs text-gray-600">
+                      Section Series
+                      <select
+                        value={selectedNode.series}
+                        onChange={(e) => {
+                          const nextSeries = e.target.value;
+                          updateSelectedLeaves((target) => {
+                            target.series = nextSeries;
+                            target.description = "";
+                            target.hasExhaustFan = false;
                             target.panelFractions = undefined;
                             target.panelMeshCount = undefined;
-                            target.mesh = "No";
                             target.panelSashes = undefined;
+                          });
+                        }}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      >
+                        <option value="">Select</option>
+                        {seriesOptions.map((series) => (
+                          <option key={series} value={series}>
+                            {series}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="text-xs text-gray-600">
+                      Section Description
+                      <select
+                        value={selectedNode.description}
+                        onChange={(e) => {
+                          const nextDescription = e.target.value;
+                          updateSelectedSectionMeta({ meshType: "" });
+                          if (selectedNode.systemType === "Sliding") {
+                            updateSelectedNode((target) => {
+                              target.description = nextDescription;
+                              target.hasExhaustFan = false;
+                              target.split = "none";
+                              target.children = undefined;
+                              const pattern = parsePanelPattern(nextDescription);
+                              if (pattern) {
+                                target.panelFractions = pattern.fractions;
+                                target.panelMeshCount = pattern.meshCount;
+                                target.mesh = (pattern.meshCount ?? 0) > 0 ? "Yes" : "No";
+                                target.panelSashes =
+                                  target.panelSashes && target.panelSashes.length === pattern.fractions.length
+                                    ? target.panelSashes
+                                    : buildDefaultSlidingPanelSashes(pattern.fractions.length);
+                              } else {
+                                target.panelFractions = undefined;
+                                target.panelMeshCount = undefined;
+                                target.mesh = "No";
+                                target.panelSashes = undefined;
+                              }
+                            });
+                            return;
                           }
+                          updateSelectedLeaves((target) => {
+                            target.description = nextDescription;
+                            target.hasExhaustFan = false;
+                            const pattern = parsePanelPattern(nextDescription);
+                            if (pattern) {
+                              target.panelFractions = pattern.fractions;
+                              target.panelMeshCount = pattern.meshCount;
+                              target.panelSashes = undefined;
+                            } else {
+                              target.panelFractions = undefined;
+                              target.panelMeshCount = undefined;
+                              target.panelSashes = undefined;
+                            }
+                          });
+                        }}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      >
+                        <option value="">Select</option>
+                        {descriptionOptions.map((desc: Description) => (
+                          <option key={desc.name} value={desc.name}>
+                            {desc.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="text-xs text-gray-600">
+                      Section Glass
+                      <select
+                        value={selectedNode.glass}
+                        onChange={(e) => {
+                          const value = e.target.value as YesNo;
+                          updateSelectedLeaves((target) => {
+                            target.glass = value;
+                          });
+                        }}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      >
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                    </label>
+
+                    <label className="text-xs text-gray-600">
+                      Section Mesh
+                      <select
+                        value={selectedNode.mesh}
+                        onChange={(e) => {
+                          if (selectedNode.systemType === "Sliding") return;
+                          const value = e.target.value as YesNo;
+                          updateSelectedLeaves((target) => {
+                            target.mesh = value;
+                          });
+                        }}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                        disabled={selectedNode.systemType === "Sliding"}
+                      >
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                      </select>
+                    </label>
+                  </>
+                )}
+
+                {canInsertExhaustFan && (
+                  <label className="text-xs text-gray-600">
+                    Exhaust Fan Insert
+                    <select
+                      value={selectedNode.hasExhaustFan ? "Yes" : "No"}
+                      onChange={(e) => {
+                        const shouldInsert = e.target.value === "Yes";
+                        updateSelectedLeaves((target) => {
+                          target.hasExhaustFan = shouldInsert;
+                          target.glass = "Yes";
+                          target.mesh = "No";
+                          target.exhaustFanX = DEFAULT_EXHAUST_FAN_X;
+                          target.exhaustFanY = DEFAULT_EXHAUST_FAN_Y;
+                          target.exhaustFanSize = DEFAULT_EXHAUST_FAN_SIZE;
                         });
-                        return;
-                      }
-                      updateSelectedLeaves((target) => {
-                        target.description = nextDescription;
-                        const pattern = parsePanelPattern(nextDescription);
-                        if (pattern) {
-                          target.panelFractions = pattern.fractions;
-                          target.panelMeshCount = pattern.meshCount;
-                          target.panelSashes = undefined;
-                        } else {
-                          target.panelFractions = undefined;
-                          target.panelMeshCount = undefined;
-                          target.panelSashes = undefined;
-                        }
-                      });
-                    }}
-                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                  >
-                    <option value="">Select</option>
-                    {descriptionOptions.map((desc: Description) => (
-                      <option key={desc.name} value={desc.name}>
-                        {desc.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                      }}
+                      className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                    >
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </select>
+                    <div className="mt-1 text-[11px] text-gray-500">
+                      Fixed glass section will include the exhaust fan cut-out.
+                    </div>
+                  </label>
+                )}
 
-                <label className="text-xs text-gray-600">
-                  Section Glass
-                  <select
-                    value={selectedNode.glass}
-                    onChange={(e) => {
-                      const value = e.target.value as YesNo;
-                      updateSelectedLeaves((target) => {
-                        target.glass = value;
-                      });
-                    }}
-                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                  >
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                  </select>
-                </label>
+                {hasAdjustableExhaustFan && (
+                  <>
+                    <label className="text-xs text-gray-600">
+                      Fan Horizontal Position
+                      <input
+                        type="range"
+                        min={18}
+                        max={82}
+                        step={1}
+                        value={Math.round((selectedNode.exhaustFanX ?? DEFAULT_EXHAUST_FAN_X) * 100)}
+                        onChange={(e) => {
+                          const value = Number(e.target.value) / 100;
+                          updateSelectedNode((target) => {
+                            target.exhaustFanX = clampValue(value, 0.18, 0.82);
+                          });
+                        }}
+                        className="mt-2 w-full"
+                      />
+                      <div className="mt-1 text-[11px] text-gray-500">
+                        {Math.round((selectedNode.exhaustFanX ?? DEFAULT_EXHAUST_FAN_X) * 100)}%
+                      </div>
+                    </label>
 
-                <label className="text-xs text-gray-600">
-                  Section Mesh
-                  <select
-                    value={selectedNode.mesh}
-                    onChange={(e) => {
-                      if (selectedNode.systemType === "Sliding") return;
-                      const value = e.target.value as YesNo;
-                      updateSelectedLeaves((target) => {
-                        target.mesh = value;
-                      });
-                    }}
-                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                    disabled={selectedNode.systemType === "Sliding"}
-                  >
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </select>
-                </label>
+                    <label className="text-xs text-gray-600">
+                      Fan Vertical Position
+                      <input
+                        type="range"
+                        min={18}
+                        max={82}
+                        step={1}
+                        value={Math.round((selectedNode.exhaustFanY ?? DEFAULT_EXHAUST_FAN_Y) * 100)}
+                        onChange={(e) => {
+                          const value = Number(e.target.value) / 100;
+                          updateSelectedNode((target) => {
+                            target.exhaustFanY = clampValue(value, 0.18, 0.82);
+                          });
+                        }}
+                        className="mt-2 w-full"
+                      />
+                      <div className="mt-1 text-[11px] text-gray-500">
+                        {Math.round((selectedNode.exhaustFanY ?? DEFAULT_EXHAUST_FAN_Y) * 100)}%
+                      </div>
+                    </label>
+
+                    <label className="text-xs text-gray-600">
+                      Fan Size
+                      <input
+                        type="range"
+                        min={20}
+                        max={90}
+                        step={1}
+                        value={Math.round((selectedNode.exhaustFanSize ?? DEFAULT_EXHAUST_FAN_SIZE) * 100)}
+                        onChange={(e) => {
+                          const value = Number(e.target.value) / 100;
+                          updateSelectedNode((target) => {
+                            target.exhaustFanSize = clampValue(value, 0.2, 0.9);
+                          });
+                        }}
+                        className="mt-2 w-full"
+                      />
+                      <div className="mt-1 text-[11px] text-gray-500">
+                        {Math.round((selectedNode.exhaustFanSize ?? DEFAULT_EXHAUST_FAN_SIZE) * 100)}%
+                      </div>
+                    </label>
+                  </>
+                )}
 
                 {/* {selectedNode.systemType === "Sliding" && !selectedNode.children?.length && (
                   <label className="text-xs text-gray-600">
@@ -3529,71 +3949,75 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
                   </label>
                 )} */}
 
-                <label className="text-xs text-gray-600">
-                  Color Finish
-                  <select
-                    value={selectedSectionMeta.colorFinish}
-                    onChange={(e) => updateSelectedSectionMeta({ colorFinish: e.target.value })}
-                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                  >
-                    <option value="">Select</option>
-                    {metaOptionsQuery.data?.colorFinishes.map((opt: OptionWithRate) => (
-                      <option key={opt.name} value={opt.name}>
-                        {opt.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {selectedSystemSupportsCatalog && (
+                  <>
+                    <label className="text-xs text-gray-600">
+                      Color Finish
+                      <select
+                        value={selectedSectionMeta.colorFinish}
+                        onChange={(e) => updateSelectedSectionMeta({ colorFinish: e.target.value })}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      >
+                        <option value="">Select</option>
+                        {metaOptionsQuery.data?.colorFinishes.map((opt: OptionWithRate) => (
+                          <option key={opt.name} value={opt.name}>
+                            {opt.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
 
-                <label className="text-xs text-gray-600">
-                  Glass Spec
-                  <select
-                    value={selectedSectionMeta.glassSpec}
-                    onChange={(e) => updateSelectedSectionMeta({ glassSpec: e.target.value })}
-                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                  >
-                    <option value="">Select</option>
-                    {metaOptionsQuery.data?.glassSpecs.map((opt: OptionWithRate) => (
-                      <option key={opt.name} value={opt.name}>
-                        {opt.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <label className="text-xs text-gray-600">
+                      Glass Spec
+                      <select
+                        value={selectedSectionMeta.glassSpec}
+                        onChange={(e) => updateSelectedSectionMeta({ glassSpec: e.target.value })}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      >
+                        <option value="">Select</option>
+                        {metaOptionsQuery.data?.glassSpecs.map((opt: OptionWithRate) => (
+                          <option key={opt.name} value={opt.name}>
+                            {opt.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
 
-                <label className="text-xs text-gray-600">
-                  Handle Type
-                  <select
-                    value={selectedSectionMeta.handleType}
-                    onChange={(e) => updateSelectedSectionMeta({ handleType: e.target.value, handleColor: "" })}
-                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                  >
-                    <option value="">Select</option>
-                    {metaOptionsQuery.data?.handleOptions.map((opt: HandleOption) => (
-                      <option key={opt.name} value={opt.name}>
-                        {opt.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <label className="text-xs text-gray-600">
+                      Handle Type
+                      <select
+                        value={selectedSectionMeta.handleType}
+                        onChange={(e) => updateSelectedSectionMeta({ handleType: e.target.value, handleColor: "" })}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      >
+                        <option value="">Select</option>
+                        {metaOptionsQuery.data?.handleOptions.map((opt: HandleOption) => (
+                          <option key={opt.name} value={opt.name}>
+                            {opt.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
 
-                <label className="text-xs text-gray-600">
-                  Handle Color
-                  <select
-                    value={selectedSectionMeta.handleColor}
-                    onChange={(e) => updateSelectedSectionMeta({ handleColor: e.target.value })}
-                    className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
-                  >
-                    <option value="">Select</option>
-                    {(metaHandleOption?.colors ?? []).map((opt: OptionWithRate) => (
-                      <option key={opt.name} value={opt.name}>
-                        {opt.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <label className="text-xs text-gray-600">
+                      Handle Color
+                      <select
+                        value={selectedSectionMeta.handleColor}
+                        onChange={(e) => updateSelectedSectionMeta({ handleColor: e.target.value })}
+                        className="mt-1 w-full rounded-md border border-gray-400 px-2 py-2 text-sm focus:border-[#124657] focus:ring-2 focus:ring-[#124657]"
+                      >
+                        <option value="">Select</option>
+                        {(metaHandleOption?.colors ?? []).map((opt: OptionWithRate) => (
+                          <option key={opt.name} value={opt.name}>
+                            {opt.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
 
-                {(!isCombinationChildSelection || selectedNode.systemType === "Sliding") && (
+                {selectedSystemSupportsCatalog && (!isCombinationChildSelection || selectedNode.systemType === "Sliding") && (
                   <label className="text-xs text-gray-600">
                     Mesh Type
                     <select
