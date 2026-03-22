@@ -271,6 +271,8 @@ export default function Header() {
             </div>
             <Link className="nav-link" href="/about">About Us</Link>
             <Link className="nav-link" href="/contact">Contact</Link>
+             <Link className="nav-link" href="/blogs">Blogs</Link>
+
             {isAuthenticated && <Link className="nav-link" href="/quotations">Quotations</Link>}
           </div>
         </div>
