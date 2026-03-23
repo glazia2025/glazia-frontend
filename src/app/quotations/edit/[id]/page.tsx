@@ -13,6 +13,7 @@ import { loadGlobalConfig } from "@/utils/globalConfig";
 import { API_BASE_URL } from "@/services/api";
 
 
+
 interface CustomerDetails {
   name: string;
   company: string;
@@ -94,7 +95,6 @@ export default function EditQuotationPage() {
   const params = useParams();
   const quotationId = params.id as string;
   const globalConfigLocked = useRef(false);
-
   const [queryClient] = useState(() => new QueryClient());
   const [loading, setLoading] = useState(true);
   const [quotationFound, setQuotationFound] = useState(false);
@@ -466,6 +466,7 @@ export default function EditQuotationPage() {
       })
     );
   };
+  
 
   const handleInlineSubItemUpdate = (
     parentId: string,
@@ -500,6 +501,7 @@ export default function EditQuotationPage() {
       })
     );
   };
+  
 
   const getItemTotals = (item: QuotationItem) => {
     if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {

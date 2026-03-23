@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { blogs } from "../data/blogData";
+import blogs from "../data/blogs.json";
 import Image from "next/image";
 import { Heart, Send, Eye, MessageCircle } from "lucide-react";
 import Link from "next/link";
@@ -24,7 +24,7 @@ export default function CategoryPage() {
 
       {filteredBlogs.map((item) => (
                     <div
-                        key={item.id}
+                        key={item.slug}
                         className="bg-white rounded-xl p-5 mb-4 flex justify-between items-center shadow-sm"
                     >
 
@@ -34,7 +34,7 @@ export default function CategoryPage() {
                             {/* Profile Image Placeholder */}
                             <div className=" relative w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
                                 <Image
-                                    src="/new-ui/Railing.webp"
+                                    src={item.image}
                                     alt="blog"
                                     fill
                                     className="object-cover"
@@ -47,7 +47,7 @@ export default function CategoryPage() {
                                 {/* Author + Date */}
                                 <div className="flex gap-6 text-sm text-gray-400 mb-1">
                                     <div>
-                                        <p className="text-[#1F2933] font-medium">{item.author}</p>
+                                        {/* <p className="text-[#1F2933] font-medium">{item.author}</p> */}
                                         <p className="text-xs">{item.category}</p>
                                     </div>
 
@@ -61,7 +61,7 @@ export default function CategoryPage() {
 
                                 {/* Description */}
                                 <p className="text-gray-500 text-sm mt-1">
-                                   {item.desc}
+                                   {item.content[0]}
                                 </p>
 
                                 {/* Stats */}

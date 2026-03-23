@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { blogs } from "../../data/blogData";
+import blogs from "../../data/blogs.json";
 import Image from "next/image";
 import { Heart, Eye, Send } from "lucide-react";
 import { useState } from "react";
@@ -13,14 +13,14 @@ export default function BlogDetailPage() {
   const category = params.category as string;
   const slug = params.slug as string;
 
-  //  correct blog find karo
+  //  find correct blog
   const blog = blogs.find(
     (b) =>
       b.slug === slug &&
       b.category.toLowerCase() === category.toLowerCase()
   );
 
-  //  agar blog na mile
+  //  if blog not found
   if (!blog) {
     return <div className="p-10">Blog not found</div>;
   }
@@ -32,7 +32,7 @@ export default function BlogDetailPage() {
       <div className="relative w-full h-[350px]">
 
         <Image
-          src="/new-ui/Railing.webp"
+          src={blog.image}
           alt="blog"
           fill
           className="object-cover"
@@ -110,12 +110,12 @@ export default function BlogDetailPage() {
 
             <div>
               <p className="text-gray-400 text-xs">Reading Time</p>
-              <p className="text-[#1F2933]">10 Min</p>
+              <p className="text-[#1F2933]">{blog.readTime}</p>
             </div>
 
             <div>
               <p className="text-gray-400 text-xs">Author</p>
-              <p className="text-[#1F2933]">{blog.author}</p>
+              <p className="text-[#1F2933]">"Glazia team"</p>
             </div>
 
           </div>
