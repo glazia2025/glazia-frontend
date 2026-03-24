@@ -180,7 +180,7 @@ export default function QuotationsPage() {
       return;
     }
 
-    let fullQuotation = quotation;
+    let fullQuotation: any = quotation;
 
     // if items are missing then fetch them 
     if (!quotation.items || quotation.items.length === 0) {
