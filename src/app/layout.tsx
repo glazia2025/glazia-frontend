@@ -50,6 +50,49 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Organization schema  */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Glazia",
+              url: "https://glazia.in",
+              logo: "https://glazia.in/new-ui/card/logo-sm.svg",
+              contactPoint: {
+                "@type": "ContactPoint",
+                telephone: "+91-9958053708",
+                contactType: "customer service"
+              },
+              address: {
+                "@type": "PostalAddress",
+                addressLocality: "Gurgaon",
+                addressCountry: "India"
+              }
+            })
+          }}
+        />
+
+        {/* LocalBusiness schema  */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "LocalBusiness",
+              name: "Glazia",
+              image: "https://glazia.in/new-ui/card/logo-sm.svg",
+              url: "https://glazia.in",
+              telephone: "+91-9958053708",
+              address: {
+                "@type": "PostalAddress",
+                addressLocality: "Gurgaon",
+                addressCountry: "India"
+              }
+            })
+          }}
+        />
       </head>
       <body
         className={`${inter.variable} ${poppins.variable} antialiased`}
@@ -60,7 +103,7 @@ export default function RootLayout({
             <DataInitializer />
             <UserDataRefresher />
             <AnalyticsWrapper>
-                {children}
+              {children}
             </AnalyticsWrapper>
             <CartSidebar />
           </AdminProvider>

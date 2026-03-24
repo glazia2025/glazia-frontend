@@ -9,6 +9,8 @@ import Footer from '@/components/Footer';
 import LoginModal from '@/components/LoginModal';
 import { ProfileApiService } from '@/services/profileApi';
 
+
+
 // Interfaces for the new API structure
 interface Product {
   _id: string;
@@ -295,6 +297,66 @@ export default function AluminiumProfilesPage() {
   }
 
   return (
+    <>
+    {/* Breadcrumb schema  */}
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "Home",
+              item: "https://glazia.in"
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: "Categories",
+              item: "https://glazia.in/categories"
+            },
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: "Aluminium Profiles",
+              item: "https://glazia.in/categories/aluminium-profiles"
+            }
+          ]
+        })
+      }}
+    />
+    {/*  Product schema  */}
+    <script
+type="application/ld+json"
+dangerouslySetInnerHTML={{
+__html: JSON.stringify({
+"@context": "https://schema.org",
+"@type": "ItemList",
+"name": selectedCategory?.name || "Products",
+"itemListElement": products.map((product, index) => ({
+  "@type": "Product",
+  "position": index + 1,
+  "name": product.description,
+  "sku": product.sapCode,
+  "brand": {
+    "@type": "Brand",
+    "name": "Glazia"
+  },
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "INR",
+    "price": ((nalcoPrice / 1000) + rateAdjustment).toFixed(2),
+    "availability": "https://schema.org/InStock"
+  }
+}))
+})
+}}
+/>
+
+    
     <div className="" style={{ backgroundColor: '#FFF' }}>
       <Header />
 
@@ -528,6 +590,80 @@ export default function AluminiumProfilesPage() {
           </div>
         )}
       </div>
+      {/* Aluminium Profiles SEO Section */}
+<section className="bg-[#F8F9FB] py-14 mt-10">
+  <div className="container mx-auto px-6 max-w-6xl">
+
+    <div className="grid md:grid-cols-2 gap-12 items-center">
+
+      {/* LEFT CONTENT */}
+      <div>
+        <h2 className="text-3xl font-semibold text-[#2F3A4F] mb-4">
+          Aluminium Window & Door Profiles
+        </h2>
+
+        <p className="text-gray-600 mb-4">
+          Glazia provides high-quality aluminium profiles designed for modern
+          window and door systems. Our aluminium solutions are widely used by
+          architects, fabricators, and builders across residential and
+          commercial construction projects.
+        </p>
+
+        <p className="text-gray-600">
+          Engineered for durability and performance, our aluminium profile
+          systems support sliding windows, casement windows, and architectural
+          installations requiring strong and lightweight aluminium structures.
+        </p>
+
+        {/* FEATURES */}
+        <ul className="mt-6 space-y-3 text-gray-700">
+          <li>✔ High strength aluminium profiles</li>
+          <li>✔ Smooth sliding & casement systems</li>
+          <li>✔ Corrosion resistant aluminium material</li>
+          <li>✔ Ideal for residential & commercial projects</li>
+        </ul>
+      </div>
+
+
+      {/* RIGHT SIDE VISUAL */}
+      <div className="bg-white rounded-xl shadow-md p-6 border">
+        <h3 className="text-lg font-semibold mb-4 text-[#2F3A4F]">
+          Why Choose Glazia Aluminium Profiles
+        </h3>
+
+        <div className="space-y-4 text-sm text-gray-600">
+
+          <div>
+            <span className="font-semibold text-[#2F3A4F]">Durability</span>
+            <p>
+              Designed to withstand long-term usage with corrosion-resistant
+              aluminium structures.
+            </p>
+          </div>
+
+          <div>
+            <span className="font-semibold text-[#2F3A4F]">Modern Design</span>
+            <p>
+              Clean architectural aluminium systems perfect for modern
+              residential and commercial buildings.
+            </p>
+          </div>
+
+          <div>
+            <span className="font-semibold text-[#2F3A4F]">Lightweight & Strong</span>
+            <p>
+              Aluminium profiles combine strength with lightweight structure
+              for easy installation.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
 
       <Footer />
 
@@ -557,5 +693,6 @@ export default function AluminiumProfilesPage() {
         onClose={() => setIsLoginModalOpen(false)}
       />
     </div>
+    </>
   );
 }

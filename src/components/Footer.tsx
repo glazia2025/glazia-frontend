@@ -32,10 +32,10 @@ export default function Footer() {
                 Your trusted partner for premium fenestration profiles and hardware solutions with an experience of over 25 years.
               </p>
               <div className="flex space-x-4">
-                <Link href="#" className="text-gray-400 hover:text-[#EE1C25] transition-colors">
+                <Link href="#" className="text-gray-400 hover:text-[#EE1C25] transition-colors" aria-label="Glazia Facebook page">
                   <Facebook className="w-5 h-5" />
                 </Link>
-                <Link href="https://www.linkedin.com/company/glazia-windoors-private-limited/" className="text-gray-400 hover:text-[#EE1C25] transition-colors">
+                <Link href="https://www.linkedin.com/company/glazia-windoors-private-limited/" className="text-gray-400 hover:text-[#EE1C25] transition-colors" aria-label="Glazia LinkedIn page">
                   <Linkedin className="w-5 h-5" />
                 </Link>
               </div>
@@ -103,7 +103,7 @@ export default function Footer() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-white text-sm">
-              © 2024 Glazia. All rights reserved.
+              © {new Date().getFullYear()} Glazia. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-2 md:mt-0">
               <Link href="/privacy" className="text-white text-sm transition-colors">

@@ -24,8 +24,8 @@ type NewItemDraft = { name: string; rate: string };
 type NewHardwareDrafts = Record<string, NewItemDraft>;
 
 const SETTINGS_PREFIXES = [
-  process.env.NEXT_PUBLIC_QUOTATION_SETTINGS_PATH,
-  "/api/user/quotation-data",
+   process.env.NEXT_PUBLIC_QUOTATION_SETTINGS_PATH,
+   "/api/user/quotation-data",
   "",
 ].filter((value, index, array): value is string => Boolean(value) && array.indexOf(value as string) === index);
 
@@ -38,9 +38,9 @@ function getSettingsAuthToken(): string {
   if (typeof window === "undefined") {
     return "";
   }
-
   return localStorage.getItem("adminToken") || localStorage.getItem("authToken") || "";
 }
+
 
 function asNumber(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) {

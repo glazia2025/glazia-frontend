@@ -10,6 +10,7 @@ import ImageModal from '@/components/ImageModal';
 import LoginModal from '@/components/LoginModal';
 import { apiClient } from '@/services/api';
 
+
 // Fixed hardware categories
 const HARDWARE_CATEGORIES = [
   "CORNER JOINERY",
@@ -241,6 +242,68 @@ export default function HardwarePage() {
   }
 
   return (
+    <>
+    {/* Breadcrumb schema  */}
+    <script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: "https://glazia.in"
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Categories",
+          item: "https://glazia.in/categories"
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: "Hardware",
+          item: "https://glazia.in/categories/hardware"
+        }
+      ]
+    })
+  }}
+/>
+{/* Product List Schema */}
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "Glazia Hardware Products",
+      "itemListElement": products.map((product, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "item": {
+          "@type": "Product",
+          "name": product.perticular || product.description || "Hardware Item",
+          "sku": product.sapCode,
+          "brand": {
+            "@type": "Brand",
+            "name": "Glazia"
+          },
+          "category": activeCategory,
+          "offers": {
+            "@type": "Offer",
+            "priceCurrency": "INR",
+            "availability": "https://schema.org/InStock"
+          }
+        }
+      }))
+    })
+  }}
+/>
+
     <div className="" style={{ backgroundColor: '#FFF' }}>
       <Header />
 
@@ -248,7 +311,7 @@ export default function HardwarePage() {
         <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-[500] text-gray-900 mb-1 sm:mb-2">Hardware</h1>
+              <h1 className="text-2xl sm:text-3xl font-[500] text-gray-900 mb-1 sm:mb-2">Aluminium Window & Door Hardware</h1>
               <p className="text-gray-600">Complete hardware solutions for windows and doors</p>
             </div>
           </div>
@@ -445,6 +508,89 @@ export default function HardwarePage() {
           )}
         </div>
       </div>
+     
+      {/* Hardware SEO Section */}
+<section className="bg-[#F8F9FB] py-14 mt-10">
+  <div className="container mx-auto px-6 max-w-6xl">
+
+    <div className="grid md:grid-cols-2 gap-12 items-center">
+
+      {/* LEFT CONTENT */}
+      <div>
+        <h2 className="text-3xl font-semibold text-[#2F3A4F] mb-4">
+          Aluminium Window & Door Hardware
+        </h2>
+
+        <p className="text-gray-600 mb-4">
+          Glazia offers a complete range of aluminium window and door hardware
+          designed for durability, smooth operation, and long-lasting
+          performance. Our hardware components support modern aluminium window
+          systems used in residential and commercial buildings.
+        </p>
+
+        <p className="text-gray-600">
+          From high-quality handles and locking systems to durable hinges and
+          installation accessories, our hardware ensures reliable operation
+          and secure aluminium window and door installations.
+        </p>
+
+      </div>
+
+      {/* RIGHT FEATURES */}
+      <div className="bg-white border rounded-xl shadow-sm p-6">
+
+  <h3 className="text-lg font-semibold text-[#2F3A4F] mb-4">
+    Window & Door Hardware Components
+  </h3>
+
+  <div className="space-y-4">
+
+    <div className="border-b pb-3">
+      <h4 className="font-semibold text-[#2F3A4F]">
+        Window & Door Handles
+      </h4>
+      <p className="text-gray-600 text-sm">
+        Ergonomic aluminium handles designed for secure locking and smooth usability.
+      </p>
+    </div>
+
+    <div className="border-b pb-3">
+      <h4 className="font-semibold text-[#2F3A4F]">
+        Locking Systems
+      </h4>
+      <p className="text-gray-600 text-sm">
+        Reliable locking mechanisms that provide security and durability for aluminium windows.
+      </p>
+    </div>
+
+    <div className="border-b pb-3">
+      <h4 className="font-semibold text-[#2F3A4F]">
+        Hinges & Operators
+      </h4>
+      <p className="text-gray-600 text-sm">
+        Strong hinge systems that support long-term movement and stability of window panels.
+      </p>
+    </div>
+
+    <div>
+      <h4 className="font-semibold text-[#2F3A4F]">
+        Installation Accessories
+      </h4>
+      <p className="text-gray-600 text-sm">
+        Essential accessories designed for professional aluminium window installation systems.
+      </p>
+    </div>
+
+  </div>
+
+</div>
+      
+
+    </div>
+
+  </div>
+</section>
+
 
       <Footer />
 
@@ -461,5 +607,6 @@ export default function HardwarePage() {
         onClose={() => setIsLoginModalOpen(false)}
       />
     </div>
+    </>
   );
 }
