@@ -1023,6 +1023,15 @@ item.refImage
 <div class="total-row"><span>GST 18%</span><span>${formatCurrency(gstValue)}</span></div>
 
 <div class="total-row"><span><strong>Grand Total</strong></span><span><strong>${formatCurrency(grandTotal)}</strong></span></div>
+<div class="total-row">
+  <span>Avg. Price Per Sq. Ft. Without GST</span>
+  <span>${formatCurrency(avgWithoutGst)}</span>
+</div>
+
+<div class="total-row">
+  <span>Avg. Price Per Sq. Ft.</span>
+  <span>${formatCurrency(avgWithGst)}</span>
+</div>
 
 </div>
 

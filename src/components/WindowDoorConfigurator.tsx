@@ -257,6 +257,16 @@ const mapLeafNodes = (node: SectionNode, cb: (leaf: SectionNode) => void) => {
   }
   node.children.forEach((child) => mapLeafNodes(child, cb));
 };
+// function for // Checks if all split window sections (leaf nodes) have a valid description filled
+const areAllDescriptionsFilled=(root:SectionNode)=>{
+  let isValid=true;
+  mapLeafNodes(root,(leaf)=>{
+    if(!leaf.description || leaf.description.trim()===""){
+      isValid=false;
+    }
+  });
+  return isValid;
+}
 
 const buildSplitChildren = (
   node: SectionNode,
@@ -2220,6 +2230,10 @@ export default function WindowDoorConfigurator({
 
   const handleSaveItem = async () => {
     if (isSaving) return;
+    if (!areAllDescriptionsFilled(root)) {
+  alert("Please fill description for all windows");
+  return;
+}
     const trimmedRefCode = meta.refCode.trim();
     if (!trimmedRefCode) {
       alert("Ref Code is required.");
@@ -2723,8 +2737,8 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
                 stroke:
                   isSelected && selectedSlidingPanelIndex === idx
                     ? COLORS.selected
-                    : "rgba(148, 163, 184, 0.45)",
-                strokeWidth: isSelected && selectedSlidingPanelIndex === idx ? 2 : 1,
+                    : " rgb(30, 30, 30)",
+                strokeWidth: isSelected && selectedSlidingPanelIndex === idx ? 7 : 7,
                 listening: true,
               });
               panelHit.on("mousedown touchstart", (event) => {

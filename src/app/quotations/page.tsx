@@ -164,16 +164,38 @@ export default function QuotationsPage() {
   }
 };
 
-  const downloadQuotationPDF = (quotation: Quotation) => {
-    try {
-      generateQuotationPDF(quotation);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Error generating PDF. Please try again.');
+  // const downloadQuotationPDF = (quotation: Quotation) => {
+  //   try {
+  //     generateQuotationPDF(quotation);
+  //   } catch (error) {
+  //     console.error('Error generating PDF:', error);
+  //     alert('Error generating PDF. Please try again.');
+  //   }
+  // };
+  const downloadQuotationPDF = async (quotation: Quotation) => {
+  try {
+    const id = quotation._id ;
+    if (!id) {
+      alert("Invalid quotation ID");
+      return;
     }
-  };
 
-  const fetchQuotationDetails = async (quotationId: string) => {
+    let fullQuotation: any = quotation;
+
+    // if items are missing then fetch them 
+    if (!quotation.items || quotation.items.length === 0) {
+      fullQuotation = await fetchQuotationDetails(id);
+    }
+
+    generateQuotationPDF(fullQuotation);
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    alert('Error generating PDF. Please try again.');
+  }
+};
+
+  const fetchQuotationDetails = async (quotationId: string)=> {
     const token = localStorage.getItem("authToken");
     const response = await fetch(
       `${API_BASE_URL}/api/quotations/${quotationId}`,
