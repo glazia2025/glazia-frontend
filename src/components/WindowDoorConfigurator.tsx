@@ -639,7 +639,7 @@ const drawCasementSwingGuide = (
   const arrowStyle = {
     stroke: "#111111",
     fill: "#111111",
-    strokeWidth: 2,
+    strokeWidth:2,
     dash: [12, 10],
     lineCap: "round" as const,
     lineJoin: "round" as const,

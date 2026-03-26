@@ -240,11 +240,11 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     return {
       ...item,
       width: totals.width,
-      height: totals.height,
+      height: item.height,
       area: totals.area,
       rate: roundToTwo(rate),
       amount: roundToTwo(totals.amount),
-      quantity: totals.quantity,
+      quantity: item.quantity,
       subItems,
     };
   };
@@ -567,22 +567,22 @@ align-items:stretch;
 
 .window-image{
 width:40%;
-height:200px; 
 display:flex;
 align-items:center;
 justify-content:center;
 border:1px solid #e0e0e0;
-overflow:hidden;
+overflow:visible;
 background:none;
 margin:0;
 }
 
 .window-image img{
-height:120%;
-width:auto;
-object-fit:cover;
-display:cover;
+max-width:100%;
+height:auto;
+object-fit:contain;
 }
+
+
 
 .computed-values{
 width:60%;
@@ -846,7 +846,10 @@ const showHandleType = isCombinationParent ? "-" : item.handleType || "-";
 const showHandleColor = isCombinationParent ? "-" : item.handleColor || "-";
 const showMeshPresent = isCombinationParent ? "-" : item.meshPresent || "-";
 const showMeshType = isCombinationParent ? "-" : item.meshType || "-";
-const showQty = item.quantity || "-";
+// const showQty = item.quantity || "-";
+const showQty = item.__isSubRow 
+  ? item.quantity 
+  : (item.quantity || "-");
 const showAmount = formatCurrency(item.amount || 0);
 const showRemarks = item.remarks || "-";
 const isFirstSubRow =
