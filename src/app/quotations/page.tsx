@@ -28,6 +28,8 @@ interface QuotationItem {
   rate?: number;
   quantity?: number;
   amount?: number;
+  sash?: string;
+  panelSashes?: string[];
   refImage?: string;
   remarks?: string;
 }

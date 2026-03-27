@@ -67,6 +67,8 @@ interface QuotationItemBase {
   rate?: number;
   quantity?: number;
   amount?: number;
+  sash?: string;
+  panelSashes?: string[];
   refImage?: string;
   remarks?: string;
 }
@@ -249,11 +251,6 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     };
   };
 
-  type DisplayItem = QuotationItemBase & {
-    __isSubRow?: boolean;
-    __rowNumber?: number | string;
-  };
-
   let itemsWithProfit: QuotationItem[] = (quotation.items || []).map((item) => {
     if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
       const subItems = item.subItems.map(applyProfit);
@@ -272,8 +269,8 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
 
   let effectiveItems = getEffectiveItems(itemsWithProfit);
 
-  const totalArea = effectiveItems.reduce(
-    (sum, item) => sum + (item.area || 0) * (item.quantity || 1),
+  const totalArea = itemsWithProfit.reduce(
+    (sum, item) => sum + (item.area || 0) * Math.max(1, item.quantity || 1),
     0
   );
 
@@ -346,22 +343,6 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
   const avgWithGst = totalArea ? avgWithoutGst * 1.18 : 0;
 
   let rowCounter = 0;
-  const displayItems: DisplayItem[] = itemsWithProfit.flatMap((item) => {
-    if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
-      return [
-        { ...item, __isSubRow: false },
-        ...item.subItems.map((sub) => ({ ...sub, __isSubRow: true })),
-      ];
-    }
-    return [{ ...item, __isSubRow: false }];
-  });
-
-  const adjustedDisplayItems = displayItems.map((item) => ({
-    ...item,
-    __rowNumber: item.__isSubRow ? "" : ++rowCounter,
-  }));
-
-
   console.log(quotation, 'quotation>>>>');
 
   const quotationDate =
@@ -372,6 +353,183 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
   const prequisites = globalConfig?.prerequisites || "";
   const logoSrc = globalConfig?.logoUrl || globalConfig?.logo;
   const customer = quotation.customerDetails || {};
+  const renderMainItemBlock = (item: QuotationItem, isCombinationParent: boolean) => {
+    const showRef = item.refCode || "-";
+    const showSystem = item.systemType || "-";
+    const showSeries = isCombinationParent ? "-" : item.series || "-";
+    const showWidth = item.width || "-";
+    const showHeight = item.height || "-";
+    const showArea = item.area?.toFixed(2) || "-";
+    const showColor = isCombinationParent ? "-" : item.colorFinish || "-";
+    const showLocation = item.location || "-";
+    const showDescription = isCombinationParent ? "-" : item.description || "-";
+    const showGlass = isCombinationParent ? "-" : item.glassSpec || "-";
+    const showHandleType = isCombinationParent ? "-" : item.handleType || "-";
+    const showHandleColor = isCombinationParent ? "-" : item.handleColor || "-";
+    const showMeshPresent = isCombinationParent ? "-" : item.meshPresent || "-";
+    const showMeshType = isCombinationParent ? "-" : item.meshType || "-";
+    const showQty = item.quantity || "-";
+    const showAmount = formatCurrency(item.amount || 0);
+    const showRemarks = item.remarks || "-";
+
+    return `
+<div class="window-block avoid-break main-row">
+<table class="window-header">
+<tr>
+<td class="label"> Ref-Code :</td>
+<td>${showRef}</td>
+<td class="label">Size :</td>
+<td>W = ${showWidth}; H = ${showHeight}</td>
+<td class="label">Color :</td>
+<td>${showColor}</td>
+</tr>
+<tr>
+<td class="label">Product :</td>
+<td>${showSystem}</td>
+<td class="label">Handle type/color :</td>
+<td>${showHandleType} - ${showHandleColor}</td>
+<td class="label">Description:</td>
+<td>${showDescription}</td>
+</tr>
+<tr>
+<td class="label">Location :</td>
+<td>${showLocation}</td>
+<td class="label">Glass :</td>
+<td>${showGlass}</td>
+<td class="label">Mesh type/color:</td>
+<td>${showMeshPresent} ${showMeshType}</td>
+</tr>
+</table>
+
+<div class="window-body">
+<div class="window-image">
+${item.refImage ? `<img src="${item.refImage}" alt="Window Image">` : `<span class="no-image">No image</span>`}
+</div>
+<div class="computed-values">
+<div class="computed-title">Computed Values</div>
+<table>
+<tr>
+<td>Series</td>
+<td colspan="2" style="text-align:center;">${showSeries}</td>
+</tr>
+<tr>
+<td>Area</td>
+<td>${showArea}</td>
+<td>Sqft </td>
+</tr>
+<tr>
+<td>Rate per Sqft</td>
+<td>${formatCurrency(item.rate || 0)}</td>
+<td>INR</td>
+</tr>
+<tr>
+<td>Quantity</td>
+<td>${showQty}</td>
+<td>pcs</td>
+</tr>
+<tr>
+<td>Amount</td>
+<td>${showAmount}</td>
+<td>INR</td>
+</tr>
+<tr>
+<td>Remarks</td>
+<td colspan="2" style="text-align:center;">${showRemarks}</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+`;
+  };
+
+  const renderSubItemsTable = (subItems: QuotationSubItem[]) => `
+<div class="window-block sub-row avoid-break">
+<table class="subrow-table">
+<tr class="subrow-header">
+<td rowspan="2">Ref</td>
+<td rowspan="2">Image</td>
+<td rowspan="2">Product</td>
+<td rowspan="2">Series</td>
+<td rowspan="2">Width (mm)</td>
+<td rowspan="2">Height (mm)</td>
+<td rowspan="2">Area (Sqft)</td>
+<td rowspan="2">Color</td>
+<td rowspan="2">Location</td>
+<td rowspan="2">Description</td>
+<td rowspan="2">Glass</td>
+<td colspan="2">Handle</td>
+<td colspan="2">Mesh</td>
+<td rowspan="2">Rate</td>
+<td rowspan="2">Qty</td>
+<td rowspan="2">Amount</td>
+<td rowspan="2">Remarks</td>
+</tr>
+<tr class="subrow-header">
+<td>Type</td>
+<td>Color</td>
+<td>Present</td>
+<td>Type</td>
+</tr>
+${subItems.map((item) => {
+  const showRef = item.refCode || "-";
+  const showSystem = item.systemType || "-";
+  const showSeries = item.series || "-";
+  const showWidth = item.width || "-";
+  const showHeight = item.height || "-";
+  const showArea = item.area?.toFixed(2) || "-";
+  const showColor = item.colorFinish || "-";
+  const showLocation = item.location || "-";
+  const showDescription = item.description || "-";
+  const showGlass = item.glassSpec || "-";
+  const showHandleType = item.handleType || "-";
+  const showHandleColor = item.handleColor || "-";
+  const showMeshPresent = item.meshPresent || "-";
+  const showMeshType = item.meshType || "-";
+  const showQty = item.quantity || "-";
+  const showAmount = formatCurrency(item.amount || 0);
+  const showRemarks = item.remarks || "-";
+
+  return `
+<tr class="subrow-data">
+<td>${showRef}</td>
+<td>${item.refImage ? `<img src="${item.refImage}" style="height:40px;">` : "-"}</td>
+<td>${showSystem}</td>
+<td>${showSeries}</td>
+<td>${showWidth}</td>
+<td>${showHeight}</td>
+<td>${showArea}</td>
+<td>${showColor}</td>
+<td>${showLocation}</td>
+<td>${showDescription}</td>
+<td>${showGlass}</td>
+<td>${showHandleType}</td>
+<td>${showHandleColor}</td>
+<td>${showMeshPresent}</td>
+<td>${showMeshType}</td>
+<td>${formatCurrency(item.rate || 0)}</td>
+<td>${showQty}</td>
+<td>${showAmount}</td>
+<td>${showRemarks}</td>
+</tr>
+`;
+}).join("")}
+</table>
+</div>
+`;
+
+  const renderedItemSections = itemsWithProfit.map((item) => {
+    rowCounter += 1;
+    const isCombinationParent =
+      item.systemType === COMBINATION_SYSTEM && Boolean(item.subItems?.length);
+
+    return `
+<section class="item-group avoid-break" data-row="${rowCounter}">
+${renderMainItemBlock(item, isCombinationParent)}
+${isCombinationParent ? renderSubItemsTable(item.subItems || []) : ""}
+</section>
+`;
+  }).join("");
 
   return `
   <!DOCTYPE html>
@@ -524,7 +682,40 @@ text-align:right;
 .window-wrapper{
 margin:0;
 border:none;
+display:flex;
+flex-direction:column;
+gap:0;
 }
+.item-group,
+.avoid-break,
+.top-bar,
+.info-container,
+.window-block,
+.window-header,
+.window-body,
+.window-image,
+.computed-values,
+.summary,
+.total-card,
+.lists,
+.list-card,
+.signature-row,
+.subrow-table,
+.subrow-table tr,
+table,
+tr {
+page-break-inside: avoid !important;
+break-inside: avoid !important;
+}
+
+.item-group{
+margin-bottom:4mm;
+}
+
+.item-group:last-child{
+margin-bottom:0;
+}
+
 .main-row{
 border-bottom:1px solid #000;
 }
@@ -552,10 +743,6 @@ padding: 0px 10px 10px 10px ;
 background:#f7f7f7;
 font-weight:700;
 width:15%;
-}
-
-table{
-page-break-inside:auto;
 }
 
 .window-body{
@@ -827,189 +1014,7 @@ We are pleased to submit our quotation of price of products as following :-
 
 
 <div class="window-wrapper">
-${adjustedDisplayItems.map((item,index) => {
-
-const isCombinationParent =
-!item.__isSubRow && item.systemType === COMBINATION_SYSTEM;
-
-const showRef = item.refCode || "-";
-const showSystem = item.systemType || "-";
-const showSeries = isCombinationParent ? "-" : item.series || "-";
-const showWidth = item.width || "-";
-const showHeight = item.height || "-";
-const showArea = item.area?.toFixed(2) || "-";
-const showColor = isCombinationParent ? "-" : item.colorFinish || "-";
-const showLocation = item.location || "-";
-const showDescription = isCombinationParent ? "-" : item.description || "-";
-const showGlass = isCombinationParent ? "-" : item.glassSpec || "-";
-const showHandleType = isCombinationParent ? "-" : item.handleType || "-";
-const showHandleColor = isCombinationParent ? "-" : item.handleColor || "-";
-const showMeshPresent = isCombinationParent ? "-" : item.meshPresent || "-";
-const showMeshType = isCombinationParent ? "-" : item.meshType || "-";
-// const showQty = item.quantity || "-";
-const showQty = item.__isSubRow 
-  ? item.quantity 
-  : (item.quantity || "-");
-const showAmount = formatCurrency(item.amount || 0);
-const showRemarks = item.remarks || "-";
-const isFirstSubRow =
-item.__isSubRow && adjustedDisplayItems[index - 1]?.__isSubRow !== true;
-if(item.__isSubRow){
-const isLastSubRow =
-item.__isSubRow && adjustedDisplayItems[index + 1]?.__isSubRow !== true;
-return `
-<div class="window-block sub-row avoid-break">
-
-${isFirstSubRow ? `<table class="subrow-table">` : ""}
-
-${isFirstSubRow?`
-<tr class="subrow-header">
-<td rowspan="2">Ref</td>
-<td rowspan="2">Image</td>
-<td rowspan="2">Product</td>
-<td rowspan="2">Series</td>
-<td rowspan="2">Width (mm)</td>
-<td rowspan="2">Height (mm)</td>
-<td rowspan="2">Area (Sqft)</td>
-<td rowspan="2">Color</td>
-<td rowspan="2">Location</td>
-<td rowspan="2">Description</td>
-<td rowspan="2">Glass</td>
-<td colspan="2">Handle</td>
-<td colspan="2">Mesh</td>
-<td rowspan="2">Rate</td>
-<td rowspan="2">Qty</td>
-<td rowspan="2">Amount</td>
-<td rowspan="2">Remarks</td>
-</tr>
-
-<tr class="subrow-header">
-<td>Type</td>
-<td>Color</td>
-<td>Present</td>
-<td>Type</td>
-</tr>
-`:""}
-
-<tr class="subrow-data">
-<td>${showRef}</td>
-<td>
-${item.refImage ? `<img src="${item.refImage}" style="height:40px;">` : "-"}
-</td>
-<td>${showSystem}</td>
-<td>${showSeries}</td>
-<td>${showWidth}</td>
-<td>${showHeight}</td>
-<td>${showArea}</td>
-<td>${showColor}</td>
-<td>${showLocation}</td>
-<td>${showDescription}</td>
-<td>${showGlass}</td>
-<td>${showHandleType}</td>
-<td>${showHandleColor}</td>
-<td>${showMeshPresent}</td>
-<td>${showMeshType}</td>
-<td>${formatCurrency(item.rate || 0)}</td>
-<td>${showQty}</td>
-<td>${showAmount}</td>
-<td>${showRemarks}</td>
-</tr>
-${isLastSubRow ? `</table>` : ""}
-</div>
-`;
-}
-
-return `
-
-<div class="window-block avoid-break main-row">
-
-<!-- HEADER TABLE -->
-
-<table class="window-header">
-<tr>
-<td class="label"> Ref-Code :</td>
-<td>
-${showRef}
-</td>
-<td class="label">Size :</td>
-<td>W = ${showWidth}; H = ${showHeight}</td>
-<td class="label">Color :</td>
-<td>${showColor}</td
-</tr>
-<tr>
-<td class="label">Product :</td>
-<td>${showSystem}</td>
-
-<td class="label">Handle type/color :</td>
-<td>${showHandleType} - ${showHandleColor}</td>
-<td class="label">Description:</td>
-<td>${showDescription}</td>
-</tr>
-<tr>
-<td class="label">Location :</td>
-<td>${showLocation}</td>
-
-<td class="label">Glass :</td>
-<td>${showGlass}</td>
-<td class="label">Mesh type/color:</td>
-<td>${showMeshPresent} ${showMeshType}</td>
-</tr>
-</table>
-
-<!-- BODY -->
-
-<div class="window-body">
-<div class="window-image">
-${
-item.refImage
-? `<img src="${item.refImage}" alt="Window Image">`
-: `<span class="no-image">No image</span>`
-}
-
-</div>
-<div class="computed-values">
-<div class="computed-title">Computed Values</div>
-<table>
-<tr>
-<td>Series</td>
-<td colspan="2" style="text-align:center;">${showSeries}</td>
-</tr>
-
-<tr>
-<td>Area</td>
-<td>${showArea}</td>
-<td>Sqft </td>
-</tr>
-
-<tr>
-<td>Rate per Sqft</td>
-<td>${formatCurrency(item.rate || 0)}</td>
-<td>INR</td>
-</tr>
-
-<tr>
-<td>Quantity</td>
-<td>${showQty}</td>
-<td>pcs</td>
-</tr>
-
-<tr>
-<td>Amount</td>
-<td>${showAmount}</td>
-<td>INR</td>
-</tr>
-
-<tr>
-<td>Remarks</td>
-<td colspan="2" style="text-align:center;">${showRemarks}</td>
-
-</tr>
-</table>
-</div>
-</div>
-</div>
-`;
-}).join("")}
+${renderedItemSections}
 </div>
 
 <div class="summary">
@@ -1108,7 +1113,7 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
 
   // Configure html2pdf options
   const options = {
-    margin: [1, 1, 1, 1] as [number, number, number, number],
+    margin: [6, 6, 6, 6] as [number, number, number, number],
     filename: `${quotation.generatedId}_${quotation.customerDetails?.name}.pdf`,
     image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: {
@@ -1132,13 +1137,23 @@ export const generateQuotationPDF = async (quotation: QuotationData) => {
       }
     },
     pagebreak: {
-      mode: ['css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
-       avoid: ['img']
+      mode: ['avoid-all', 'css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
+      avoid: [
+        'img',
+        '.avoid-break',
+        '.item-group',
+        '.window-block',
+        '.window-body',
+        '.subrow-table',
+        '.summary',
+        '.lists',
+        '.signature-row'
+      ]
     },
     jsPDF: {
       unit: 'mm',
       format: 'a3',
-      orientation: 'portrait' as const // Use landscape for better table fit
+      orientation: 'landscape' as const
 
     }
   };

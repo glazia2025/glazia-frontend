@@ -504,27 +504,12 @@ export default function EditQuotationPage() {
   
 
   const getItemTotals = (item: QuotationItem) => {
-    if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
-      const parentQuantity = Math.max(1, item.quantity || 1);
-      const perFrame = item.subItems.reduce(
-        (acc, sub) => {
-          acc.amount += sub.amount;
-          acc.area += sub.area;
-          return acc;
-        },
-        { amount: 0, area: 0 }
-      );
-      return {
-        amount: roundToTwo(perFrame.amount * parentQuantity),
-        area: roundToTwo(perFrame.area * parentQuantity),
-        quantity: parentQuantity,
-      };
-    }
+    const quantity = Math.max(1, item.quantity || 1);
 
     return {
       amount: item.amount,
-      area: item.area * item.quantity,
-      quantity: item.quantity,
+      area: roundToTwo(item.area * quantity),
+      quantity,
     };
   };
 

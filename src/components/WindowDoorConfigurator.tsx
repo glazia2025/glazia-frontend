@@ -436,7 +436,10 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
     }
     node.panelFractions = pattern.fractions;
     node.panelMeshCount = pattern.meshCount;
-    node.panelSashes = buildDefaultSlidingPanelSashes(pattern.fractions.length);
+    node.panelSashes =
+      node.panelSashes && node.panelSashes.length === pattern.fractions.length
+        ? node.panelSashes
+        : buildDefaultSlidingPanelSashes(pattern.fractions.length);
     node.mesh = (pattern.meshCount ?? 0) > 0 ? "Yes" : node.mesh;
   };
 
@@ -477,7 +480,9 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
           0,
           safeFrac,
           1,
-          sub.systemType === "Sliding" ? (idx % 2 === 0 ? "left" : "right") : "fixed",
+          sub.systemType === "Sliding"
+            ? ((sub.sash as SashType | undefined) ?? (idx % 2 === 0 ? "left" : "right"))
+            : "fixed",
           normalizedSystemType,
           normalizedSystemType === "Exhaust Fan" ? "Yes" : yesNoFromValue(sub.glassSpec),
           yesNoFromValue(sub.meshPresent)
@@ -488,6 +493,10 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
         child.exhaustFanY = typeof sub.exhaustFanY === "number" ? sub.exhaustFanY : DEFAULT_EXHAUST_FAN_Y;
         child.exhaustFanSize = typeof sub.exhaustFanSize === "number" ? sub.exhaustFanSize : DEFAULT_EXHAUST_FAN_SIZE;
         child.description = normalizeLeafDescription(normalizedSystemType, sub.description || "", childHasExhaustFan);
+        child.panelSashes =
+          sub.panelSashes?.filter((value): value is SashType =>
+            value === "fixed" || value === "left" || value === "right" || value === "double" || value === "top" || value === "bottom"
+          ) ?? undefined;
         applySlidingPatternFromDescription(child);
         cursor += safeFrac;
         return child;
@@ -518,7 +527,9 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
           cursor,
           1,
           safeFrac,
-          sub.systemType === "Sliding" ? (idx % 2 === 0 ? "left" : "right") : "fixed",
+          sub.systemType === "Sliding"
+            ? ((sub.sash as SashType | undefined) ?? (idx % 2 === 0 ? "left" : "right"))
+            : "fixed",
           normalizedSystemType,
           normalizedSystemType === "Exhaust Fan" ? "Yes" : yesNoFromValue(sub.glassSpec),
           yesNoFromValue(sub.meshPresent)
@@ -529,6 +540,10 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
         child.exhaustFanY = typeof sub.exhaustFanY === "number" ? sub.exhaustFanY : DEFAULT_EXHAUST_FAN_Y;
         child.exhaustFanSize = typeof sub.exhaustFanSize === "number" ? sub.exhaustFanSize : DEFAULT_EXHAUST_FAN_SIZE;
         child.description = normalizeLeafDescription(normalizedSystemType, sub.description || "", childHasExhaustFan);
+        child.panelSashes =
+          sub.panelSashes?.filter((value): value is SashType =>
+            value === "fixed" || value === "left" || value === "right" || value === "double" || value === "top" || value === "bottom"
+          ) ?? undefined;
         applySlidingPatternFromDescription(child);
         cursor += safeFrac;
         return child;
@@ -557,6 +572,19 @@ const mapItemToConfiguratorState = (item: QuotationItem) => {
     root.description = normalizeLeafDescription(sourceSystem, item.description || "", root.hasExhaustFan);
     root.glass = sourceSystem === "Exhaust Fan" ? "Yes" : yesNoFromValue(item.glassSpec);
     root.mesh = yesNoFromValue(item.meshPresent);
+    root.sash =
+      item.sash === "fixed" ||
+      item.sash === "left" ||
+      item.sash === "right" ||
+      item.sash === "double" ||
+      item.sash === "top" ||
+      item.sash === "bottom"
+        ? item.sash
+        : root.sash;
+    root.panelSashes =
+      item.panelSashes?.filter((value): value is SashType =>
+        value === "fixed" || value === "left" || value === "right" || value === "double" || value === "top" || value === "bottom"
+      ) ?? undefined;
     applySlidingPatternFromDescription(root);
   }
 
@@ -2338,6 +2366,8 @@ export default function WindowDoorConfigurator({
           rate: roundToTwo(resolvedRate),
           quantity,
           amount: roundToTwo(quantity * roundToTwo(resolvedRate) * itemArea),
+          sash: leaf.sash,
+          panelSashes: leaf.panelSashes,
           refImage: "",
           remarks: meta.remarks || "",
           hasExhaustFan: Boolean(leaf.hasExhaustFan),
@@ -2423,6 +2453,8 @@ export default function WindowDoorConfigurator({
         rate,
         quantity: Math.max(1, meta.quantity || 1),
         amount,
+        sash: isCombination ? undefined : singleLeaf?.sash,
+        panelSashes: isCombination ? undefined : singleLeaf?.panelSashes,
         refImage: dataUrl,
         remarks: meta.remarks || "",
         hasExhaustFan: isCombination ? false : Boolean(singleLeaf?.hasExhaustFan),
