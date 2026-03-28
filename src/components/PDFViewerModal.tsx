@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { X, Download } from "lucide-react";
-import { generateQuotationPDF, createQuotationHTML } from "@/utils/pdfGenerator";
-import { createPdfFrame } from "@/utils/pdfFrame";
+import {
+  generateQuotationPDF,
+  generateQuotationPDFBlob,
+} from "@/utils/pdfGenerator";
 
 interface PDFViewerModalProps {
   isOpen: boolean;
@@ -26,118 +28,20 @@ export default function PDFViewerModal({ isOpen, onClose, quotation }: PDFViewer
     };
   }, [isOpen, quotation]);
 
-  // Convert image → base64
-  const imageToBase64 = (url: string): Promise<string> =>
-    new Promise((resolve) => {
-      if (!url) return resolve("");
-
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          try {
-            resolve(canvas.toDataURL("image/jpeg", 0.8));
-          } catch {
-            resolve("");
-          }
-        } else {
-          resolve("");
-        }
-      };
-
-      img.onerror = () => resolve("");
-
-      img.src = url.startsWith("/") ? window.location.origin + url : url;
-    });
-
   const generatePDFBlob = async () => {
     setIsLoading(true);
     setError("");
-
-    let cleanupFrame: (() => void) | null = null;
     try {
       if (!quotation) {
         return;
       }
-      const html2pdf = (await import("html2pdf.js")).default;
-
-      // Convert images → base64
-      const items = quotation.items ?? [];
-      const itemsWithImages = await Promise.all(
-        items.map(async (item: any) => ({
-          ...item,
-          refImage: item.refImage ? await imageToBase64(item.refImage) : "",
-          subItems: item.subItems
-            ? await Promise.all(
-                item.subItems.map(async (sub: any) => ({
-                  ...sub,
-                  refImage: sub.refImage ? await imageToBase64(sub.refImage) : "",
-                }))
-              )
-            : undefined,
-        }))
-      );
-
-      const quotationWithImages = {
-        ...quotation,
-        items: itemsWithImages,
-      };
-
-      // Generate HTML for PDF
-      const htmlContent = await createQuotationHTML(quotationWithImages);
-
-      const { body, cleanup, doc } = await createPdfFrame(htmlContent);
-      cleanupFrame = cleanup;
-
-      const options = {
-        margin: [5, 5, 5, 5] as [number, number, number, number],
-        filename: `${quotation.quotationNumber}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          windowWidth: document.body.scrollWidth,
-windowHeight: document.body.scrollHeight,
-          onclone: (clonedDoc: Document) => {
-            if (doc.head && clonedDoc.head) {
-              clonedDoc.head.innerHTML = "";
-              clonedDoc.head.appendChild(doc.head.cloneNode(true));
-            }
-          },
-        },
-        jsPDF: {
-          unit: "mm",
-          format: "a3",
-          orientation: "landscape",
-        },
-        pagebreak: {
-          mode: ["css", "legacy"] as Array<"avoid-all" | "css" | "legacy">,
-          avoid: ["img"],
-        },
-      };
-
-      // FIX: Proper PDF Worker
-      const worker = html2pdf().set(options).from(body);
-
-      await worker.toPdf();
-      const pdfBlob = await worker.output("blob");
-
+      const pdfBlob = await generateQuotationPDFBlob(quotation);
       const url = URL.createObjectURL(pdfBlob);
       setPdfUrl(url);
     } catch (err: any) {
       console.error(err);
       setError(`Failed to generate PDF preview: ${err.message}`);
     } finally {
-      cleanupFrame?.();
       setIsLoading(false);
     }
   };

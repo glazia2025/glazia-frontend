@@ -10,6 +10,7 @@ import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import { QuotationItemRow, QuotationItem } from "@/components/QuotationItemRow";
 import { loadGlobalConfig } from "@/utils/globalConfig";
 import { API_BASE_URL } from "@/services/api";
+import { calculateQuotationPricing, roundToTwo } from "@/utils/quotationPricing";
 import dynamic from "next/dynamic";
 
 interface CustomerDetails {
@@ -334,8 +335,6 @@ useEffect(() => {
     };
   };
 
-  const roundToTwo = (value: number) => Number(value.toFixed(2));
-
   const calculateTotal = () =>
     items.reduce((total, item) => total + getItemTotals(item).amount, 0);
   const calculateTotalArea = () =>
@@ -346,15 +345,10 @@ useEffect(() => {
   const getAdditionalCost = (key: keyof GlobalConfig["additionalCosts"]) =>
     Number(globalConfig.additionalCosts?.[key] || 0);
 
+  const pricing = calculateQuotationPricing(items, globalConfig.additionalCosts);
+
   const calculateFinalTotal = () => {
-    const totalWithProfit = calculateTotal() + (calculateTotal() * (profitPercentage / 100));
-    const additionalCosts =
-      getAdditionalCost("transport") +
-      (getAdditionalCost("installation") * calculateTotalArea()) +
-      getAdditionalCost("loadingUnloading");
-    const discount =
-      (getAdditionalCost("discountPercent") / 100) * (totalWithProfit + additionalCosts);
-    return totalWithProfit + additionalCosts - discount;
+    return pricing.totalProjectCost;
   };
 
   const handleLogoUpload = (file: File | null) => {
@@ -371,7 +365,7 @@ useEffect(() => {
 
   const handleSave = (pushBack: boolean = true) => {
 
-    const totalAmount = calculateFinalTotal().toFixed(2);
+    const totalAmount = pricing.totalProjectCost.toFixed(2);
 
     console.log("Total amount", totalAmount);
 
@@ -948,7 +942,7 @@ useEffect(() => {
               </div>
               <div className="text-center">
                 <div className="text-sm font-medium text-gray-600">Total Area</div>
-                <div className="text-lg font-bold text-gray-900">{calculateTotalArea().toFixed(2)}</div>
+                <div className="text-lg font-bold text-gray-900">{pricing.totalArea.toFixed(2)}</div>
               </div>
               <div className="text-center">
                 <div className="text-sm font-medium text-gray-600">Profit %</div>
@@ -971,7 +965,7 @@ useEffect(() => {
                 <div className="text-sm font-medium text-gray-600">Total Amount</div>
                 <div className="text-lg font-bold text-[#124657]">
                   ₹
-                  {(calculateTotal() + calculateTotal() * (profitPercentage / 100)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {pricing.baseTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
               <div className="text-center">
@@ -985,7 +979,7 @@ useEffect(() => {
                 <div className="text-sm font-medium text-gray-600">Final Amount with GST</div>
                 <div className="text-lg font-bold text-[#124657]">
                   ₹
-                  {(calculateFinalTotal() + (calculateFinalTotal() * 0.18)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {pricing.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
             </div>
@@ -1033,6 +1027,7 @@ useEffect(() => {
                       onInlineUpdate={handleInlineItemUpdate}
                       onInlineSubItemUpdate={handleInlineSubItemUpdate}
                       canRemove={items.length > 1}
+                      profitPercentage={profitPercentage}
                     />
                   ))}
                 </tbody>

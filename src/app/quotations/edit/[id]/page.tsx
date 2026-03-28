@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import axios from "axios";
 import { loadGlobalConfig } from "@/utils/globalConfig";
 import { API_BASE_URL } from "@/services/api";
+import { calculateQuotationPricing, roundToTwo } from "@/utils/quotationPricing";
 
 
 
@@ -513,8 +514,6 @@ export default function EditQuotationPage() {
     };
   };
 
-  const roundToTwo = (value: number) => Number(value.toFixed(2));
-
   const calculateTotal = () =>
     items.reduce((total, item) => total + getItemTotals(item).amount, 0);
 
@@ -527,15 +526,10 @@ export default function EditQuotationPage() {
   const getAdditionalCost = (key: keyof GlobalConfig["additionalCosts"]) =>
     Number(globalConfig.additionalCosts?.[key] || 0);
 
+  const pricing = calculateQuotationPricing(items, globalConfig.additionalCosts);
+
   const calculateFinalTotal = () => {
-    const totalWithProfit = calculateTotal() + calculateTotal() * (profitPercentage / 100);
-    const additionalCosts =
-      getAdditionalCost("transport") +
-      (getAdditionalCost("installation") * calculateTotalArea()) +
-      getAdditionalCost("loadingUnloading");
-    const discount =
-      (getAdditionalCost("discountPercent") / 100) * (totalWithProfit + additionalCosts);
-    return totalWithProfit + additionalCosts - discount;
+    return pricing.totalProjectCost;
   };
 
   const handleLogoUpload = (file: File | null) => {
@@ -561,7 +555,7 @@ export default function EditQuotationPage() {
 
   // Update quotation (instead of create new)
   const handleUpdate = async () => {
-    const totalAmount = calculateFinalTotal().toFixed(2);
+    const totalAmount = pricing.totalProjectCost.toFixed(2);
 
     console.log("Total amount", totalAmount);
 
@@ -1188,7 +1182,7 @@ export default function EditQuotationPage() {
                   </div>
                   <div className="text-center">
                     <div className="text-sm font-medium text-gray-600">Total Area</div>
-                    <div className="text-lg font-bold text-gray-900">{calculateTotalArea().toFixed(2)} sq ft</div>
+                    <div className="text-lg font-bold text-gray-900">{pricing.totalArea.toFixed(2)} sq ft</div>
                   </div>
                   <div className="text-center">
                     <div className="text-sm font-medium text-gray-600 mb-1">Profit %</div>
@@ -1211,7 +1205,7 @@ export default function EditQuotationPage() {
                     <div className="text-sm font-medium text-gray-600">Total Amount</div>
                     <div className="text-lg font-bold text-[#124657]">
                       ₹
-                      {(calculateTotal() + calculateTotal() * (profitPercentage / 100)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {pricing.baseTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
                   <div className="text-center">
@@ -1225,7 +1219,7 @@ export default function EditQuotationPage() {
                     <div className="text-sm font-medium text-gray-600">Final Amount with GST</div>
                     <div className="text-lg font-bold text-[#124657]">
                       ₹
-                      {(calculateFinalTotal() + (calculateFinalTotal() * 0.18)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {pricing.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
                 </div>
@@ -1273,6 +1267,7 @@ export default function EditQuotationPage() {
                           onInlineUpdate={handleInlineItemUpdate}
                           onInlineSubItemUpdate={handleInlineSubItemUpdate}
                           canRemove={items.length > 1}
+                          profitPercentage={profitPercentage}
                         />
                       ))}
                     </tbody>

@@ -1,5 +1,6 @@
 import { loadGlobalConfig } from "@/utils/globalConfig";
 import { createPdfFrame } from "@/utils/pdfFrame";
+import { calculateQuotationPricing, roundToTwo } from "@/utils/quotationPricing";
 
 // Helper function to convert image URL to base64
 const imageToBase64 = (url: string): Promise<string> => {
@@ -79,18 +80,6 @@ interface QuotationItem extends QuotationItemBase {
   subItems?: QuotationSubItem[];
 }
 
-const getPresetImagePath = (description?: string): string => {
-  if (!description) return "";
-  if (description === "Fix") return "/Quotations/Fix.png";
-  if (description === "French Door" || description === "French Window")
-    return "/Quotations/French Door-Window.jpg";
-  if (description === "Left Openable Window" || description === "Left Openable Door")
-    return "/Quotations/Left Openable Door-Window.jpg";
-  if (description === "Right Openable Window" || description === "Right Openable Door")
-    return "/Quotations/Right Openable Door-Window.jpg";
-  return `/Quotations/${description}.jpg`;
-};
-
 interface QuotationData {
   id: string;
   quotationNumber?: string;
@@ -141,6 +130,16 @@ interface QuotationData {
   totalAmount?: number;
 }
 
+const getQuotationPdfFilename = (quotation: QuotationData) => {
+  const quotationId =
+    quotation.quotationNumber ||
+    quotation.quotationDetails?.id ||
+    quotation.generatedId ||
+    quotation.id;
+
+  return `${quotationId}.pdf`;
+};
+
 export function getInitials(name?: string): string {
   if (!name) return "??";
 
@@ -188,159 +187,21 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
     return str.replace(/\n/g, "<br>");
   };
 
-  const roundToTwo = (value: number) => Number(value.toFixed(2));
   const formatCurrency = (value: number) =>
     value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  const profitMultiplier =
-    (quotation as unknown as { profitPercentage?: number })?.profitPercentage
-      ? 1 + ((quotation as unknown as { profitPercentage?: number }).profitPercentage || 0) / 100
-      : 1;
-
-
   const COMBINATION_SYSTEM = "Combination";
-  const applyProfit = <T extends QuotationItemBase>(item: T): T => {
-    const quantity = item.quantity || 0;
-    const area = item.area || 0;
-    const rate = roundToTwo((item.rate || 0) * profitMultiplier);
-    const amount = roundToTwo(rate * quantity * area);
-    return {
-      ...item,
-      rate,
-      amount,
-    };
-  };
-
-  const syncCombinationValues = (item: QuotationItem, subItems: QuotationSubItem[]): QuotationItem => {
-    if (subItems.length === 0) {
-      return {
-        ...item,
-        width: 0,
-        height: 0,
-        area: 0,
-        rate: 0,
-        amount: 0,
-        quantity: 0,
-        subItems,
-      };
-    }
-
-    const totals = subItems.reduce(
-      (acc, sub) => {
-        acc.width += sub.width || 0;
-        acc.height += sub.height || 0;
-        acc.area += (sub.area || 0) * (sub.quantity || 0);
-        acc.amount += sub.amount || 0;
-        acc.quantity += sub.quantity || 0;
-        return acc;
-      },
-      { width: 0, height: 0, area: 0, amount: 0, quantity: 0 }
-    );
-
-    const rate = totals.area ? totals.amount / totals.area : 0;
-
-    return {
-      ...item,
-      width: totals.width,
-      height: item.height,
-      area: totals.area,
-      rate: roundToTwo(rate),
-      amount: roundToTwo(totals.amount),
-      quantity: item.quantity,
-      subItems,
-    };
-  };
-
-  let itemsWithProfit: QuotationItem[] = (quotation.items || []).map((item) => {
-    if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
-      const subItems = item.subItems.map(applyProfit);
-      return syncCombinationValues(item, subItems);
-    }
-    return applyProfit(item);
-  });
-
-  const getEffectiveItems = (items: QuotationItem[]) =>
-    items.flatMap((item) => {
-      if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
-        return item.subItems;
-      }
-      return [item];
-    });
-
-  let effectiveItems = getEffectiveItems(itemsWithProfit);
-
-  const totalArea = itemsWithProfit.reduce(
-    (sum, item) => sum + (item.area || 0) * Math.max(1, item.quantity || 1),
-    0
-  );
-
-  const rawTotal =
-    quotation.totalAmount ??
-    effectiveItems.reduce((sum, item) => sum + (item.amount || 0), 0);
-  let baseTotal = roundToTwo(rawTotal);
-  const additionalCosts = globalConfig?.additionalCosts || {};
-  const transport = additionalCosts.transport || 0;
-  const installation = (additionalCosts.installation || 0) * totalArea;
-  const loadingUnloading = additionalCosts.loadingUnloading || 0;
-  const discount =
-    ((additionalCosts.discountPercent || 0) / 100) *
-    (baseTotal + transport + installation + loadingUnloading);
-
-  const showTransport = additionalCosts.showTransport ?? true;
-  const showInstallation = additionalCosts.showInstallation ?? true;
-  const showLoadingUnloading = additionalCosts.showLoadingUnloading ?? true;
-  const showDiscount = additionalCosts.showDiscount ?? true;
-
-  const hiddenCostTotal =
-    (showTransport ? 0 : transport) +
-    (showInstallation ? 0 : installation) +
-    (showLoadingUnloading ? 0 : loadingUnloading) -
-    (showDiscount ? 0 : discount);
-
-  if (hiddenCostTotal !== 0 && effectiveItems.length > 0) {
-    const totalWeight = effectiveItems.reduce(
-      (sum, item) => sum + (item.area || 0) * (item.quantity || 1),
-      0
-    );
-    const useEqualWeight = totalWeight === 0;
-    const perItemShare = useEqualWeight ? hiddenCostTotal / effectiveItems.length : 0;
-
-    effectiveItems.forEach((item) => {
-      const weight = useEqualWeight ? 1 : (item.area || 0) * (item.quantity || 1);
-      const share = useEqualWeight ? perItemShare : (hiddenCostTotal * weight) / totalWeight;
-      const nextAmount = roundToTwo((item.amount || 0) + share);
-      item.amount = nextAmount;
-      const denom = (item.area || 0) * (item.quantity || 1);
-      if (denom > 0) {
-        item.rate = roundToTwo(nextAmount / denom);
-      }
-    });
-
-    itemsWithProfit = itemsWithProfit.map((item) => {
-      if (item.systemType === COMBINATION_SYSTEM && item.subItems?.length) {
-        return syncCombinationValues(item, item.subItems);
-      }
-      return item;
-    });
-    effectiveItems = getEffectiveItems(itemsWithProfit);
-    baseTotal = roundToTwo(
-      effectiveItems.reduce((sum, item) => sum + (item.amount || 0), 0)
-    );
-  }
-
-  const visibleTransport = showTransport ? transport : 0;
-  const visibleInstallation = showInstallation ? installation : 0;
-  const visibleLoadingUnloading = showLoadingUnloading ? loadingUnloading : 0;
-  const visibleDiscount = showDiscount ? discount : 0;
-
-  const totalProjectCost =
-    baseTotal + visibleTransport + visibleInstallation + visibleLoadingUnloading - visibleDiscount;
-  const gstValue = totalProjectCost * 0.18;
-  const grandTotal = totalProjectCost + gstValue;
-
-  const totalQty = effectiveItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const avgWithoutGst = totalArea ? totalProjectCost / totalArea : 0;
-  const avgWithGst = totalArea ? avgWithoutGst * 1.18 : 0;
+  const pricing = calculateQuotationPricing(quotation.items || [], globalConfig?.additionalCosts);
+  const itemsWithComputedParents = pricing.items as QuotationItem[];
+  const {
+    baseTotal,
+    totalArea,
+    totalQty,
+    totalProjectCost,
+    gstValue,
+    grandTotal,
+    avgWithoutGst,
+    avgWithGst,
+  } = pricing;
 
   let rowCounter = 0;
   console.log(quotation, 'quotation>>>>');
@@ -518,7 +379,7 @@ ${subItems.map((item) => {
 </div>
 `;
 
-  const renderedItemSections = itemsWithProfit.map((item) => {
+  const renderedItemSections = itemsWithComputedParents.map((item) => {
     rowCounter += 1;
     const isCombinationParent =
       item.systemType === COMBINATION_SYSTEM && Boolean(item.subItems?.length);
@@ -1076,92 +937,108 @@ ${renderedItemSections}
   `;
 };
 
-export const generateQuotationPDF = async (quotation: QuotationData) => {
-  // Convert all images to base64 first
-  const itemsWithBase64Images = await Promise.all(
+export const prepareQuotationForPdf = async (quotation: QuotationData): Promise<QuotationData> => {
+  const itemsWithImages = await Promise.all(
     (quotation.items || []).map(async (item) => ({
       ...item,
       refImage: item.refImage ? await imageToBase64(item.refImage) : "",
-      
       subItems: item.subItems
         ? await Promise.all(
-          item.subItems.map(async (sub) => ({
-            ...sub,
-            refImage: sub.refImage
-              ? await imageToBase64(sub.refImage)
-              : await imageToBase64(getPresetImagePath(sub.description)),
-            //         
-          }))
-        )
+            item.subItems.map(async (sub) => ({
+              ...sub,
+              refImage: sub.refImage ? await imageToBase64(sub.refImage) : "",
+            }))
+          )
         : undefined,
     }))
   );
 
-  // Create quotation with base64 images
-  const quotationWithImages = {
+  return {
     ...quotation,
-    items: itemsWithBase64Images
+    items: itemsWithImages,
   };
+};
 
-  // Dynamic import to avoid SSR issues
-  const html2pdf = (await import('html2pdf.js')).default;
+export const getQuotationPdfOptions = (
+  quotation: QuotationData,
+  doc: Document,
+  body: HTMLBodyElement
+) => {
+  const pageMargin = 5;
+  const a3LandscapeWidthMm = 420;
+  const pxToMm = 25.4 / 96;
+  const container = body.querySelector(".container") as HTMLElement | null;
+  const measuredHeightPx = container
+    ? Math.max(
+        Math.ceil(container.getBoundingClientRect().height),
+        container.scrollHeight,
+        container.offsetHeight
+      )
+    : Math.max(body.scrollHeight, body.offsetHeight);
+  const contentHeightMm = measuredHeightPx * pxToMm;
+  const pageWidthMm = a3LandscapeWidthMm;
+  const pageHeightMm = contentHeightMm + pageMargin * 2 + 2;
 
-  const html = await createQuotationHTML(quotationWithImages);
-  const { body, cleanup, doc } = await createPdfFrame(html);
-
-  console.log(quotation);
-
-  // Configure html2pdf options
-  const options = {
-    margin: [6, 6, 6, 6] as [number, number, number, number],
-    filename: `${quotation.generatedId}_${quotation.customerDetails?.name}.pdf`,
-    image: { type: 'jpeg' as const, quality: 0.98 },
+  return {
+    margin: [5, 5, 5, 5] as [number, number, number, number],
+    filename: getQuotationPdfFilename(quotation),
+    image: { type: "jpeg" as const, quality: 0.98 },
     html2canvas: {
-      scale: 3,
+      scale: 2,
       useCORS: true,
       allowTaint: true,
-      letterRendering: true,
-      logging: false,
-      imageTimeout: 15000,
-      backgroundColor: "#ffffff",
-      windowWidth: document.body.scrollWidth,
-      windowHeight: document.body.scrollHeight,
-
-      scrollX: 0,
-      scrollY: 0,
+      windowWidth: Math.max(body.scrollWidth, body.offsetWidth),
+      windowHeight: Math.max(body.scrollHeight, body.offsetHeight),
       onclone: (clonedDoc: Document) => {
         if (doc.head && clonedDoc.head) {
           clonedDoc.head.innerHTML = "";
           clonedDoc.head.appendChild(doc.head.cloneNode(true));
         }
-      }
-    },
-    pagebreak: {
-      mode: ['avoid-all', 'css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
-      avoid: [
-        'img',
-        '.avoid-break',
-        '.item-group',
-        '.window-block',
-        '.window-body',
-        '.subrow-table',
-        '.summary',
-        '.lists',
-        '.signature-row'
-      ]
+      },
     },
     jsPDF: {
-      unit: 'mm',
-      format: 'a3',
-      orientation: 'landscape' as const
-
-    }
+      unit: "mm" as const,
+      format: [pageWidthMm, pageHeightMm] as [number, number],
+      orientation: "portrait" as const,
+    },
+    pagebreak: {
+      mode: ["avoid-all"] as Array<"avoid-all" | "css" | "legacy">,
+      avoid: ["*"],
+    },
   };
+};
+
+export const generateQuotationPDFBlob = async (quotation: QuotationData): Promise<Blob> => {
+  const quotationWithImages = await prepareQuotationForPdf(quotation);
+  const html2pdf = (await import("html2pdf.js")).default;
+  const html = await createQuotationHTML(quotationWithImages);
+  const { body, cleanup, doc } = await createPdfFrame(html);
 
   try {
-    // Generate and download the PDF
-    await html2pdf().set(options).from(body).save();
+    const worker = html2pdf()
+      .set(getQuotationPdfOptions(quotationWithImages, doc, body))
+      .from(body);
+
+    await worker.toPdf();
+    return await worker.output("blob");
   } finally {
     cleanup();
+  }
+};
+
+export const generateQuotationPDF = async (quotation: QuotationData) => {
+  const blob = await generateQuotationPDFBlob(quotation);
+  const filename = getQuotationPdfFilename(quotation);
+  const url = URL.createObjectURL(blob);
+
+  try {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } finally {
+    URL.revokeObjectURL(url);
   }
 };
