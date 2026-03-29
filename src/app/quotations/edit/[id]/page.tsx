@@ -526,7 +526,7 @@ export default function EditQuotationPage() {
   const getAdditionalCost = (key: keyof GlobalConfig["additionalCosts"]) =>
     Number(globalConfig.additionalCosts?.[key] || 0);
 
-  const pricing = calculateQuotationPricing(items, globalConfig.additionalCosts);
+  const pricing = calculateQuotationPricing(items, globalConfig.additionalCosts, profitPercentage);
 
   const calculateFinalTotal = () => {
     return pricing.totalProjectCost;

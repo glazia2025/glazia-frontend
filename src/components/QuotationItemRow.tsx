@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Copy, Pencil, Trash2 } from "lucide-react";
 import { useDescriptionsQuery, useOptionsQuery } from "@/lib/quotations/queries";
 import type { Description, OptionsResponse } from "@/lib/quotations/types";
-import { applyProfitToRate } from "@/utils/quotationPricing";
 
 interface QuotationItemBase {
   id: string;
@@ -39,7 +38,7 @@ interface QuotationItemBase {
   areaSlabIndex?: number;
 }
 
-export interface QuotationSubItem extends QuotationItemBase {}
+export type QuotationSubItem = QuotationItemBase;
 
 export interface QuotationItem extends QuotationItemBase {
   subItems?: QuotationSubItem[];
@@ -140,13 +139,11 @@ function QuotationSubItemEditRow({
   item,
   index,
   onInlineSubItemUpdate,
-  profitPercentage,
 }: {
   parentId: string;
   item: QuotationSubItem;
   index: number;
   onInlineSubItemUpdate: (parentId: string, subItemId: string, patch: InlinePatch) => void;
-  profitPercentage: number;
 }) {
   const [imageError, setImageError] = useState(false);
   const presetImage = getPresetImagePath(item.description);
@@ -177,7 +174,7 @@ function QuotationSubItemEditRow({
     const calc = calculateRateForItem(next, descriptionsQuery.data?.descriptions, metaOptionsQuery.data);
     onInlineSubItemUpdate(parentId, item.id, {
       ...patch,
-      rate: applyProfitToRate(calc.rate, profitPercentage),
+      rate: calc.rate,
       baseRate: calc.baseRate,
       areaSlabIndex: calc.areaSlabIndex,
       handleCount: calc.handleCount,
@@ -325,7 +322,6 @@ export function QuotationItemRow({
   onInlineUpdate,
   onInlineSubItemUpdate,
   canRemove,
-  profitPercentage,
 }: Props) {
   const [imageError, setImageError] = useState(false);
   const isCombination = item.systemType === COMBINATION_SYSTEM;
@@ -356,7 +352,7 @@ export function QuotationItemRow({
     const calc = calculateRateForItem(next, descriptionsQuery.data?.descriptions, metaOptionsQuery.data);
     onInlineUpdate(item.id, {
       ...patch,
-      rate: applyProfitToRate(calc.rate, profitPercentage),
+      rate: calc.rate,
       baseRate: calc.baseRate,
       areaSlabIndex: calc.areaSlabIndex,
       handleCount: calc.handleCount,
@@ -552,7 +548,6 @@ export function QuotationItemRow({
                       item={subItem}
                       index={subIndex}
                       onInlineSubItemUpdate={onInlineSubItemUpdate}
-                      profitPercentage={profitPercentage}
                     />
                   ))}
                 </tbody>

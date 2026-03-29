@@ -101,8 +101,6 @@ const AREA_SLABS = [
 const COMBINATION_SYSTEM = "Combination";
 const CATALOG_SYSTEMS = new Set<SystemType>(["Casement", "Sliding", "Slide N Fold"]);
 const roundToTwo = (value: number) => Number(value.toFixed(2));
-const applyProfitToRate = (rate: number, profitPercentage: number) =>
-  profitPercentage > 0 ? roundToTwo(rate + (rate * profitPercentage) / 100) : roundToTwo(rate);
 const indexToAlphaLower = (index: number): string => {
   let n = index;
   let result = "";
@@ -2343,7 +2341,7 @@ export default function WindowDoorConfigurator({
           descriptions,
           options
         );
-        const computedRate = applyProfitToRate(calc.rate, profitPercentage);
+        const computedRate = calc.rate;
         const resolvedRate = manualChildRates[leaf.id] ?? autoChildRates[leaf.id] ?? computedRate;
         const quantity = 1;
         return {
@@ -2415,7 +2413,7 @@ export default function WindowDoorConfigurator({
         baseRate = calc.baseRate;
         areaSlabIndex = calc.areaSlabIndex;
         handleCount = calc.handleCount;
-        rate = isManualRate ? meta.rate : applyProfitToRate(calc.rate, profitPercentage);
+        rate = isManualRate ? meta.rate : calc.rate;
         amount = roundToTwo(Math.max(1, meta.quantity || 1) * rate * areaSqft);
       } else {
         const parentQuantity = Math.max(1, meta.quantity || 1);
@@ -3437,7 +3435,7 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
               descriptionsResp.descriptions,
               optionsResp
             );
-            next[leaf.id] = applyProfitToRate(calc.rate, profitPercentage);
+            next[leaf.id] = calc.rate;
           } catch {
             next[leaf.id] = 0;
           }
@@ -3458,7 +3456,6 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
     isCombinationDraft,
     leafNodesForMode,
     meta.productType,
-    profitPercentage,
     widthMm,
   ]);
 

@@ -1,6 +1,6 @@
 import { loadGlobalConfig } from "@/utils/globalConfig";
 import { createPdfFrame } from "@/utils/pdfFrame";
-import { calculateQuotationPricing, roundToTwo } from "@/utils/quotationPricing";
+import { calculateQuotationPricing } from "@/utils/quotationPricing";
 
 // Helper function to convert image URL to base64
 const imageToBase64 = (url: string): Promise<string> => {
@@ -74,7 +74,7 @@ interface QuotationItemBase {
   remarks?: string;
 }
 
-interface QuotationSubItem extends QuotationItemBase { }
+type QuotationSubItem = QuotationItemBase;
 
 interface QuotationItem extends QuotationItemBase {
   subItems?: QuotationSubItem[];
@@ -125,7 +125,9 @@ interface QuotationData {
   breakdown?: {
     baseRate?: number;
     areaSlabIndex?: number;
+    profitPercentage?: number;
   };
+  profitPercentage?: number;
   validUntil?: string;
   totalAmount?: number;
 }
@@ -190,7 +192,11 @@ export const createQuotationHTML = async (quotation: QuotationData): Promise<str
   const formatCurrency = (value: number) =>
     value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const COMBINATION_SYSTEM = "Combination";
-  const pricing = calculateQuotationPricing(quotation.items || [], globalConfig?.additionalCosts);
+  const pricing = calculateQuotationPricing(
+    quotation.items || [],
+    globalConfig?.additionalCosts,
+    quotation.breakdown?.profitPercentage ?? quotation.profitPercentage ?? 0
+  );
   const itemsWithComputedParents = pricing.items as QuotationItem[];
   const {
     baseTotal,

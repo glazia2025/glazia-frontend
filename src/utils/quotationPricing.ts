@@ -25,6 +25,9 @@ export const roundToTwo = (value: number) => Number(value.toFixed(2));
 export const applyProfitToRate = (rate: number, profitPercentage: number) =>
   profitPercentage > 0 ? roundToTwo(rate + (rate * profitPercentage) / 100) : roundToTwo(rate);
 
+export const applyProfitToAmount = (amount: number, profitPercentage: number) =>
+  profitPercentage > 0 ? roundToTwo(amount + (amount * profitPercentage) / 100) : roundToTwo(amount);
+
 export const getItemQuantity = (item: PricingItem) => Math.max(1, item.quantity || 1);
 
 const COMBINATION_SYSTEM = "Combination";
@@ -63,9 +66,14 @@ export const normalizeQuotationItemsForPricing = <T extends PricingItem>(items: 
 
 export const calculateQuotationPricing = (
   items: PricingItem[],
-  additionalCosts?: AdditionalCosts
+  additionalCosts?: AdditionalCosts,
+  profitPercentage = 0
 ) => {
-  const normalizedItems = normalizeQuotationItemsForPricing(items);
+  const normalizedItems = normalizeQuotationItemsForPricing(items).map((item) => ({
+    ...item,
+    rate: applyProfitToRate(Number(item.rate) || 0, profitPercentage),
+    amount: applyProfitToAmount(Number(item.amount) || 0, profitPercentage),
+  }));
   const baseTotal = roundToTwo(
     normalizedItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
   );
