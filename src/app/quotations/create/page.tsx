@@ -182,6 +182,23 @@ useEffect(() => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [isDirty]);
+  useEffect(() => {
+  const handlePopState = () => {
+    if (!isDirty) return;
+
+    alert(" If You back.Your quotation changes are not saved!");
+
+    window.history.pushState(null, "", window.location.href);
+  };
+
+  window.history.pushState(null, "", window.location.href);
+
+  window.addEventListener("popstate", handlePopState);
+
+  return () => {
+    window.removeEventListener("popstate", handlePopState);
+  };
+}, [isDirty]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("glazia-user");

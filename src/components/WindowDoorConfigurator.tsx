@@ -2697,20 +2697,20 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
                   points: [cursor + pw * 0.5, arrowY, cursor + pw * 0.25, arrowY],
                   stroke: "#111827",
                   fill: "#111827",
-                  strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+                  strokeWidth: x % (gridSize * 5) === 0 ? 2.6: 2,
                   pointerLength: 7,
                   pointerWidth: 7,
-                  opacity: 0.7,
+                  opacity: 1,
                   listening: false,
                 }));
                 g.add(new Konva.Arrow({
                   points: [cursor + pw * 0.5, arrowY, cursor + pw * 0.75, arrowY],
                   stroke: "#111827",
                   fill: "#111827",
-                  strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+                  strokeWidth: x % (gridSize * 5) === 0 ? 2.6: 2,
                   pointerLength: 7,
                   pointerWidth: 7,
-                  opacity: 0.7,
+                  opacity: 1,
                   listening: false,
                 }));
               } else if (panelSash === "left" || panelSash === "right") {
@@ -2720,10 +2720,10 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
                   points: [from, arrowY, to, arrowY],
                   stroke: "#111827",
                   fill: "#111827",
-                  strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+                  strokeWidth: x % (gridSize * 5) === 0 ? 2.6 : 2,
                   pointerLength: 7,
                   pointerWidth: 7,
-                  opacity: 0.7,
+                  opacity: 1,
                   listening: false,
                 }));
               }
@@ -2968,20 +2968,20 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
             points: [x + w * 0.50, arrowY, x + w * 0.28, arrowY],
             stroke: "#111827",
             fill: "#111827",
-            strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+            strokeWidth: x % (gridSize * 5) === 0 ? 2.6 : 2,
             pointerLength: 8,
             pointerWidth: 8,
-            opacity: 0.7,
+            opacity: 1,
             listening: false,
           }));
           g.add(new Konva.Arrow({
             points: [x + w * 0.50, arrowY, x + w * 0.72, arrowY],
             stroke: "#111827",
             fill: "#111827",
-            strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+            strokeWidth: x % (gridSize * 5) === 0 ? 2.6: 2,
             pointerLength: 8,
             pointerWidth: 8,
-            opacity: 0.7,
+            opacity: 1,
             listening: false,
           }));
         } else {
@@ -2991,10 +2991,10 @@ for (let y = 0; y <= stageSize.h; y += gridSize) {
             points: [from, arrowY, to, arrowY],
             stroke: "#111827",
             fill: "#111827",
-            strokeWidth: x % (gridSize * 5) === 0 ? 1.2 : 0.6,
+            strokeWidth: x % (gridSize * 5) === 0 ? 2.6 : 2,
             pointerLength: 8,
             pointerWidth: 8,
-            opacity: 0.7,
+            opacity: 1,
             listening: false,
           }));
         }

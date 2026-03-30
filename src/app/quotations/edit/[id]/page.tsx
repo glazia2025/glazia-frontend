@@ -369,6 +369,25 @@ export default function EditQuotationPage() {
     };
   }, [isDirty]);
 
+ useEffect(() => {
+  const handlePopState = () => {
+    if (!isDirty) return;
+
+    alert(" If You back.Your quotation changes are not saved!");
+
+    window.history.pushState(null, "", window.location.href);
+  };
+
+  window.history.pushState(null, "", window.location.href);
+
+  window.addEventListener("popstate", handlePopState);
+
+  return () => {
+    window.removeEventListener("popstate", handlePopState);
+  };
+}, [isDirty]);
+
+
   useEffect(() => {
     const savedUser = localStorage.getItem("glazia-user");
     if (!savedUser) return;
@@ -803,7 +822,9 @@ export default function EditQuotationPage() {
                       <input
                         type="date"
                         value={quotationDetails.date}
-                        onChange={(e) => setQuotationDetails({ ...quotationDetails, date: e.target.value })}
+                        onChange={(e) =>
+                          { setQuotationDetails({ ...quotationDetails, date: e.target.value })}}
+                      
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                       />
                     </div>
@@ -831,6 +852,16 @@ export default function EditQuotationPage() {
                         type="tel"
                         value={quotationDetails.contactPhone}
                         onChange={(e) => setQuotationDetails({ ...quotationDetails, contactPhone: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
+                      />
+                    </div>
+                     <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Valid Till
+                      </label>
+                      <input
+                        type="tel"
+                        value="For 15 days"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#124657] focus:border-transparent"
                       />
                     </div>

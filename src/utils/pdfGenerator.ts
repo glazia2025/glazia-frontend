@@ -705,34 +705,67 @@ height:45px;
 object-fit:contain;
 }
 
-.summary{
-display:flex;
-margin:6mm 0;
+.summary {
+  display: flex;
+  margin: 6mm 0;
 }
 
-.total-card{
-width:320px;
-border:1px solid #e5e5e5;
-border-radius:6px;
-padding:14px;
+/* Card */
+.total-card {
+  width: 380px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #dcdcdc;
+  font-family: Arial, sans-serif;
 }
 
-.total-heading{
-color:#d5272b;
-font-size:14px;
-font-weight:600;
-margin-bottom:10px;
+/* Heading bar (like image) */
+.total-heading {
+  background: #f5f7fa;
+  color: #d5272b;
+  font-weight: 700;
+  font-size:22px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #ccc;
 }
 
-.total-row{
-display:grid;
-grid-template-columns:1fr auto;
-padding:6px 0;
-border-bottom:1px solid #eaeaea;
+/* Table */
+.total-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
 }
 
-.total-row:last-child{
-border-bottom:none;
+/* Cells */
+.total-table td {
+  padding: 8px 10px;
+  border: 1px solid #dcdcdc;
+}
+
+/* Alignment */
+.total-table td:nth-child(2) {
+  text-align: right;
+  font-weight: 600;
+}
+
+.total-table td:nth-child(3) {
+  text-align: left;
+  color: #666;
+  font-size: 12px;
+}
+
+/* Highlight row (Basic Value) */
+.total-table .highlight td {
+  font-weight: 700;
+ 
+}
+
+/* Grand Total row */
+.total-table .grand td {
+  font-weight: 700;
+  font-size: 14px;
+  border-top: 2px solid #999;
+  background: #fafafa;
 }
 
 .lists{
@@ -1014,29 +1047,63 @@ item.refImage
 
 <div class="summary">
 
-<div class="total-card">
+  <div class="total-card">
 
-<div class="total-heading">Quote Total</div>
+    <div class="total-heading">Quote Total</div>
 
-<div class="total-row"><span>No. of Components</span><span>${totalQty}</span></div>
-<div class="total-row"><span>Total Area(sqft)</span><span>${totalArea.toFixed(2)}</span></div>
-<div class="total-row"><span><strong>Basic Value</strong></span><span><strong>${formatCurrency(baseTotal)}</strong></span></div>
+    <table class="total-table">
 
-<div class="total-row"><span>Total Project Cost</span><span>${formatCurrency(totalProjectCost)}</span></div>
-<div class="total-row"><span>GST 18%</span><span>${formatCurrency(gstValue)}</span></div>
+      <tr>
+        <td>No. of Components</td>
+        <td>${totalQty}</td>
+        <td>Pcs</td>
+      </tr>
 
-<div class="total-row"><span><strong>Grand Total</strong></span><span><strong>${formatCurrency(grandTotal)}</strong></span></div>
-<div class="total-row">
-  <span>Avg. Price Per Sq. Ft. Without GST</span>
-  <span>${formatCurrency(avgWithoutGst)}</span>
-</div>
+      <tr>
+        <td>Total Area</td>
+        <td>${totalArea.toFixed(2)}</td>
+        <td>Sq.Ft.</td>
+      </tr>
 
-<div class="total-row">
-  <span>Avg. Price Per Sq. Ft.</span>
-  <span>${formatCurrency(avgWithGst)}</span>
-</div>
+      <tr class="highlight">
+        <td>Basic Value</td>
+        <td>${formatCurrency(baseTotal)}</td>
+        <td>INR</td>
+      </tr>
 
-</div>
+      <tr>
+        <td>Total Project Cost</td>
+        <td>${formatCurrency(totalProjectCost)}</td>
+        <td>INR</td>
+      </tr>
+
+      <tr>
+        <td>GST @18%</td>
+        <td>${formatCurrency(gstValue)}</td>
+        <td>INR</td>
+      </tr>
+
+      <tr class="grand">
+        <td>Grand Total</td>
+        <td>${formatCurrency(grandTotal)}</td>
+        <td>INR</td>
+      </tr>
+
+      <tr>
+        <td>Avg. Price / Sq.Ft. (Without GST)</td>
+        <td>${formatCurrency(avgWithoutGst)}</td>
+        <td>INR</td>
+      </tr>
+
+      <tr>
+        <td>Avg. Price / Sq.Ft.</td>
+        <td>${formatCurrency(avgWithGst)}</td>
+        <td>INR</td>
+      </tr>
+
+    </table>
+
+  </div>
 
 </div>
 
