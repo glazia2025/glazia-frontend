@@ -11,7 +11,7 @@ const apiBaseURL = API_BASE_URL;
 
 const apiClient = axios.create({
   baseURL: apiBaseURL,
-  withCredentials: false,
+  withCredentials: true,
 });
 
 export async function fetchSystems() {

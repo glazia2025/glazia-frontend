@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
+import { hasAuthToken } from '@/utils/authCookie';
 
 /**
  * Custom hook to initialize application data on app startup
@@ -59,8 +60,7 @@ export const useDataInitialization = () => {
       try {
         setLoadingUser(true);
 
-        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-        if (token) {
+        if (hasAuthToken()) {
           setAuthentication(true);
           
           // Load user data

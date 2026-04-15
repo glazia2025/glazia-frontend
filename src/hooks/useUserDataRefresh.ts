@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { UserApiService } from '@/services/productApi';
+import { clearAuthToken, hasAuthToken } from '@/utils/authCookie';
 
 /**
  * Hook for manually refreshing user data
@@ -15,8 +16,7 @@ export const useUserDataRefresh = () => {
   const refreshUserData = useCallback(async () => {
     try {
       // Check if user is authenticated
-      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-      if (!token) {
+      if (!hasAuthToken()) {
         console.log('🔄 No auth token found, skipping user data refresh');
         return { success: false, error: 'No authentication token' };
       }
@@ -72,7 +72,7 @@ export const useUserDataRefresh = () => {
       if (error instanceof Error) {
         if (error.message.includes('401') || error.message.includes('Unauthorized')) {
           console.log('🔐 Token might be expired, clearing auth data');
-          localStorage.removeItem('authToken');
+          clearAuthToken();
           localStorage.removeItem('glazia-user');
           setUser(null);
           return { success: false, error: 'Token expired', tokenExpired: true };

@@ -24,6 +24,7 @@ import {
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
 import { API_BASE_URL } from '@/services/api';
+import { getAuthToken, hasAuthToken } from '@/utils/authCookie';
 
 interface OrderProduct {
   productId: string;
@@ -178,9 +179,10 @@ export default function OrderDetailsPage() {
         });
       }, 200);
 
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/api/user/upload-payment-proof`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -232,8 +234,7 @@ export default function OrderDetailsPage() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
+    if (!hasAuthToken()) {
       router.push('/auth/login');
       return;
     }

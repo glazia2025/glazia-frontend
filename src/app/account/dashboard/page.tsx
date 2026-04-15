@@ -27,6 +27,7 @@ import {
 import { useAuth, useCartState, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
+import { getAuthToken, hasAuthToken } from '@/utils/authCookie';
 
 // Component to handle search params with Suspense
 function WelcomeBanner({ onClose }: { onClose: () => void }) {
@@ -108,7 +109,7 @@ function DashboardContent() {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!window.localStorage.getItem('authToken')) {
+    if (!hasAuthToken()) {
       window.location.href = '/auth/login';
     }
   }, [isAuthenticated]);
@@ -133,7 +134,7 @@ function DashboardContent() {
   // Load real orders from API
   useEffect(() => {
     const loadOrders = async () => {
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) {
         console.log('No auth token, skipping orders load');
         setLoadingOrders(false);

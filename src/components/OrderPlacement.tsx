@@ -5,6 +5,7 @@ import { QrCode, Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { useCartState, useAuth } from '@/contexts/AppContext';
 import { generateGlaziaPaymentQR, formatAmount } from '@/utils/qrCodeGenerator';
 import { API_BASE_URL } from '@/services/api';
+import { getAuthToken } from '@/utils/authCookie';
 
 interface OrderPlacementProps {
   onOrderSuccess: () => void;
@@ -120,7 +121,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
       console.log('📦 Order Data:', JSON.stringify(orderData, null, 2));
 
       // Get auth token from localStorage
-      const authToken = localStorage.getItem('authToken');
+      const authToken = getAuthToken();
       if (!authToken) {
         throw new Error('Authentication token not found. Please login again.');
       }
@@ -130,6 +131,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
       // Make API call
       const response = await fetch(`${API_BASE_URL}/api/user/pi-generate`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,

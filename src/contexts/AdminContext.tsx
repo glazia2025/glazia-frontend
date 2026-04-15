@@ -59,10 +59,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         body: { username, password }
       });
 
-      // Save the JWT token in localStorage (using same key as old implementation)
-      localStorage.setItem('authToken', response.token);
-
-      // Also save as adminToken for compatibility with admin portal
+      // Save admin auth state only under the admin storage key.
       localStorage.setItem('adminToken', response.token);
 
       // Decode JWT token to get the role (admin or user)
@@ -88,7 +85,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       console.error('Admin login error:', error);
 
       // Clear any existing tokens on failed login
-      localStorage.removeItem('authToken');
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
 
@@ -99,8 +95,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   };
 
   const adminLogout = () => {
-    // Remove both token keys for compatibility
-    localStorage.removeItem('authToken');
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
     setAdminUser(null);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { hasAuthToken } from '@/utils/authCookie';
 import { useApi, useMutation, usePaginatedApi } from './useApi';
 import { railingsApi } from '../services/railingsApi';
 import { ProfileListParams, ProfileSearchParams, ProfileProduct, ProfileOptions } from '../services';
@@ -134,7 +135,7 @@ export const useRailingsData = () => {
   const loadRailingsOptions = useCallback(async () => {
     try {
       console.log('🚀 Making API call to get railings options...');
-      console.log('🔑 Auth token:', localStorage.getItem('authToken') ? 'Present' : 'Missing');
+      console.log('🔑 Auth token:', hasAuthToken() ? 'Present' : 'Missing');
       const response = await railingsApi.getRailingsOptions();
       console.log('📦 Railings API response:', response);
       return response;

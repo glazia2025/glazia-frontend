@@ -7,6 +7,7 @@ import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import PDFViewerModal from "@/components/PDFViewerModal";
 import { API_BASE_URL } from "@/services/api";
 import { apiClient } from "@/services/api";
+import { getAuthToken } from "@/utils/authCookie";
 
 interface QuotationItem {
   id?: string;
@@ -80,7 +81,7 @@ export default function QuotationsPage() {
     const getQuotations = async () => {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem("authToken");
+      const token = getAuthToken();
       if (!token) {
         setLoading(false);
         return;
@@ -89,6 +90,7 @@ export default function QuotationsPage() {
         const response = await fetch(
           `${API_BASE_URL}/api/quotations?page=${currentPage}&limit=${pageLimit}`,
           {
+            credentials: "include",
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -198,10 +200,10 @@ export default function QuotationsPage() {
 };
 
   const fetchQuotationDetails = async (quotationId: string)=> {
-    const token = localStorage.getItem("authToken");
+    const token = getAuthToken();
     const response = await fetch(
       `${API_BASE_URL}/api/quotations/${quotationId}`,
-      token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+      token ? { headers: { Authorization: `Bearer ${token}` }, credentials: "include" } : { credentials: "include" }
     );
     if (!response.ok) {
       throw new Error(`Failed to fetch quotation (${response.status})`);

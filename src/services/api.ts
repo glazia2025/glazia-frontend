@@ -1,3 +1,5 @@
+import { getAuthToken } from '@/utils/authCookie';
+
 // API Configuration
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL|| 'https://api.glazia.in';
 export const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || 'v1';
@@ -247,10 +249,7 @@ class ApiClient {
   }
 
   private getAuthToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('authToken');
-    }
-    return null;
+    return getAuthToken();
   }
 
   private buildURL(endpoint: string, params?: Record<string, string | number>): string {
@@ -307,6 +306,7 @@ class ApiClient {
     const requestConfig: RequestInit = {
       method,
       headers: requestHeaders,
+      credentials: 'include',
     };
 
     if (body && method !== 'GET') {

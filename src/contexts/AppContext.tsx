@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import { clearAuthToken, hasAuthToken } from '@/utils/authCookie';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -638,8 +639,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
 
     // Check authentication
-    const token = localStorage.getItem('authToken');
-    if (token) {
+    if (hasAuthToken()) {
       dispatch({ type: 'SET_AUTHENTICATION', payload: true });
       // Load user data if available
       const savedUser = localStorage.getItem('glazia-user');
@@ -702,7 +702,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearUser = useCallback(() => {
     dispatch({ type: 'CLEAR_USER' });
-    localStorage.removeItem('authToken');
+    clearAuthToken();
   }, []);
 
   const updateUser = useCallback((updates: Partial<User>) => {

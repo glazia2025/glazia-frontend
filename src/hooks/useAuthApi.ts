@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { useApi, useMutation } from './useApi';
 import { authApi, userApi } from '../services';
 import { useApp } from '../contexts/AppContext';
+import { clearAuthToken, setAuthToken } from '@/utils/authCookie';
 
 /**
  * Hook for authentication API operations
@@ -30,7 +31,7 @@ export const useAuthApi = () => {
         onSuccess: (response) => {
           if (response.userExists && response.token) {
             // User exists and is logged in
-            localStorage.setItem('authToken', response.token);
+            setAuthToken(response.token);
             setAuthentication(true);
             if (response.user) {
               setUser(response.user);
@@ -58,7 +59,7 @@ export const useAuthApi = () => {
       {
         onSuccess: (response) => {
           if (response.success && response.token) {
-            localStorage.setItem('authToken', response.token);
+            setAuthToken(response.token);
             setAuthentication(true);
             setUser(response.user);
           }
@@ -78,7 +79,7 @@ export const useAuthApi = () => {
       {
         onSuccess: (response) => {
           if (response.success && response.token) {
-            localStorage.setItem('authToken', response.token);
+            setAuthToken(response.token);
             setAuthentication(true);
             setUser(response.user);
           }
@@ -93,7 +94,7 @@ export const useAuthApi = () => {
       () => authApi.logout(),
       {
         onSuccess: () => {
-          localStorage.removeItem('authToken');
+          clearAuthToken();
           setAuthentication(false);
           clearUser();
         }
@@ -108,7 +109,7 @@ export const useAuthApi = () => {
       {
         onSuccess: (response) => {
           if (response.success && response.token) {
-            localStorage.setItem('authToken', response.token);
+            setAuthToken(response.token);
             if (response.refreshToken) {
               localStorage.setItem('refreshToken', response.refreshToken);
             }
@@ -131,13 +132,13 @@ export const useAuthApi = () => {
           } else {
             setAuthentication(false);
             clearUser();
-            localStorage.removeItem('authToken');
+            clearAuthToken();
           }
         },
         onError: () => {
           setAuthentication(false);
           clearUser();
-          localStorage.removeItem('authToken');
+          clearAuthToken();
         }
       }
     );
@@ -204,7 +205,7 @@ export const useAuthApi = () => {
       ({ password }) => authApi.deleteAccount(password),
       {
         onSuccess: () => {
-          localStorage.removeItem('authToken');
+          clearAuthToken();
           setAuthentication(false);
           clearUser();
         }

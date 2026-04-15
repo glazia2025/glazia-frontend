@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useApp, useAuth } from '@/contexts/AppContext';
 import { useUserDataRefresh } from '@/hooks/useUserDataRefresh';
+import { hasAuthToken } from '@/utils/authCookie';
 
 /**
  * Component that refreshes user data on route changes and page refreshes
@@ -51,31 +52,10 @@ export default function UserDataRefresher() {
   // Refresh user data on page load/refresh
   useEffect(() => {
     // This will run once when the component mounts (page load/refresh)
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-    if (token) {
+    if (hasAuthToken()) {
       console.log('🔄 UserDataRefresher: Page loaded/refreshed');
       handleRefreshUserData('page load');
     }
-  }, []);
-
-  // Listen for storage changes (in case user logs in/out in another tab)
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'authToken') {
-        if (e.newValue) {
-          // User logged in in another tab
-          console.log('🔄 UserDataRefresher: Auth token added in another tab');
-          handleRefreshUserData('cross-tab login');
-        } else {
-          // User logged out in another tab
-          console.log('🔄 UserDataRefresher: Auth token removed in another tab - Clearing user data');
-          localStorage.removeItem('glazia-user');
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // This component doesn't render anything

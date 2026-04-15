@@ -5,13 +5,14 @@ import {
   fetchSeries,
   fetchSystems,
 } from "./api";
+import { getAuthToken } from "@/utils/authCookie";
 
 function getQuotationToken(): string {
   if (typeof window === "undefined") {
     return "";
   }
 
-  return localStorage.getItem("adminToken") || localStorage.getItem("authToken") || "";
+  return localStorage.getItem("adminToken") || getAuthToken() || "";
 }
 
 export function useSystemsQuery() {

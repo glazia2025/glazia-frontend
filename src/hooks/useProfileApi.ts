@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { hasAuthToken } from '@/utils/authCookie';
 import { useApi, useMutation, usePaginatedApi } from './useApi';
 import { profileApi, ProfileListParams, ProfileSearchParams, ProfileProduct, ProfileOptions } from '../services';
 
@@ -185,7 +186,7 @@ export const useProfilesData = () => {
   const loadProfileOptions = useCallback(async () => {
     try {
       console.log('🚀 Making API call to get profile categories...');
-      console.log('🔑 Auth token:', localStorage.getItem('authToken') ? 'Present' : 'Missing');
+      console.log('🔑 Auth token:', hasAuthToken() ? 'Present' : 'Missing');
 
       // Step 1: Get categories list
       const categoriesResponse = await profileApi.getProfileCategories();

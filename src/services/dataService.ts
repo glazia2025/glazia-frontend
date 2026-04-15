@@ -1,5 +1,6 @@
 import { Product, User, Order } from '@/contexts/AppContext';
 import { API_BASE_URL } from '@/services/api';
+import { getAuthToken, hasAuthToken } from '@/utils/authCookie';
 
 // ============================================================================
 // MOCK PRODUCT DATA
@@ -329,8 +330,7 @@ export class DataService {
   // User
   static async getUserData() {
     await this.delay();
-    const token = localStorage.getItem('authToken');
-    if (!token) return null;
+    if (!hasAuthToken()) return null;
 
     // Try to get user data from localStorage first
     const savedUser = localStorage.getItem('glazia-user');
@@ -345,7 +345,7 @@ export class DataService {
   }
   // Orders
   static async getUserOrders(): Promise<any[]> {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       console.log('No auth token, returning empty orders');
       return [];
@@ -353,6 +353,7 @@ export class DataService {
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/user/getOrders?limit=10&page=1&sortOrder=desc&sortKey=createdAt`, {
+        credentials: 'include',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

@@ -7,6 +7,7 @@ import axios from 'axios';
 import PartnerAgreement from '@/components/PartnerAgreement/PartnerAgreement';
 import { supabase } from '@/utils/supabase';
 import { API_BASE_URL } from '@/services/api';
+import { setAuthToken } from '@/utils/authCookie';
 
 interface UserRegistrationFormProps {
   phoneNumber: string;
@@ -107,10 +108,11 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
 
         const response = await axios.post(`${API_BASE_URL}/api/user/register`, registrationData, {
           headers: { 'Content-Type': 'multipart/form-data' },
+          withCredentials: true,
         });
 
         if (response.data.token) {
-          localStorage.setItem('authToken', response.data.token);
+          setAuthToken(response.data.token);
           setMessage('User details saved successfully!');
 
           // Handle success callback for modal or redirect

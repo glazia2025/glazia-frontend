@@ -6,6 +6,7 @@ import { Package, Truck, CheckCircle, Clock, Eye, Download } from 'lucide-react'
 import { useAuth, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
+import { getAuthToken, hasAuthToken } from '@/utils/authCookie';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -13,8 +14,7 @@ export default function OrdersPage() {
 
   // Redirect if not authenticated
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
+    if (!hasAuthToken()) {
       window.location.href = '/auth/login';
     }
   }, []);
@@ -22,7 +22,7 @@ export default function OrdersPage() {
   // Load real orders from API
   useEffect(() => {
     const loadOrders = async () => {
-      const token = localStorage.getItem('authToken');
+      const token = getAuthToken();
       if (!token) {
         console.log('No auth token, redirecting to login');
         setLoading(false);

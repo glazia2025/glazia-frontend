@@ -11,6 +11,7 @@ import { QuotationItemRow, QuotationItem } from "@/components/QuotationItemRow";
 import { loadGlobalConfig } from "@/utils/globalConfig";
 import { API_BASE_URL } from "@/services/api";
 import { calculateQuotationPricing, roundToTwo } from "@/utils/quotationPricing";
+import { getAuthToken } from "@/utils/authCookie";
 import dynamic from "next/dynamic";
 
 interface CustomerDetails {
@@ -404,8 +405,9 @@ useEffect(() => {
         payload,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            Authorization: `Bearer ${getAuthToken() ?? ""}`,
           },
+          withCredentials: true,
         }
       )
       .then(res => {
