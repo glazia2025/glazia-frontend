@@ -273,7 +273,16 @@ export default function Header() {
             <Link className="nav-link" href="/contact">Contact</Link>
              <Link className="nav-link" href="/blogs">Blogs</Link>
 
-            {isAuthenticated && <Link className="nav-link" href="/quotations">Quotations</Link>}
+            {isAuthenticated && (
+              <a
+                className="nav-link"
+                href="https://quotation.glazia.in"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Quotations
+              </a>
+            )}
           </div>
         </div>
 
