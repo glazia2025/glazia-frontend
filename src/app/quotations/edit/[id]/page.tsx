@@ -10,7 +10,7 @@ import { QuotationItemRow, QuotationItem } from "@/components/QuotationItemRow";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import { loadGlobalConfig } from "@/utils/globalConfig";
-import { API_BASE_URL } from "@/services/api";
+import { QUOTATION_API_BASE_URL } from "@/services/api";
 import { calculateQuotationPricing, roundToTwo } from "@/utils/quotationPricing";
 import { getAuthToken } from "@/utils/authCookie";
 
@@ -152,7 +152,7 @@ export default function EditQuotationPage() {
         setError(null);
         const token = getAuthToken();
         const response = await axios.get<BackendQuotation>(
-          `${API_BASE_URL}/api/quotations/${quotationId}`,
+          `${QUOTATION_API_BASE_URL}/api/quotations/${quotationId}`,
           token
             ? { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
             : { withCredentials: true }
@@ -590,7 +590,7 @@ export default function EditQuotationPage() {
     try {
       const token = getAuthToken();
       await axios.post(
-        `${API_BASE_URL}/api/quotations/${quotationId}`,
+        `${QUOTATION_API_BASE_URL}/api/quotations/${quotationId}`,
         payload,
         token
           ? { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }

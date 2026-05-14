@@ -9,7 +9,7 @@ import axios from "axios";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import { QuotationItemRow, QuotationItem } from "@/components/QuotationItemRow";
 import { loadGlobalConfig } from "@/utils/globalConfig";
-import { API_BASE_URL } from "@/services/api";
+import { QUOTATION_API_BASE_URL } from "@/services/api";
 import { calculateQuotationPricing, roundToTwo } from "@/utils/quotationPricing";
 import { getAuthToken } from "@/utils/authCookie";
 import dynamic from "next/dynamic";
@@ -401,7 +401,7 @@ useEffect(() => {
 
     return axios
       .post(
-        `${API_BASE_URL}/api/quotations`,
+        `${QUOTATION_API_BASE_URL}/api/quotations`,
         payload,
         {
           headers: {

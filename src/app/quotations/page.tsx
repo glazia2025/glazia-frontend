@@ -5,8 +5,7 @@ import Link from "next/link";
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, File, HandCoins } from "lucide-react";
 import { generateQuotationPDF } from "@/utils/pdfGenerator";
 import PDFViewerModal from "@/components/PDFViewerModal";
-import { API_BASE_URL } from "@/services/api";
-import { apiClient } from "@/services/api";
+import { QUOTATION_API_BASE_URL } from "@/services/api";
 import { getAuthToken } from "@/utils/authCookie";
 
 interface QuotationItem {
@@ -88,7 +87,7 @@ export default function QuotationsPage() {
       }
       try {
         const response = await fetch(
-          `${API_BASE_URL}/api/quotations?page=${currentPage}&limit=${pageLimit}`,
+          `${QUOTATION_API_BASE_URL}/api/quotations?page=${currentPage}&limit=${pageLimit}`,
           {
             credentials: "include",
             headers: {
@@ -157,7 +156,15 @@ export default function QuotationsPage() {
   );
   if (!confirmDelete) return;
   try {
-   await apiClient.delete(`/api/quotations/${id}`);
+   const token = getAuthToken();
+   const response = await fetch(`${QUOTATION_API_BASE_URL}/api/quotations/${id}`, {
+     method: "DELETE",
+     credentials: "include",
+     headers: token ? { Authorization: `Bearer ${token}` } : {},
+   });
+   if (!response.ok) {
+     throw new Error(`Failed to delete quotation (${response.status})`);
+   }
     setQuotations(prev =>
       prev.filter(q => q._id !== id)
     );
@@ -202,7 +209,7 @@ export default function QuotationsPage() {
   const fetchQuotationDetails = async (quotationId: string)=> {
     const token = getAuthToken();
     const response = await fetch(
-      `${API_BASE_URL}/api/quotations/${quotationId}`,
+      `${QUOTATION_API_BASE_URL}/api/quotations/${quotationId}`,
       token ? { headers: { Authorization: `Bearer ${token}` }, credentials: "include" } : { credentials: "include" }
     );
     if (!response.ok) {

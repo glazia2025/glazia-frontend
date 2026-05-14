@@ -5,9 +5,9 @@ import {
   SeriesResponse,
   SystemsResponse,
 } from "./types";
-import { API_BASE_URL } from "@/services/api";
+import { QUOTATION_API_BASE_URL } from "@/services/api";
 
-const apiBaseURL = API_BASE_URL;
+const apiBaseURL = QUOTATION_API_BASE_URL;
 
 const apiClient = axios.create({
   baseURL: apiBaseURL,

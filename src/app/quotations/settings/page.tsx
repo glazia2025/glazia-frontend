@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import axios, { AxiosError } from "axios";
 import { ArrowLeft, Plus, Save, Search } from "lucide-react";
-import { API_BASE_URL } from "@/services/api";
+import { QUOTATION_API_BASE_URL } from "@/services/api";
 import { loadGlobalConfig, saveGlobalConfig } from "@/utils/globalConfig";
 import { getAuthToken } from "@/utils/authCookie";
 
@@ -31,7 +31,7 @@ const SETTINGS_PREFIXES = [
 ].filter((value, index, array): value is string => Boolean(value) && array.indexOf(value as string) === index);
 
 const settingsApi = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: QUOTATION_API_BASE_URL,
   withCredentials: true,
 });
 
