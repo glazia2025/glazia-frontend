@@ -109,10 +109,10 @@ export default function Footer() {
               <Link href="/privacy" className="text-white text-sm transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="text-white text-sm transition-colors">
+              <Link href="/service" className="text-white text-sm transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/cookies" className="text-white text-sm transition-colors">
+              <Link href="/cookie" className="text-white text-sm transition-colors">
                 Cookie Policy
               </Link>
             </div>
