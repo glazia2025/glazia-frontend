@@ -106,14 +106,23 @@ export default function Footer() {
               © {new Date().getFullYear()} Glazia. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-2 md:mt-0">
-              <Link href="/privacy" className="text-white text-sm transition-colors">
+              <Link href="/privacy-policy" className="text-white text-sm transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/service" className="text-white text-sm transition-colors">
+              <Link href="/terms-service" className="text-white text-sm transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/cookie" className="text-white text-sm transition-colors">
+              <Link href="/cookies-policy" className="text-white text-sm transition-colors">
                 Cookie Policy
+              </Link>
+              <Link href="/return-policy" className="text-white text-sm transition-colors">
+                Return Policy
+              </Link>
+              <Link href="/refund-policy" className="text-white text-sm transition-colors">
+                Refund Policy
+              </Link>
+              <Link href="/shipping-policy" className="text-white text-sm transition-colors">
+                Shipping Policy
               </Link>
             </div>
           </div>
