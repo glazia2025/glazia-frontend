@@ -27,7 +27,7 @@ const imageToBase64 = (url: string): Promise<string> => {
           resolve(dataURL);
         } catch (error) {
           console.warn('Failed to convert image to base64:', error);
-          resolve('');
+          resolve(url);
         }
       } else {
         resolve('');
@@ -36,7 +36,7 @@ const imageToBase64 = (url: string): Promise<string> => {
 
     img.onerror = () => {
       console.warn('Failed to load image:', url);
-      resolve('');
+      resolve(url);
     };
 
     // Handle relative URLs
