@@ -56,15 +56,15 @@ export default function Footer() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Get in Touch</h3>
               <div className="space-y-4">
-                <a
-                  href="https://maps.google.com/?q=Near Manesar Toll Plaza, Gurgaon, Haryana 122001"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-start space-x-3 text-gray-300 hover:text-white transition-colors"
-                >
+               <a
+  href="https://maps.google.com/?q=177/2,%20Badkhal%20Pali%20Rd,%20opp.%20PSP%20Dharam%20Kanta,%20Bhankri%20Village,%20Faridabad,%20Haryana%20121004"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="flex items-start space-x-3 text-gray-300 hover:text-white transition-colors"
+>
                   <MapPin className="w-5 h-5 text-[#EE1C25] mt-1 flex-shrink-0" />
                   <span>
-                    Near Manesar Toll Plaza, Gurgaon, Haryana – 122001
+                    177/2, Badkhal Pali Rd, opp. PSP Dharam Kanta, Bhankri Village, Faridabad, Haryana 121004
                   </span>
                 </a>
                 <div className="flex items-start space-x-3">

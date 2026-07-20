@@ -184,7 +184,7 @@ export default function ContactPage() {
                 <div>
                   <h2 className="text-lg font-[500] underline">Visit Us</h2>
                   <div className="mb-2">Our friendly team is here to help.</div>
-                  <p><b>Near Manesar Toll Plaza, Gurgaon, Haryana - 122001</b></p>
+                  <p><b>177/2, Badkhal Pali Rd, opp. PSP Dharam Kanta, Bhankri Village, Faridabad, Haryana 121004</b></p>
                 </div>
 
                 <div>
