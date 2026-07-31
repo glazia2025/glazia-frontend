@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { QrCode, Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { useCartState, useAuth } from '@/contexts/AppContext';
-import { generateGlaziaPaymentQR, formatAmount } from '@/utils/qrCodeGenerator';
+import { Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { useCartState } from '@/contexts/AppContext';
+import { formatAmount } from '@/utils/qrCodeGenerator';
 import { API_BASE_URL } from '@/services/api';
 import { getAuthToken } from '@/utils/authCookie';
 
@@ -14,7 +14,6 @@ interface OrderPlacementProps {
 
 const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCancel }) => {
   const { cart, clearCart } = useCartState();
-  const { user } = useAuth();
   const [step, setStep] = useState<'qr' | 'upload' | 'processing' | 'success'>('qr');
   const [paymentProof, setPaymentProof] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -40,9 +39,6 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
   const shippingDiscount = calculateShippingDiscount(cart.total);
   const tax = Math.round(cart.total * 0.18);
   const finalTotal = cart.total + tax; // Keep product total separate from shipping discount
-
-  // Generate QR Code for payment
-  const qrCodeDataURL = generateGlaziaPaymentQR(finalTotal, `GLZ-${Date.now()}`);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -81,14 +77,8 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
   };
 
   const handlePlaceOrder = async () => {
-    if (!paymentProof || !user) {
-      setError('Payment proof and user information are required');
-      return;
-    }
-
-    // Validate required user fields
-    if (!user.id || !user.name || !user.phone) {
-      setError('User information is incomplete. Please update your profile.');
+    if (!paymentProof) {
+      setError('Please upload the payment proof.');
       return;
     }
 
@@ -98,17 +88,11 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
     try {
       // Prepare order data according to the API format
       const orderData = {
-        user: {
-          userId: user.id,
-          name: user.name,
-          city: user.city || 'Not specified',
-          phoneNumber: user.phone
-        },
         products: cart.items.map(item => ({
           productId: item.id,
           description: item.name,
           quantity: item.quantity,
-          amount: item.price * item.quantity
+          amount: Number(item.price) * item.quantity
         })),
         payment: {
           amount: finalTotal,
@@ -118,43 +102,25 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
         deliveryType: "SELF"
       };
 
-      console.log('📦 Order Data:', JSON.stringify(orderData, null, 2));
-
-      // Get auth token from localStorage
       const authToken = getAuthToken();
       if (!authToken) {
         throw new Error('Authentication token not found. Please login again.');
       }
 
-      console.log('🔑 Using auth token:', authToken.substring(0, 20) + '...');
-
-      // Make API call
       const response = await fetch(`${API_BASE_URL}/api/user/pi-generate`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-          'sec-ch-ua-platform': '"macOS"',
-          'Referer': 'https://www.glazia.in/',
-          'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-          'sec-ch-ua-mobile': '?0',
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
-          'Accept': 'application/json, text/plain, */*'
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify(orderData)
       });
 
-      console.log('📡 API Response Status:', response.status);
-
+      const result = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ API Error:', errorData);
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        throw new Error(result.message || 'Failed to place the order.');
       }
-
-      const result = await response.json();
-      console.log('✅ Order placed successfully:', result);
 
       // Clear cart and show success
       clearCart();
@@ -166,7 +132,6 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
       }, 2000);
 
     } catch (error) {
-      console.error('❌ Error placing order:', error);
       setError(error instanceof Error ? error.message : 'Failed to place order. Please try again.');
       setStep('upload');
     }
@@ -367,7 +332,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
       </div>
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Order Placed Successfully!</h3>
-        <p className="text-gray-600">Your order has been confirmed and will be processed shortly.</p>
+        <p className="text-gray-600">The payment proof is awaiting admin confirmation.</p>
       </div>
     </div>
   );
