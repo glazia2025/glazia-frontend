@@ -11,7 +11,7 @@ import LoginModal from '@/components/LoginModal';
 import { apiClient } from '@/services/api';
 
 
-// Fixed hardware categories
+// Used only while the API category list is loading or unavailable.
 const HARDWARE_CATEGORIES = [
   "CORNER JOINERY",
   "PLASTIC PART",
@@ -28,6 +28,7 @@ export default function HardwarePage() {
   // State management
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>(HARDWARE_CATEGORIES[0]);
+  const [hardwareCategories, setHardwareCategories] = useState<string[]>(HARDWARE_CATEGORIES);
   const [products, setProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated } = useAuth();
@@ -44,6 +45,22 @@ export default function HardwarePage() {
     imageAlt: '',
     productName: ''
   });
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await apiClient.get('/api/admin/getHardwares');
+        const categories = Array.isArray(response?.options) ? response.options.filter(Boolean) : [];
+        if (categories.length) {
+          setHardwareCategories(categories);
+          setActiveCategory((current) => categories.includes(current) ? current : categories[0]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch hardware categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // Filter products based on search query
   const filteredProducts = searchQuery.trim()
@@ -320,7 +337,7 @@ export default function HardwarePage() {
 
 
        <div className="block md:hidden flex flex-row flex-wrap items-start gap-2 p-4">
-        {HARDWARE_CATEGORIES.map((category) => (
+        {hardwareCategories.map((category) => (
           <button
             key={category}
             onClick={() => {
@@ -342,7 +359,7 @@ export default function HardwarePage() {
       <div className="flex flex-col lg:flex-row justify-between items-start border-[3px] border-[#D6DADE] bg-white mx-4 my-6 sm:my-8">
         <div className="bg-white w-full lg:w-[20%] rounded-lg p-4 sm:p-6">
           <div className="hidden md:flex flex flex-col items-start gap-4">
-            {HARDWARE_CATEGORIES.map((category) => (
+            {hardwareCategories.map((category) => (
               <button
                 key={category}
                 onClick={() => {

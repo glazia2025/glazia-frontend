@@ -700,13 +700,7 @@ export default function QuotationSettingsPage() {
   const fetchRates = async () => {
     setIsRatesLoading(true);
     try {
-      const [descriptions, optionSets] = await Promise.all([
-        listDescriptionRates(),
-        listOptionSetRates(),
-      ]);
-
-      setProfileRows(descriptions);
-      setInitialProfileRows(descriptions);
+      const optionSets = await listOptionSetRates();
 
       setMeshRows(optionSets.meshType);
       setInitialMeshRows(optionSets.meshType);
@@ -1035,7 +1029,6 @@ export default function QuotationSettingsPage() {
             <ul className="space-y-2 text-sm">
               {[
                 { key: "profileStructure", label: "Quotation Structure" },
-                { key: "profileRate", label: "Profile Rate" },
                 { key: "colorFinishRate", label: "Colour Finish Rate" },
                 { key: "meshRate", label: "Mesh Rate" },
                 { key: "glassRate", label: "Glass Rate" },
@@ -1212,19 +1205,6 @@ export default function QuotationSettingsPage() {
                   </div>
                 </div>
               </>
-            )}
-
-            {activeTab === "profileRate" && (
-              <ProfileRateSection
-                rows={filteredProfiles}
-                search={profileSearch}
-                isLoading={isRatesLoading}
-                isSaving={isRatesSaving}
-                onSearchChange={setProfileSearch}
-                onRateChange={updateProfileRateValue}
-                onSave={() => void saveProfileRates()}
-                onReset={resetProfileRates}
-              />
             )}
 
             {activeTab === "meshRate" && (
