@@ -1,6 +1,16 @@
 import { MetadataRoute } from "next";
+import { getBlogs } from "@/services/blogService";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const blogs = await getBlogs();
+
+  const blogUrls: MetadataRoute.Sitemap = blogs.map((blog) => ({
+    url: `https://glazia.in/blogs/${blog.category.toLowerCase()}/${blog.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }));
+
   return [
     {
       url: "https://glazia.in",
@@ -44,5 +54,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.9,
     },
+    ...blogUrls,
   ];
 }
