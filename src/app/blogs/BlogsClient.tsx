@@ -68,8 +68,11 @@ export default function BlogsClient({ blogs }: BlogsClientProps) {
                                 <h2 className="text-2xl font-semibold text-[#1F2933] mb-3">
                                     {featuredBlog.title}
                                 </h2>
-                                <p className="text-gray-500 mb-6">
+                                {/* <p className="text-gray-500 mb-6">
                                     {renderContent(featuredBlog.content[0])}
+                                </p> */}
+                                <p className="text-gray-500 mb-6">
+                                    {renderContent(featuredBlog.content[0], false)}
                                 </p>
 
                                 <div className="flex flex-wrap gap-8 text-sm text-gray-500 mb-6">
@@ -119,11 +122,16 @@ export default function BlogsClient({ blogs }: BlogsClientProps) {
 
                             {/* Image */}
                             <div className="relative h-[140px] bg-gray-200 rounded-lg mb-4 overflow-hidden">
-                                <Image
+                                {/* <Image
                                     src={item.image}
                                     alt="blog"
                                     fill
                                     className="object-cover"
+                                /> */}
+                                <img
+                                    src={item.image}
+                                    alt="blog"
+                                    className="w-full h-full object-cover"
                                 />
                             </div>
 
@@ -137,7 +145,8 @@ export default function BlogsClient({ blogs }: BlogsClientProps) {
                                 {renderContent(
                                     item.content[0].length > 140
                                         ? item.content[0].slice(0, 140) + "..."
-                                        : item.content[0]
+                                        : item.content[0],
+                                    false
                                 )}
                             </p>
 
@@ -215,11 +224,16 @@ export default function BlogsClient({ blogs }: BlogsClientProps) {
                             <div className="flex gap-4 items-start">
 
                                 <div className="relative w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
-                                    <Image
+                                    {/* <Image
                                         src={item.image}
                                         alt="blog"
                                         fill
                                         className="object-cover"
+                                    /> */}
+                                    <img
+                                        src={item.image}
+                                        alt="blog"
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
 
@@ -239,7 +253,8 @@ export default function BlogsClient({ blogs }: BlogsClientProps) {
                                         {renderContent(
                                             item.content[0].length > 140
                                                 ? item.content[0].slice(0, 140) + "..."
-                                                : item.content[0]
+                                                : item.content[0],
+                                            false
                                         )}
                                     </p>
 

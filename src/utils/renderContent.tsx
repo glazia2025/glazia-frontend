@@ -1,7 +1,7 @@
 import Link from "next/link";
 import React from "react";
 
-export function renderContent(text: string) {
+export function renderContent(text: string, clickable = true) {
   const regex = /\[\[(.*?)\|(.*?)\]\]/g;
 
   const parts: React.ReactNode[] = [];
@@ -17,15 +17,19 @@ export function renderContent(text: string) {
     }
 
     // Clickable Link
-    parts.push(
-      <Link
-        key={match.index}
-        href={href}
-        className="text-[#2563eb] font-medium hover:underline"
-      >
-        {label}
-      </Link>
-    );
+    if (clickable) {
+  parts.push(
+    <Link
+      key={match.index}
+      href={href}
+      className="text-[#2563eb] font-medium hover:underline"
+    >
+      {label}
+    </Link>
+  );
+} else {
+  parts.push(label);
+}
 
     lastIndex = match.index + fullMatch.length;
   }
