@@ -375,7 +375,7 @@ const CartSidebar: React.FC = () => {
                 </td>
                 <td style="text-align: right;">
                   <div class="label">Contact</div>
-                  <div class="muted">www.glazia.in<br/>+91-9958053708<br/>sales@glazia.com</div>
+                  <div class="muted">www.glazia.in<br/>+91-9958053708<br/>sales@glazia.in</div>
                 </td>
               </tr>
             </table>
@@ -494,18 +494,9 @@ const CartSidebar: React.FC = () => {
                 <tr>
                   <td style="width: 60%; vertical-align: top;">
                     <div class="muted"><span class="label">Account No: </span>50200084871361</div>
-                    <div class="muted"><span class="label">Account Name: </span>AGlazia Windoors Pvt. Ltd.</div>
+                    <div class="muted"><span class="label">Account Name: </span>Glazia Windoors Pvt. Ltd.</div>
                     <div class="muted"><span class="label">IFSC Code: </span>HDFC0004809</div>
                     <div class="muted"><span class="label">Bank: </span>HDFC Bank</div>
-                  </td>
-                  <td style="text-align: right; vertical-align: top;">
-                    <div style="display: inline-flex; gap: 12px; align-items: flex-start;">
-                      <img src="/upi.jpeg" alt="Glazia UPI QR" class="qr-img" />
-                      <div>
-                        <div class="muted"><span class="label">Name: </span>${user.name || 'Glazia Windoors Pvt. Ltd.'}</div>
-                        <div class="muted"><span class="label">UPI: </span>glazia@okhdfcbank</div>
-                      </div>
-                    </div>
                   </td>
                 </tr>
               </table>
