@@ -45,11 +45,16 @@ export default function CategoryClient({
 
 
                             <div className=" relative w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
-                                <Image
+                                {/* <Image
                                     src={item.image}
                                     alt="blog"
                                     fill
                                     className="object-cover"
+                                /> */}
+                                <img
+                                    src={item.image}
+                                    alt="blog"
+                                    className="w-full h-full object-cover"
                                 />
 
                             </div>

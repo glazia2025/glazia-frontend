@@ -33,12 +33,18 @@ export default function BlogDetail({
             {/*  HERO SECTION */}
             <div className="relative w-full h-[350px]">
 
-                <Image
+                {/* <Image
                     src={blog.image}
                     alt="blog"
                     fill
                     className="object-cover"
+                /> */}
+                <img
+                    src={blog.image}
+                    alt="blog"
+                    className="w-full h-full object-cover"
                 />
+
 
                 <div className="absolute inset-0 bg-black/40"></div>
 
