@@ -410,10 +410,10 @@ export default function Header() {
         <Image className="shadow-md hover:shadow-xl transition-all duration-300 hover-primary-border" width={120} height={120} src="/new-ui/hardware.svg" alt="Aluminium Profiles" />
         <div>Hardware</div>
       </Link>
-      <Link style={{border: currentPageChecker('railings') ? '1px solid #4a4b4dff': 'none'}} className="text-center p-1 rounded-[10px] flex flex-col items-center gap-2" href="/categories/railings" hrefLang="">
+      {/* <Link style={{border: currentPageChecker('railings') ? '1px solid #4a4b4dff': 'none'}} className="text-center p-1 rounded-[10px] flex flex-col items-center gap-2" href="/categories/railings" hrefLang="">
         <Image className="shadow-md hover:shadow-xl transition-all duration-300 hover-primary-border" width={120} height={120} src="/new-ui/railing.svg" alt="Aluminium Profiles" />
         <div>Railings</div>
-      </Link>
+      </Link> */}
 
       <div className="hidden md:block" ref={searchDropdownRef}>
         <div className="border-[#B2B2B2] border-[1px] flex items-center rounded-[24px] relative">
