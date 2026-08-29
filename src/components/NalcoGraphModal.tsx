@@ -61,6 +61,9 @@ export default function NalcoGraphModal({ isOpen, onClose }: NalcoGraphModalProp
       case '90d':
         cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
         break;
+      case 'all':
+        cutoffDate = new Date(now.getFullYear(), 0, 1);
+        break;
       default:
         return graphData;
     }
