@@ -68,6 +68,8 @@ export interface User {
   loyaltyPoints: number;
   isAuthenticated: boolean;
   paUrl?: string;
+  accountType?: 'FABRICATOR' | 'DEALERSHIP';
+  dealership?: string | null;
   dynamicPricing?: {
     hardware: {
       [key: string]: number; // e.g., "CORNER JOINERY": 100

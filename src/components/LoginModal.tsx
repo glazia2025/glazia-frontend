@@ -140,6 +140,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
           totalSpent: existingUser.totalSpent || 0,
           loyaltyPoints: existingUser.loyaltyPoints || 0,
           paUrl: existingUser.paUrl || '',
+          accountType: existingUser.accountType || 'FABRICATOR',
+          dealership: existingUser.dealership || null,
           isAuthenticated: true,
           dynamicPricing: existingUser.dynamicPricing
         };

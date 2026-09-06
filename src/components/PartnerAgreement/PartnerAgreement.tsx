@@ -1,445 +1,53 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPdfFrame } from '@/utils/pdfFrame';
 
-interface PartnerAgreementProps {
-  userName: string;
-  completeAddress: string;
-  gstNumber: string;
-  pincode: string;
-  city: string;
-  state: string;
-  phoneNumber: string;
-  email: string;
-  setBlob: (blob: Blob) => void;
-}
+export type AgreementParty = { name: string; address: string; gstNumber: string; pincode: string; city: string; state: string; phoneNumber: string; email: string };
+export type PartnerAgreementType = 'GLAZIA_FABRICATOR' | 'GLAZIA_DEALERSHIP' | 'DEALERSHIP_FABRICATOR';
+interface Props { userName: string; completeAddress: string; gstNumber: string; pincode: string; city: string; state: string; phoneNumber: string; email: string; agreementType?: PartnerAgreementType; dealership?: AgreementParty; setBlob: (blob: Blob) => void }
 
-const PartnerAgreement: React.FC<PartnerAgreementProps> = ({
-  userName,
-  completeAddress,
-  gstNumber,
-  pincode,
-  city,
-  state,
-  phoneNumber,
-  email,
-  setBlob
-}) => {
-  const [url, setUrl] = useState<string>("");
+const esc = (v: string) => v.replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c] || c);
+const block = (p: AgreementParty) => `${esc(p.name)}<br>${esc(p.email)}<br>GST No: ${esc(p.gstNumber)}<br>${esc(p.address)}, ${esc(p.city)} - ${esc(p.pincode)}, ${esc(p.state)}, India<br>Phone: +91 ${esc(p.phoneNumber)}`;
+const glazia: AgreementParty = { name: 'GLAZIA WINDOORS PRIVATE LIMITED', address: 'Kevat Khata No. 361, Rect. No. 21, Killa No. 4/7 0-18, Kherki Daula Village Road', gstNumber: '', pincode: '', city: 'Gurugram', state: 'Haryana', phoneNumber: '9354876670 / 9958053708', email: 'sales@glazia.in' };
 
-  const generatePA = async () => {
-    const day = new Date();
-    const date = day.getDate();
-    const month = day.getMonth() + 1; // JavaScript months are 0-indexed
-    const year = day.getFullYear();
-    
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    
-    const htmlStr = `<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glazia Partner Agreement</title>
-    <style>
-        @page {
-            size: A4;
-            margin: 2cm;
-        }
-
-        body {
-            font-family: 'Times New Roman', serif;
-            font-size: 12pt;
-            line-height: 1.5;
-            color: #000;
-            margin: 0 auto;
-            width: 21cm;
-            padding: 2cm;
-            box-sizing: border-box;
-        }
-
-        h1 {
-            text-align: center;
-            text-decoration: underline;
-            font-size: 16pt;
-            margin-bottom: 24pt;
-        }
-
-        .section {
-            margin-bottom: 14pt;
-        }
-
-        .indent {
-            margin-left: 2em;
-        }
-
-        b {
-            font-weight: bold;
-        }
-    </style>
-</head>
-
-<body>
-
-    <h1>AGREEMENT</h1>
-
-    <div class="section">
-        This agreement is made at <b>${state}</b> on this <b>${date}</b> day of <b>${monthNames[month - 1]}, ${year}</b> ("Agreement").
-    </div>
-
-    <div class="section">
-        <b>BY AND BETWEEN</b><br>
-        <div class="indent">
-            Glazia Windoors Private Limited is a Firm incorporated under the laws of the Companies Act 2013 and having
-            its registered/principal office at Kevat Khata No 361, Rect, No 21, Killa No 4/7 0-18, Kherki Daula Village
-            Road, Gurugram, India through Mr. Navdeep Kamboj, (hereinafter referred to as the "Supplier") of the ONE
-            PART;
-        </div>
-    </div>
-
-    <div class="section">
-        <b>AND</b><br>
-        <div class="indent">
-            ${userName}<br>
-            ${email}<br>
-            GST No: ${gstNumber}<br>
-            ${completeAddress}, ${city} - ${pincode}, ${state}, India<br>
-            (hereinafter referred to as the "Fabricator/Dealer") of the OTHER PART.
-        </div>
-    </div>
-
-    <div class="section">
-        (Supplier and Fabricator/Dealer are collectively referred to as "Parties" and individually as "Party")
-    </div>
-
-    <div class="section">
-        <b>WHEREAS:</b>
-        <div class="indent">
-            <p>
-                A. GLAZIA WINDOORS PRIVATE LIMITED is engaged inter alia in the business of architectural Aluminium
-                systems products for marketing & supplying extrusions, gaskets, accessories like screws, plastic
-                components, etc., and hardware like hinges, handles, tooling, and other high-end luxury products.
-            </p>
-            <p>
-                B. Fabricator/Dealer is engaged inter alia in the business of supplying fabricated Aluminum Façade,
-                Doors, Windows & Internal partition Systems.
-            </p>
-            <p>
-                C. GLAZIA WINDOORS PRIVATE LIMITED on the request of the Fabricator/Dealer is agreeable to explore
-                business opportunities of mutual benefits initially for the region <b>${state}</b> with the
-                Fabricator/Dealer in relation to supplying Aluminium fabricated Windows, doors, and façade systems of
-                Glazia Windoors listed in Annexure I attached, from the Fabricator/Dealer (the "Purpose") and for the
-                Purpose it may be desirable or necessary for GLAZIA WINDOORS PRIVATE LIMITED to disclose to the
-                Fabricator/Dealer the Confidential Information (as defined in Article 1.3 hereof) which is either
-                non-public, confidential or proprietary in nature and which may be disclosed either in written,
-                electronic, oral or any other form/medium of whatsoever nature.
-            </p>
-            <p>
-                D. Fabricator/Dealer is authorized to consult, evaluate, and execute projects & retail site,
-                establish/negotiate for development of the business to supply to the developers/builders/showroom under
-                the jurisdiction of his region.
-            </p>
-            <p>
-                E. GLAZIA WINDOORS PRIVATE LIMITED being desirous of controlling the dissemination of the Confidential
-                Information wishes the Fabricator/Dealer to enter into this Agreement and the Fabricator/Dealer has
-                agreed to enter into this Agreement with GLAZIA WINDOORS PRIVATE LIMITED in respect of the Confidential
-                Information and agrees and acknowledges that the Confidential Information will be regarded as
-                confidential or proprietary in nature and will not be disclosed or used except in accordance with this
-                Agreement.
-            </p>
-        </div>
-    </div>
-
-    <div class="section">
-        NOW THEREFORE, This Agreement witnessed and in consideration of the mutually promised and covenants contained
-        herein and for good and valuable mutual consideration, the receipt and sufficiency of which is hereby
-        acknowledged, the Parties hereby agree as follows:
-    </div>
-
-    <div class="section">
-        <b>1. DEFINITIONS</b>
-        <div class="indent">
-            <p>Unless the context otherwise requires, when used in this Agreement the following terms have the following
-                meanings:</p>
-
-            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                <tr>
-                    <td style="width: 8%; vertical-align: top;"><b>1.1</b></td>
-                    <td style="width: 35%; vertical-align: top;"><b>"Agreement"</b></td>
-                    <td style="width: 57%; vertical-align: top;">
-                        Shall mean this Agreement and shall include any subsequent written additions, modifications, and
-                        amendments thereto.
-                    </td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top;"><b>1.2</b></td>
-                    <td style="vertical-align: top;"><b>"GLAZIA WINDOORS PRIVATE LIMITED"</b></td>
-                    <td style="vertical-align: top;">
-                        Shall mean GLAZIA WINDOORS PRIVATE LIMITED, Kevat Khata No 361, Rect, No 21, Killa No 4/7 0-18,
-                        Kherki Daula Village Road, Gurugram.
-                    </td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top;"><b>1.3</b></td>
-                    <td style="vertical-align: top;"><b>"Confidential Information"</b></td>
-                    <td style="vertical-align: top;">
-                        Shall include but not be restricted to all documents, materials, memoranda, copies, reports,
-                        papers,
-                        surveys, data,
-                        graphs, charts, analyses, summaries, designs, drawings, diagrams, discs, tapes, floppy disks,
-                        CDs,
-                        DVDs, and other
-                        information, of whatever nature and in whichever form, pertaining/relating to/owned or used by
-                        GLAZIA WINDOORS
-                        PRIVATE LIMITED (whether in physical/visual/oral/electronic/written and/or any other tangible
-                        form
-                        or otherwise)
-                        and disclosed to the Fabricator/Dealer (whether prior to or after the execution of this
-                        Agreement),
-                        including without
-                        limitations:
-                        <ul style="list-style-type: none; padding-left: 0; margin-top: 0.5em;">
-                            <li style="margin-bottom: 1em;">
-                                ❖ any know-how, patent, copyright, software program, procedure, methodology, systems,
-                                applications, computer files/data,
-                                techniques, scientific data, price specifications, information pertaining to the
-                                training
-                                procedures/manuals, trade secrets,
-                                business methods, business process, business techniques, customers list, price lists,
-                                marketing plans, business plans,
-                                drawings, designs, samples, past data concepts and ideas and other know-how, whether
-                                protected under law or not, products
-                                and product lines and other information relevant to GLAZIA WINDOORS PRIVATE LIMITED's
-                                business including but not limited
-                                to technical information (and any tangible expression of such technical information),
-                                commercial information and financial
-                                information and past, present and future plans of GLAZIA WINDOORS PRIVATE LIMITED; and
-                            </li>
-                            <li>
-                                ❖ any other matter which may reasonably be regarded as confidential or proprietary as
-                                per
-                                industry practice or which the
-                                GLAZIA WINDOORS PRIVATE LIMITED informs the Fabricator/Dealer that it considers as
-                                confidential or proprietary.
-                            </li>
-                        </ul>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top;"><b>1.4</b></td>
-                    <td style="vertical-align: top;"><b>"Purpose"</b></td>
-                    <td style="vertical-align: top;">
-                        Shall have the meaning ascribed to it in Recital C hereof.
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="section">
-            <b>3. CONFIDENTIALITY OBLIGATIONS</b>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                <tr>
-                    <td style="width: 6%; vertical-align: top;"><b>3.1</b></td>
-                    <td style="width: 94%; vertical-align: top;">
-                        The Fabricator/Dealer hereby represents, warrants, and undertakes that it will not without the
-                        specific prior written consent
-                        of GLAZIA WINDOORS PRIVATE LIMITED, disclose the Confidential Information or any part thereof to
-                        any
-                        third party.
-                        The Fabricator/Dealer acknowledges that the Confidential Information received by it on and from
-                        ${date}
-                        day of ${monthNames[month - 1]}
-                        shall be covered and governed by this Agreement as if disclosed pursuant to this Agreement.
-                    </td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top;"><b>3.2</b></td>
-                    <td style="vertical-align: top;">
-                        The Fabricator/Dealer hereby represents, warrants, and undertakes that it will keep secret and
-                        confidential
-                        the Confidential Information and all other information that comes into its knowledge or is
-                        generated
-                        or
-                        collected by it for the Purpose and will not use the same for any purpose whatsoever other than
-                        for
-                        the
-                        Purpose in strict accordance with the terms and conditions of this Agreement.
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="section">
-            <b>8. TERM OF AGREEMENT</b>
-            <div class="indent">
-                <p>
-                    This Agreement shall be deemed to be effective from ${date}/${month}/${year} being the date of first disclosure
-                    of Confidential
-                    Information by GLAZIA WINDOORS PRIVATE LIMITED to the Fabricator/Dealer. The license should be
-                    renewed first on
-                    completion of 3 years and subsequent renewal will be in each 5th year.
-                </p>
-            </div>
-        </div>
-
-        <div class="section">
-            <b>13. NOTICE</b>
-            <div class="indent">
-                <p><b>13.1</b> Any notice, demand, consent, or other communication given or made under this Agreement:
-                </p>
-                <ol type="a" style="margin-left: 1.5em;">
-                    <li>must be in writing and signed by a person duly authorized by the sender; and</li>
-                    <li>
-                        must be delivered to the intended Fabricator/Dealer by prepaid post or by hand or email to the
-                        address
-                        or email addresses below or the address last notified by the intended Fabricator/Dealer to the
-                        sender:
-                        <br><br>
-                        <b>To GLAZIA WINDOORS PRIVATE LIMITED</b><br>
-                        Attention: Director<br>
-                        Address: GLAZIA WINDOORS PRIVATE LIMITED,<br>
-                        Kevat Khata No 361, Rect, No 21, Killa No 4/7 0-18<br>
-                        Kherki Daula Village Road, Gurugram, India<br>
-                        Phone: +91 9354876670, 9958053708; Email: sales@glazia.in<br><br>
-
-                        <b>To The Fabricator/Dealer</b><br>
-                        Attention: Mr./Ms. ${userName}<br>
-                        Address: ${completeAddress}<br>
-                        Phone: +91 ${phoneNumber}; Email: ${email}
-                    </li>
-                </ol>
-            </div>
-        </div>
-
-        <div class="section">
-            <p>
-                <b>IN WITNESS WHEREOF,</b> the Parties have caused this Agreement to be executed by and through their
-                duly
-                authorized
-                representatives as of the date first above written.
-            </p>
-        </div>
-
-        <div class="section" style="margin-top: 2em;">
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="width: 50%; vertical-align: top;">
-                        <b>GLAZIA WINDOORS PRIVATE LIMITED</b><br><br>
-                        By<br><br>
-                    </td>
-                    <td style="width: 50%; vertical-align: top;">
-                        <b>(Fabricator/Dealer)</b><br><br>
-                        By<br><br>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top;">
-                        Name: _________________________________<br>
-                        Title: <b>DIRECTOR</b><br><br>
-                        Witness:<br>
-                        Name: ____________________________<br>
-                        Address: ______________________________
-                    </td>
-                    <td style="vertical-align: top;">
-                        Name: _________________________________<br>
-                        Title: __________________________________<br><br>
-                        Witness:<br>
-                        Name: _________________________________<br>
-                        Address: ______________________________
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="section" style="margin-top: 5em;">
-            <p style="text-align: center; text-decoration: underline; font-weight: bold;">Details of Systems</p>
-            <ul style="margin-left: 2em;">
-                <li><b>C-Series</b> (Sliding System)</li>
-                <li><b>E-series</b> (Sliding System)</li>
-                <li><b>P-Series</b> (Sliding System)</li>
-                <li><b>C4</b> (Casement System)</li>
-                <li><b>C5</b> (Casement System)</li>
-                <li><b>E131</b> (Casement System)</li>
-                <li><b>E231</b> (Casement System)</li>
-                <li><b>ESF</b> (Slide & Fold)</li>
-                <li><b>PSF</b> (Slide & Fold)</li>
-                <li><b>Railing</b></li>
-                <li><b>C1645</b> (Internal Partition)</li>
-            </ul>
-        </div>
-    </div>
-</body>
-
-</html>`;
-
-    let cleanupFrame: (() => void) | null = null;
-    try {
-      // Dynamically import html2pdf to avoid SSR issues
-      const html2pdf = (await import('html2pdf.js')).default;
-      
-      const opt = {
-        margin: 0.5,
-        filename: 'document.pdf',
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const },
-        pagebreak: {
-          mode: ['avoid-all', 'css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
-          avoid: ['img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', '.avoid-break']
-        }
-      };
-
-      const { body, cleanup, doc } = await createPdfFrame(htmlStr);
-      cleanupFrame = cleanup;
-
-      const nextOpt = {
-        ...opt,
-        html2canvas: {
-          ...opt.html2canvas,
-          onclone: (clonedDoc: Document) => {
-            if (doc.head && clonedDoc.head) {
-              clonedDoc.head.innerHTML = "";
-              clonedDoc.head.appendChild(doc.head.cloneNode(true));
-            }
-          },
-        },
-      };
-
-      const pdfBlob = await html2pdf().set(nextOpt).from(body).outputPdf('blob');
-      setBlob(pdfBlob);
-      setUrl(URL.createObjectURL(pdfBlob));
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-    } finally {
-      cleanupFrame?.();
-    }
-  };
-
-  useEffect(() => {
-    generatePA();
-  }, []);
-
-  return (
-    <div className="mt-4">
-      {url ? (
-        <a 
-          href={url} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Open Partner Agreement
-        </a>
-      ) : (
-        <div className="text-gray-600">Generating partner agreement...</div>
-      )}
-    </div>
-  );
+const agreementHtml = (type: PartnerAgreementType, second: AgreementParty, dealer?: AgreementParty) => {
+  const dealerToFabricator = type === 'DEALERSHIP_FABRICATOR';
+  const dealershipAgreement = type === 'GLAZIA_DEALERSHIP';
+  const first = dealerToFabricator ? dealer! : glazia;
+  const firstRole = dealerToFabricator ? 'Dealership' : 'Glazia';
+  const secondRole = dealershipAgreement ? 'Dealership' : 'Fabricator';
+  const title = dealerToFabricator ? 'DEALERSHIP–FABRICATOR PARTNER AGREEMENT' : `GLAZIA–${secondRole.toUpperCase()} PARTNER AGREEMENT`;
+  const ordering = dealershipAgreement ? 'The Dealership may order goods for its own stock or place an order for direct delivery to a registered Fabricator. Direct-delivery goods shall not enter Dealership stock.' : dealerToFabricator ? "Fabricator orders shall first be checked against Dealership stock. Available quantities are deducted when ordered. If unavailable, the Dealership may order from Glazia for delivery to the Fabricator; those goods shall not enter Dealership stock." : 'The Fabricator shall place orders through the Glazia platform or an approved written channel. Each order is binding only when accepted by Glazia.';
+  const inventory = dealershipAgreement ? 'Products ordered for Dealership stock are added to inventory only when marked delivered. The Dealership is responsible for custody, safe storage, insurance and accurate stock records.' : dealerToFabricator ? 'The Dealership shall maintain accurate stock. Fabricator orders fulfilled locally reduce that stock. Authorized manual corrections must remain recorded in the inventory audit ledger.' : 'The Fabricator shall store, handle, fabricate and install products according to current Glazia technical instructions.';
+  const sections = [
+    ['1. PURPOSE AND APPOINTMENT', `${firstRole} appoints the ${secondRole} on a non-exclusive basis to market, purchase, supply, fabricate or install approved Glazia aluminium systems, profiles, hardware and accessories for mutually agreed projects and territory. This Agreement creates no employment, franchise, legal partnership or authority to bind the other Party.`],
+    ['2. ORDERS AND FULFILMENT', `${ordering} Product, quantity, price, GST, freight, credit and delivery terms in an accepted order or invoice prevail for that transaction.`],
+    ['3. INVENTORY AND CUSTODY', `${inventory} Risk passes as stated in the applicable invoice or dispatch document; title remains subject to full payment.`],
+    ['4. PRICING, TAXES AND PAYMENT', 'Prices and discounts are those accepted for each order and may change for future orders. The purchasing Party shall pay invoices, GST, freight and stated charges within the agreed period. Overdue amounts may result in suspension of supply, credit or platform access.'],
+    ['5. DELIVERY, INSPECTION AND RETURNS', 'The receiving Party shall inspect quantity and visible condition promptly and report shortages, transit damage or discrepancies in writing within 48 hours. Returns require prior written approval. Delivery dates are estimates unless expressly guaranteed in writing.'],
+    ['6. PRODUCT USE AND QUALITY', `The ${secondRole} shall follow current manuals, approved drawings, fabrication tolerances, installation guidance and safety requirements. It shall not alter Glazia branding, represent non-approved goods as genuine, or make warranties beyond official documentation.`],
+    ['7. WARRANTY AND CUSTOMER SERVICE', 'Each Party is responsible for its own workmanship, representations and services. Product warranty requires proof of purchase and compliance with storage, fabrication and installation instructions. Misuse, unauthorized modification and improper installation are excluded to the extent permitted by law.'],
+    ['8. CONFIDENTIALITY', 'Non-public prices, customer information, drawings, technical data, software access, business plans and commercial terms are confidential. The receiving Party shall use them only for this relationship, limit access to personnel who need to know and protect them with reasonable care. This duty survives termination for three years; trade secrets remain protected while legally confidential.'],
+    ['9. INTELLECTUAL PROPERTY AND BRAND', `Glazia retains all rights in its trademarks, catalogues, system designs, drawings, software and technical materials. Permission to use Glazia branding is limited, non-transferable and revocable. The ${secondRole} shall stop using it immediately upon termination.`],
+    ['10. COMPLIANCE', 'Each Party shall comply with applicable tax, anti-bribery, competition, consumer protection, labour, environmental, privacy and safety laws; maintain required registrations and licences; and retain accurate transaction records.'],
+    ['11. LIABILITY AND INDEMNITY', 'Each Party shall indemnify the other against third-party claims caused by its fraud, wilful misconduct, legal violation, unauthorized representation, negligence or material breach. Neither Party is liable for indirect or consequential loss except where liability cannot lawfully be excluded.'],
+    ['12. TERM AND TERMINATION', 'This Agreement begins on execution and continues for three years. Either Party may terminate on 30 days’ written notice, or immediately for uncured material breach, insolvency, fraud, brand misuse or unlawful conduct. Accepted orders, accrued payment, confidentiality, intellectual-property and dispute terms survive.'],
+    ['13. FORCE MAJEURE', 'A Party is not liable for delay caused by events beyond reasonable control, provided it promptly notifies the other Party and takes reasonable mitigation steps.'],
+    ['14. NOTICES AND DISPUTES', 'Notices must be written and sent to the addresses or emails above. The Parties shall first seek good-faith resolution. Unresolved disputes shall be referred to a sole mutually appointed arbitrator under the Arbitration and Conciliation Act, 1996. The seat and venue shall be Gurugram, Haryana; proceedings shall be in English; Indian law governs; and Gurugram courts have jurisdiction for permitted court proceedings.'],
+    ['15. GENERAL', 'This Agreement, accepted orders and referenced policies are the entire understanding on their subject matter. Amendments and waivers must be written. Assignment requires consent except in a lawful business reorganization. Invalid provisions are severed without affecting the remainder. Electronic execution and counterparts are permitted to the extent allowed by law.']
+  ];
+  return `<!doctype html><html><head><meta charset="utf-8"><style>@page{size:A4;margin:18mm}body{font-family:'Times New Roman',serif;font-size:11pt;line-height:1.45;color:#111;max-width:174mm;margin:auto}h1{text-align:center;font-size:16pt;text-decoration:underline}h2{font-size:12pt;margin:18px 0 5px}.party{border:1px solid #bbb;padding:10px;margin:8px 0}.clause{page-break-inside:avoid}.sign{width:100%;margin-top:45px}.sign td{width:50%;vertical-align:top}</style></head><body><h1>${title}</h1><p>This Agreement is executed on <b>${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</b> at <b>${esc(second.state)}</b>.</p><b>BY AND BETWEEN</b><div class="party">${block(first)}<br>(“${firstRole}”)</div><b>AND</b><div class="party">${block(second)}<br>(“${secondRole}”)</div><p>Together, the “Parties”, and individually, a “Party”.</p>${sections.map(([heading, text]) => `<div class="clause"><h2>${heading}</h2><p>${text}</p></div>`).join('')}<p><b>IN WITNESS WHEREOF</b>, the Parties execute this Agreement through authorized representatives.</p><table class="sign"><tr><td><b>${esc(first.name)}</b><br><br>Signature: __________________<br>Name: _____________________<br>Title: ______________________<br>Date: ______________________</td><td><b>${esc(second.name)}</b><br><br>Signature: __________________<br>Name: _____________________<br>Title: ______________________<br>Date: ______________________</td></tr></table><h2>ANNEXURE A — APPROVED SYSTEMS</h2><p>C-Series, E-Series and P-Series Sliding; C4, C5, E131 and E231 Casement; ESF and PSF Slide & Fold; Railing; C1645 Internal Partition; and other products approved in writing.</p></body></html>`;
 };
 
+const PartnerAgreement: React.FC<Props> = ({ userName, completeAddress, gstNumber, pincode, city, state, phoneNumber, email, agreementType = 'GLAZIA_FABRICATOR', dealership, setBlob }) => {
+  const [url, setUrl] = useState('');
+  useEffect(() => {
+    let active = true; let objectUrl = ''; let cleanup: (() => void) | undefined;
+    const party: AgreementParty = { name: userName, address: completeAddress, gstNumber, pincode, city, state, phoneNumber, email };
+    (async () => { try { if (agreementType === 'DEALERSHIP_FABRICATOR' && !dealership) return; const html2pdf = (await import('html2pdf.js')).default; const frame = await createPdfFrame(agreementHtml(agreementType, party, dealership)); cleanup = frame.cleanup; const blob = await html2pdf().set({ margin: .5, image: { type: 'jpeg', quality: .98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.clause'] } }).from(frame.body).outputPdf('blob'); if (active) { setBlob(blob); objectUrl = URL.createObjectURL(blob); setUrl(objectUrl); } } catch (error) { console.error('Agreement PDF generation failed:', error); } finally { cleanup?.(); } })();
+    return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [agreementType, dealership, userName, completeAddress, gstNumber, pincode, city, state, phoneNumber, email, setBlob]);
+  return <div className="mt-4">{url ? <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Open Partner Agreement</a> : <div className="text-gray-600">Generating partner agreement…</div>}</div>;
+};
 export default PartnerAgreement;

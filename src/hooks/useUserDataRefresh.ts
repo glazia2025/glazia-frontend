@@ -48,6 +48,8 @@ export const useUserDataRefresh = () => {
           totalSpent: response.user.totalSpent || 0,
           loyaltyPoints: response.user.loyaltyPoints || 0,
           paUrl: response.user.paUrl || '',
+          accountType: response.user.accountType || 'FABRICATOR',
+          dealership: response.user.dealership || null,
           isAuthenticated: true,
           dynamicPricing: response.user.dynamicPricing || {}
         };

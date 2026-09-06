@@ -249,6 +249,11 @@ function DashboardContent() {
               <p className="text-gray-600">Welcome back, {user.name}</p>
             </div>
             <div className="flex items-center space-x-4">
+              {user.accountType === 'DEALERSHIP' && (
+                <Link href="/account/dealership" className="rounded-lg bg-[#124657] px-4 py-2 text-sm font-medium text-white">
+                  Manage dealership
+                </Link>
+              )}
               <div className="text-right">
                 <p className="text-sm text-gray-600">Loyalty Points: {user.loyaltyPoints?.toLocaleString() || 0}</p>
               </div>

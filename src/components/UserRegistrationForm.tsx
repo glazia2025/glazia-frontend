@@ -374,6 +374,7 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
           </div>
 
           <PartnerAgreement
+            agreementType="GLAZIA_FABRICATOR"
             userName={userName}
             completeAddress={completeAddress}
             gstNumber={gstNumber}
@@ -395,7 +396,7 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
               onChange={(e) => setIsAgreed(e.target.checked)}
             />
             <label htmlFor="agreement" className="text-sm text-gray-700">
-              I agree to the Partner Agreement terms and conditions
+              I agree to the Glazia–Fabricator Partner Agreement terms and conditions
             </label>
           </div>
 
