@@ -1,10 +1,20 @@
 import { MetadataRoute } from "next";
-import { getBlogs } from "@/services/blogService";
+// import { getBlogs } from "@/services/blogService";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const blogs = await getBlogs();
+  // const blogs = await getBlogs();
+  const response = await fetch("https://api.glazia.in/api/blogs", {
+  cache: "no-store",
+});
 
-  const blogUrls: MetadataRoute.Sitemap = blogs.map((blog) => ({
+if (!response.ok) {
+  throw new Error("Failed to fetch blogs");
+}
+
+const blogs = await response.json();
+
+
+  const blogUrls: MetadataRoute.Sitemap = blogs.map((blog: any) => ({
     url: `https://glazia.in/blogs/${blog.category.toLowerCase()}/${blog.slug}`,
     lastModified: new Date(),
     changeFrequency: "weekly",
