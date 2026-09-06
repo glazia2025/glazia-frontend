@@ -103,7 +103,7 @@ export default function TechnicalSpecs() {
   const downloadCatalogue = () => {
     // Create a link element to trigger the download
     const link = document.createElement('a');
-    link.href = '/Glazia Catalogue.pdf'; // Path to the PDF file in public folder
+    link.href = '/Glazia Latest Catalogue.pdf'; // Path to the PDF file in public folder
     link.download = 'Glazia Catalogue.pdf'; // Name for the downloaded file
     link.target = '_blank'; // Open in new tab as fallback
 
