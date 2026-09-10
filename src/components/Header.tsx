@@ -432,7 +432,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setIsSearchDropdownOpen(true)}
-            className="bg-[#2F3A4F] rounded-full px-4 py-2 text-white flex items-center gap-2"
+            className="bg-[#EE1C25] rounded-full px-4 py-2 text-white flex items-center gap-2"
           >
             <Search className="h-4 w-4" />
             Search
