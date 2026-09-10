@@ -367,10 +367,17 @@ export class DataService {
 
       const data = await response.json();
       console.log('📦 Orders API Response:', data);
+      const orders = Array.isArray(data)
+  ? data
+  : Array.isArray(data?.orders)
+    ? data.orders
+    : Array.isArray(data?.data)
+      ? data.data
+      : [];
       console.log('📦 Number of orders in response:', data?.length || 0);
 
       // Return the raw API response structure
-      return data || [];
+      return orders;
     } catch (error) {
       console.error('Error fetching orders:', error);
       return [];
