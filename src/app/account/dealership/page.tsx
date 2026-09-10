@@ -2,12 +2,13 @@
 
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Building2, PackageCheck, Plus, Users } from 'lucide-react';
+import { Building2, PackageCheck, Plus, SlidersHorizontal, Users } from 'lucide-react';
 import Header from '@/components/Header';
 import { API_BASE_URL } from '@/services/api';
 import { getAuthToken } from '@/utils/authCookie';
 import PartnerAgreement, { AgreementParty } from '@/components/PartnerAgreement/PartnerAgreement';
 import StockManager from '@/components/dealership/StockManager';
+import DynamicPricingManager from '@/components/dealership/DynamicPricingManager';
 
 type Fabricator = { _id: string; name: string; email: string; phoneNumber: string; city: string; state: string };
 type DealerOrder = {
@@ -24,7 +25,7 @@ type InventoryItem = { _id: string; productId: string; description: string; quan
 const emptyForm = { name: '', email: '', gstNumber: '', pincode: '', city: '', state: '', address: '', phoneNumber: '', authorizedPerson: '', authorizedPersonDesignation: '' };
 
 export default function DealershipPage() {
-  const [activeMenu, setActiveMenu] = useState<'fabricators' | 'stock'>('fabricators');
+  const [activeMenu, setActiveMenu] = useState<'fabricators' | 'stock' | 'pricing'>('fabricators');
   const [fabricators, setFabricators] = useState<Fabricator[]>([]);
   const [orders, setOrders] = useState<DealerOrder[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -97,13 +98,14 @@ export default function DealershipPage() {
   };
 
   return <><Header /><main className="min-h-screen bg-gray-50 py-8"><div className="mx-auto max-w-7xl px-4">
-    <div className="mb-7 flex items-center justify-between gap-4"><div><h1 className="flex items-center gap-3 text-3xl font-bold text-gray-900"><Building2 className="text-[#124657]" /> Manage Dealership</h1><p className="mt-2 text-gray-600">Manage your fabricator network and available inventory.</p></div><Link href="/account/dashboard" className="shrink-0 text-sm font-medium text-[#124657]">Back to dashboard</Link></div>
+    <div className="mb-7 flex items-center justify-between gap-4"><div><h1 className="flex items-center gap-3 text-3xl font-bold text-gray-900"><Building2 className="text-[#124657]" /> Manage Dealership</h1><p className="mt-2 text-gray-600">Manage your fabricator network, pricing and available inventory.</p></div><Link href="/account/dashboard" className="shrink-0 text-sm font-medium text-[#124657]">Back to dashboard</Link></div>
     {error && <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>}{message && <div className="mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">{message}</div>}
     {loading ? <p className="text-gray-600">Loading dealership…</p> : <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
        <div className="space-y-6">
       <aside className="h-fit rounded-xl border border-gray-200 bg-white p-3 shadow-sm"><p className="px-3 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-gray-400">Manage dealership</p><nav className="space-y-1">
         <button onClick={() => setActiveMenu('fabricators')} className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-medium transition-colors ${activeMenu === 'fabricators' ? 'bg-[#124657] text-white' : 'text-gray-700 hover:bg-gray-100'}`}><span className="flex items-center gap-3"><Users size={19}/> Fabricators</span><span className={`rounded-full px-2 py-0.5 text-xs ${activeMenu === 'fabricators' ? 'bg-white/20' : 'bg-gray-100'}`}>{fabricators.length}</span></button>
         <button onClick={() => setActiveMenu('stock')} className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-medium transition-colors ${activeMenu === 'stock' ? 'bg-[#124657] text-white' : 'text-gray-700 hover:bg-gray-100'}`}><span className="flex items-center gap-3"><PackageCheck size={19}/> Stock</span><span className={`rounded-full px-2 py-0.5 text-xs ${activeMenu === 'stock' ? 'bg-white/20' : 'bg-gray-100'}`}>{inventory.length}</span></button>
+        <button onClick={() => setActiveMenu('pricing')} className={`flex w-full items-center rounded-lg px-3 py-3 text-left text-sm font-medium transition-colors ${activeMenu === 'pricing' ? 'bg-[#124657] text-white' : 'text-gray-700 hover:bg-gray-100'}`}><span className="flex items-center gap-3"><SlidersHorizontal size={19}/> Dynamic Pricing</span></button>
       </nav></aside>
          
           {activeMenu === 'fabricators' && (
@@ -185,6 +187,7 @@ export default function DealershipPage() {
         </div>
         </div>}
         {activeMenu === 'stock' && <StockManager inventory={inventory} onChanged={load}/>} 
+        {activeMenu === 'pricing' && <DynamicPricingManager fabricators={fabricators} request={request} onMessage={setMessage} onError={setError}/>}
       </div>
     </div>}
   </div></main></>;
