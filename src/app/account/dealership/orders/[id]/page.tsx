@@ -3,6 +3,8 @@
 import { use,useEffect, useState } from 'react';
 
 import PaymentProofModal from '@/components/PaymentProofModal/PaymentProofModal';
+import EditPaymentDueDateModal from '@/components/EditPaymentDueDateModal/EditPaymentDueDateModal';
+import CompleteOrderModal from '@/components/CompleteOrderModal/CompleteOrderModal';
 import {
   CalendarDays,
   MapPin,
@@ -55,6 +57,15 @@ type Order = {
     createdAt?: string;
     dueDate?: string;
   }>;
+  driverInfo?: {
+  name: string;
+  phone: string;
+  description?: string;
+};
+
+biltyDoc?: string;
+eWayBill?: string;
+taxInvoice?: string;
 
   fulfillment: {
     status: string;
@@ -185,6 +196,22 @@ export default function DealershipOrderDetailsPage({
 );
 const [showPaymentProofModal, setShowPaymentProofModal] = useState<{
   payment: Order['payments'][number];
+  title: string;
+  message: React.ReactNode;
+  onClose: () => void;
+  onConfirm: (data: any, cb?: () => void) => void;
+} | undefined>(undefined);
+
+const [showEditPaymentDueDateModal, setShowEditPaymentDueDateModal] = useState<{
+  payment: Order['payments'][number];
+  title: string;
+  message: React.ReactNode;
+  onClose: () => void;
+  onConfirm: (data: any, cb?: () => void) => void;
+} | undefined>(undefined);
+
+const [showCompleteOrderModal, setShowCompleteOrderModal] = useState<{
+  order: Order;
   title: string;
   message: React.ReactNode;
   onClose: () => void;
@@ -406,6 +433,63 @@ const renderPaymentStatus = (
     console.error('Error approving payment:', error);
   }
 };
+
+const updatePaymentDueDate = async (
+  paymentId: string,
+  data: any,
+  cb?: () => void
+) => {
+  if (!order || !order._id || !paymentId) {
+    console.error('Order or payment not found');
+    return;
+  }
+
+  if (!data.dueDate) {
+    console.error('New due date is required');
+    return;
+  }
+
+  try {
+    const token = getAuthToken();
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/admin/update-payment-due-date`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token
+            ? { Authorization: `Bearer ${token}` }
+            : {}),
+        },
+        body: JSON.stringify({
+          orderId: order._id,
+          paymentId: paymentId,
+          dueDate: data.dueDate,
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.message || 'Failed to update due date'
+      );
+    }
+
+    console.log('Due date updated successfully');
+
+    cb?.();
+    setShowEditPaymentDueDateModal(undefined);
+
+    // Reload order so updated due date is shown
+    window.location.reload();
+  } catch (error) {
+    console.error('Error updating due date:', error);
+  }
+};
 const openPaymentProofModal = (
   payment: Order['payments'][number]
 ) => {
@@ -439,6 +523,144 @@ const openPaymentProofModal = (
     onConfirm: (data, cb) =>
       approvePayment(payment._id, data, cb),
   });
+};
+
+const openEditPaymentDueDateModal = (
+  payment: Order['payments'][number]
+) => {
+  setShowEditPaymentDueDateModal({
+    payment,
+    title: 'Edit Due Date',
+    message: (
+      <span>
+        Current due date:{' '}
+        <strong>
+          {payment.dueDate
+            ? new Date(payment.dueDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+            : 'Upon dispatch'}
+        </strong>
+      </span>
+    ),
+    onClose: () => setShowEditPaymentDueDateModal(undefined),
+    onConfirm: (data, cb) =>
+      updatePaymentDueDate(payment._id, data, cb),
+  });
+};
+const openCompleteOrderModal = () => {
+  if (!order) {
+    console.error('Order not found');
+    return;
+  }
+
+  setShowCompleteOrderModal({
+    order,
+    title: 'Complete Order & Release Dispatch',
+    message: (
+      <span>
+        Upload dispatch documentation and driver contact details.
+      </span>
+    ),
+    onClose: () => setShowCompleteOrderModal(undefined),
+    onConfirm: (data, cb) => completeOrder(data, cb),
+  });
+};
+const completeOrder = async (
+  data: any,
+  cb?: () => void
+) => {
+  if (!order || !order._id) {
+    console.error('Order not found');
+    return;
+  }
+
+  if (
+    !data.driverInfo ||
+    !data.biltyDoc ||
+    !data.eWayBill ||
+    !data.taxInvoice
+  ) {
+    console.error(
+      'Driver details and all dispatch documents are required'
+    );
+    return;
+  }
+
+  try {
+    const token = getAuthToken();
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/admin/complete-order`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token
+            ? { Authorization: `Bearer ${token}` }
+            : {}),
+        },
+        body: JSON.stringify({
+          orderId: order._id,
+          driverInfo: data.driverInfo,
+          biltyDoc: data.biltyDoc,
+          eWayBill: data.eWayBill,
+          taxInvoice: data.taxInvoice,
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.message || 'Failed to complete order'
+      );
+    }
+
+    console.log('Order completed and dispatched successfully');
+
+    cb?.();
+    setShowCompleteOrderModal(undefined);
+
+    window.location.reload();
+  } catch (error) {
+    console.error('Error completing order:', error);
+  }
+};
+
+const openViewDocumentModal = (doc: {
+  value: 'biltyDoc' | 'eWayBill' | 'taxInvoice';
+}) => {
+  if (!order || !order[doc.value]) {
+    console.error('Document not available yet');
+    return;
+  }
+
+  const docData = order[doc.value];
+
+  if (
+    typeof docData === 'string' &&
+    docData.startsWith('http')
+  ) {
+    window.open(docData, '_blank');
+  } else if (
+    typeof docData === 'string' &&
+    docData.startsWith('data:')
+  ) {
+    const win = window.open();
+
+    if (win) {
+      win.document.write(
+        `<iframe src="${docData}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
+      );
+    }
+  } else {
+    window.open(docData, '_blank');
+  }
 };
 
   if (loading) {
@@ -486,6 +708,7 @@ const openPaymentProofModal = (
         <div className="mt-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
 
           <div className="border-b border-gray-200 px-6 py-5">
+            <div className="flex items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3">
 
               <span className="rounded-lg bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700">
@@ -517,6 +740,17 @@ const openPaymentProofModal = (
 </span>
 
             </div>
+            {checkOrderDispatchPending(order) && (
+  <button
+    type="button"
+    className="inline-flex items-center gap-2 rounded-lg bg-[#EE1C25] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#EE1C25]"
+    onClick={openCompleteOrderModal}
+  >
+    <Check size={16} />
+    <span>Complete Order</span>
+  </button>
+)}
+</div>
 
             <div className="mt-3 flex flex-wrap gap-5 text-sm text-gray-500">
 
@@ -695,13 +929,42 @@ const openPaymentProofModal = (
                 </span>
               </button>
 
-              <button
+              {/* <button
                 type="button"
                 className="flex items-center gap-2 px-1 py-4 text-sm font-semibold text-gray-400"
               >
                 <LockKeyhole size={16} />
                 Documents & Dispatch
-              </button>
+              </button> */}
+              <button
+  type="button"
+  onClick={() => {
+    if (order.isComplete) {
+      setActiveTab('documents');
+    }
+  }}
+  className={`flex items-center gap-2 px-1 py-4 text-sm font-semibold ${
+    activeTab === 'documents'
+      ? 'border-b-2 border-[#EE1C25] text-[#EE1C25]'
+      : order.isComplete
+      ? 'text-gray-500'
+      : 'text-gray-400'
+  }`}
+>
+  {order.isComplete ? (
+    <FileText size={16} />
+  ) : (
+    <LockKeyhole size={16} />
+  )}
+
+  <span>Documents & Dispatch</span>
+
+  {order.isComplete && (
+    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+      3
+    </span>
+  )}
+</button>
 
             </div>
           </div>
@@ -1116,6 +1379,7 @@ const openPaymentProofModal = (
                   <button
                     type="button"
                     className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700"
+                    onClick={() => openEditPaymentDueDateModal(payment)}
                   >
                     <CalendarDays size={14} />
                     Edit Due Date
@@ -1135,6 +1399,145 @@ const openPaymentProofModal = (
   </div>
 )}
 
+{activeTab === 'documents' && (
+  <div className="px-6 py-5">
+
+    {/* Driver Information */}
+    {order.driverInfo && (
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gray-200 bg-gray-50 p-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
+            Assigned Dispatch Driver
+          </p>
+
+          <h3 className="mt-1 text-lg font-bold text-gray-900">
+            {order.driverInfo.name || 'Driver Unassigned'}
+          </h3>
+
+          <p className="mt-1 text-sm text-gray-500">
+            {order.driverInfo.description || 'Vehicle info N/A'}
+          </p>
+        </div>
+
+        {order.driverInfo.phone && (
+          <a
+            href={`tel:${order.driverInfo.phone}`}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm no-underline hover:bg-gray-50"
+          >
+            <Phone size={16} className="text-green-600" />
+            <span>
+              Call Driver: {order.driverInfo.phone}
+            </span>
+          </a>
+        )}
+      </div>
+    )}
+
+    {/* Documents Heading */}
+    <div className="flex items-center justify-between py-5">
+      <div>
+        <h2 className="text-sm font-semibold text-gray-900">
+          Official Shipment Documentation
+        </h2>
+
+        <p className="mt-1 text-xs text-gray-500">
+          Certified PDF / Scans
+        </p>
+      </div>
+
+      <span className="text-sm text-gray-500">
+        3 documents
+      </span>
+    </div>
+
+    {/* Documents Grid */}
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+
+      {/* Bilty Document */}
+      {[
+        {
+          label: 'Bilty Document',
+          value: 'biltyDoc' as const,
+        },
+        {
+          label: 'EWay Bill',
+          value: 'eWayBill' as const,
+        },
+        {
+          label: 'Tax Invoice',
+          value: 'taxInvoice' as const,
+        },
+      ].map((doc) => {
+        const docContent = order[doc.value];
+
+        const hasDoc = !!docContent;
+
+        const isImg =
+          typeof docContent === 'string' &&
+          docContent.startsWith('data:image');
+
+        const sizeKb = hasDoc
+          ? (docContent.length / 1024).toFixed(1)
+          : '0';
+
+        return (
+          <div
+            key={doc.value}
+            className="flex min-h-[180px] flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+          >
+            {/* Document Info */}
+            <div>
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                  <FileText size={21} />
+                </div>
+
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-gray-900">
+                    {doc.label}
+                  </h3>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    {hasDoc
+                      ? `${
+                          isImg
+                            ? 'Image Format'
+                            : 'PDF Document'
+                        } • ${sizeKb} KB`
+                      : 'Document Pending'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Open Button */}
+            <button
+              type="button"
+              disabled={!hasDoc}
+              onClick={() =>
+                openViewDocumentModal(doc)
+              }
+              className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-semibold transition ${
+                hasDoc
+                  ? 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                  : 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400'
+              }`}
+            >
+              <FileText size={14} />
+
+              <span>
+                {hasDoc
+                  ? 'Open Document'
+                  : 'Not Available'}
+              </span>
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
+
         </section>
          <PaymentProofModal
       isOpen={!!showPaymentProofModal}
@@ -1146,6 +1549,26 @@ const openPaymentProofModal = (
     showPaymentProofModal?.onConfirm(data, cb)
   }
     />
+    <EditPaymentDueDateModal
+  isOpen={!!showEditPaymentDueDateModal}
+  title={showEditPaymentDueDateModal?.title}
+  message={showEditPaymentDueDateModal?.message}
+  payment={showEditPaymentDueDateModal?.payment}
+  onClose={() => showEditPaymentDueDateModal?.onClose()}
+  onConfirm={(data, cb) =>
+    showEditPaymentDueDateModal?.onConfirm(data, cb)
+  }
+/>
+<CompleteOrderModal
+  isOpen={!!showCompleteOrderModal}
+  title={showCompleteOrderModal?.title}
+  message={showCompleteOrderModal?.message}
+  order={showCompleteOrderModal?.order}
+  onClose={() => showCompleteOrderModal?.onClose()}
+  onConfirm={(data, cb) =>
+    showCompleteOrderModal?.onConfirm(data, cb)
+  }
+/>
                  
 
       </div>
