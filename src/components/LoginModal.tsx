@@ -74,13 +74,13 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     }
     setIsLoading(true);
     try {
-      await axios.post(`${API_BASE_URL}/api/auth/send-otp`, { phoneNumber }, { withCredentials: true });
+      await axios.post(`${API_BASE_URL}/api/auth/send-otp`, { phoneNumber, accessModule: 'MAIN_SITE' }, { withCredentials: true });
       setStep('otp');
       setCountdown(30);
       startCountdown();
     } catch (err) {
       console.error("Error sending OTP:", err);
-      setError('Failed to send OTP. Please try again.');
+      setError(axios.isAxiosError(err) ? err.response?.data?.message || 'Failed to send OTP. Please try again.' : 'Failed to send OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +114,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/auth/verify-otp`,
-        { phoneNumber, otp: otpValue },
+        { phoneNumber, otp: otpValue, accessModule: 'MAIN_SITE' },
         { withCredentials: true }
       );
       const { userExists, token, existingUser } = response.data;
@@ -152,7 +152,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       }
     } catch (err) {
       console.error('OTP Verification Error:', err);
-      setError('Failed to verify OTP. Please try again.');
+      setError(axios.isAxiosError(err) ? err.response?.data?.message || 'Failed to verify OTP. Please try again.' : 'Failed to verify OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -162,11 +162,11 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     setIsLoading(true);
     setError('');
     try {
-      await axios.post(`${API_BASE_URL}/api/auth/send-otp`, { phoneNumber }, { withCredentials: true });
+      await axios.post(`${API_BASE_URL}/api/auth/send-otp`, { phoneNumber, accessModule: 'MAIN_SITE' }, { withCredentials: true });
       setCountdown(30);
       startCountdown();
-    } catch {
-      setError('Failed to resend OTP. Please try again.');
+    } catch (err) {
+      setError(axios.isAxiosError(err) ? err.response?.data?.message || 'Failed to resend OTP. Please try again.' : 'Failed to resend OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }

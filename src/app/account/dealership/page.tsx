@@ -3,12 +3,13 @@
 import { FormEvent,Fragment, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Building2, ClipboardList, PackageCheck, Plus,Search,Users } from 'lucide-react';
+import { Building2, ClipboardList, PackageCheck, Plus,Search,Users, SlidersHorizontal } from 'lucide-react';
 import Header from '@/components/Header';
 import { API_BASE_URL } from '@/services/api';
 import { getAuthToken } from '@/utils/authCookie';
 import PartnerAgreement, { AgreementParty } from '@/components/PartnerAgreement/PartnerAgreement';
 import StockManager from '@/components/dealership/StockManager';
+import DynamicPricingManager from '@/components/dealership/DynamicPricingManager';
 
 type Fabricator = { _id: string; name: string; email: string; phoneNumber: string; city: string; state: string };
 type DealerOrder = {
@@ -31,7 +32,7 @@ const emptyForm = { name: '', email: '', gstNumber: '', pincode: '', city: '', s
 
 export default function DealershipPage() {
   const router = useRouter();
-  const [activeMenu, setActiveMenu] = useState<'fabricators' | 'stock' | 'orders'>('fabricators');
+  const [activeMenu, setActiveMenu] = useState<'fabricators' | 'stock' | 'orders'| 'pricing'>('fabricators');
   const [fabricators, setFabricators] = useState<Fabricator[]>([]);
   const [orders, setOrders] = useState<DealerOrder[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -860,6 +861,7 @@ const getOrderStatusLabel = (order: DealerOrder) => {
   </div>
 )}
         {activeMenu === 'stock' && <StockManager inventory={inventory} onChanged={load}/>} 
+        {activeMenu === 'pricing' && <DynamicPricingManager fabricators={fabricators} request={request} onMessage={setMessage} onError={setError}/>}
       </div>
     </div>}
   </div></main></>;
