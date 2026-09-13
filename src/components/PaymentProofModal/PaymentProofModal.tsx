@@ -58,7 +58,7 @@ const PaymentProofModal = ({
   const [userRole, setUserRole] = useState<string | null>(null);
 
   const [finalPaymentDueDate, setFinalPaymentDueDate] = useState("");
-  const [paymentVal, setPaymentVal] = useState<number | string>(0);
+  const [paymentVal, setPaymentVal] = useState<number | string>("");
   const [depositedAmount, setDepositedAmount] = useState("");
 
   const [onCompletionStep, setOnCompletionStep] = useState(false);

@@ -6,14 +6,25 @@ import { useCartState } from '@/contexts/AppContext';
 import { formatAmount } from '@/utils/qrCodeGenerator';
 import { API_BASE_URL } from '@/services/api';
 import { getAuthToken } from '@/utils/authCookie';
+interface OrderPlacementItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+}
 
 interface OrderPlacementProps {
   onOrderSuccess: () => void;
   onCancel: () => void;
+  items?: OrderPlacementItem[];
+  totalAmountOverride?: number;
+  sourceOrderId?: string;
 }
 
-const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCancel }) => {
+const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCancel,items,totalAmountOverride,sourceOrderId,}) => {
+   
   const { cart, clearCart } = useCartState();
+  const orderItems = items ?? cart.items;
   const [step, setStep] = useState<'qr' | 'upload' | 'processing' | 'success'>('qr');
   const [paymentProof, setPaymentProof] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -34,11 +45,18 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
     return 0;
   };
 
-  // Calculate totals
-  const subtotal = cart.total;
-  const shippingDiscount = calculateShippingDiscount(cart.total);
-  const tax = Math.round(cart.total * 0.18);
-  const finalTotal = cart.total + tax; // Keep product total separate from shipping discount
+const subtotal =
+  totalAmountOverride ??
+  (items
+    ? orderItems.reduce(
+        (total, item) =>
+          total + Number(item.price || 0) * Number(item.quantity || 0),
+        0
+      )
+    : cart.total);
+const shippingDiscount = calculateShippingDiscount(subtotal);
+const tax = Math.round(subtotal * 0.18);
+const finalTotal = totalAmountOverride ?? (subtotal + tax);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -86,21 +104,26 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
     setError(null);
 
     try {
-      // Prepare order data according to the API format
       const orderData = {
-        products: cart.items.map(item => ({
-          productId: item.id,
-          description: item.name,
-          quantity: item.quantity,
-          amount: Number(item.price) * item.quantity
-        })),
-        payment: {
-          amount: finalTotal,
-          proof: paymentProof
-        },
-        totalAmount: finalTotal,
-        deliveryType: "SELF"
-      };
+  products: orderItems.map(item => ({
+    productId: item.id,
+    description: item.name,
+    quantity: item.quantity,
+    amount: Number(item.price) * item.quantity
+  })),
+  payment: {
+    amount: finalTotal,
+    proof: paymentProof
+  },
+  totalAmount: finalTotal,
+  deliveryType: "SELF",
+  orderChannel: items
+    ? "DEALER_DIRECT_FULFILLMENT"
+    : "CUSTOMER",
+    ...(items && sourceOrderId
+    ? { sourceOrderId }
+    : {})
+};
 
       const authToken = getAuthToken();
       if (!authToken) {
@@ -337,14 +360,18 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
     </div>
   );
 
-  return (
-    <div className="space-y-6">
+    return (
+  <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/50 p-4">
+    <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-2xl">
       {/* Order Summary */}
       <div className="bg-gray-50 p-4 rounded-lg">
         <h4 className="font-semibold text-gray-900 mb-3">Order Summary</h4>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span>Subtotal ({cart.itemCount} items)</span>
+            {/* <span>Subtotal ({cart.itemCount} items)</span> */}
+            <span>
+  Subtotal ({orderItems.reduce((sum, item) => sum + item.quantity, 0)} items)
+</span>
             <span>₹{subtotal.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
@@ -369,6 +396,7 @@ const OrderPlacement: React.FC<OrderPlacementProps> = ({ onOrderSuccess, onCance
       {step === 'upload' && renderUploadStep()}
       {step === 'processing' && renderProcessingStep()}
       {step === 'success' && renderSuccessStep()}
+    </div>
     </div>
   );
 };
