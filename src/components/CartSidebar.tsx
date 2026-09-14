@@ -251,43 +251,76 @@ const CartSidebar: React.FC = () => {
     const dispatchMode = 'By Road';
     const destination = [user.city, user.state].filter(Boolean).join(', ') || 'Destination';
 
-    // Prepare cart items for invoice with pricing aligned to cart logic
-    const selectedProducts = cart.items.map((item, index) => {
-      console.log(item, 'ITEM<<>>')
-      const adjustedRate = getAdjustedItemPrice(item);
-      const isHardware = item.category?.toLowerCase().includes('hardware');
-      const baseProfilePrice = (nalcoPrice / 1000) + adjustedRate;
-      const basePrice = Number(item.price) || 0;
-      const quantity = Number(item.quantity) || 0;
-      const lengthInMeters = (parseFloat(String(item.length)) || 0) / 1000;
-      const kgm = Number(item.kgm) || 0;
+    // Prepare cart items separated by category: Aluminium Profiles and Hardware
+    const profileProducts = cart.items
+      .filter((item) => !item.category?.toLowerCase().includes('hardware'))
+      .map((item) => {
+        const adjustedRate = getAdjustedItemPrice(item);
+        const baseProfilePrice = (nalcoPrice / 1000) + adjustedRate;
+        const quantity = Number(item.quantity) || 0;
+        const lengthInMeters = (parseFloat(String(item.length)) || 0) / 1000;
+        const kgm = Number(item.kgm) || 0;
+        const rate = baseProfilePrice;
+        const amount = rate * quantity * lengthInMeters * kgm;
 
-      const rate = isHardware ? basePrice + adjustedRate : baseProfilePrice;
-      const amount = isHardware
-        ? rate * quantity
-        : rate * quantity * lengthInMeters * kgm;
+        return {
+          description: item.name || 'Aluminium Profile',
+          series: item.category || 'Aluminium Profile',
+          sapCode: item.id,
+          quantity: item.quantity,
+          rate,
+          per: 'Kg',
+          amount
+        };
+      });
 
-      return {
-        description: item.name || 'Item',
-        series: item.category || 'Series',
-        sapCode: item.id,
-        quantity: item.quantity,
-        rate,
-        per: isHardware ? 'Piece' : 'Kg',
-        amount
-      };
-    });
+    const hardwareProducts = cart.items
+      .filter((item) => item.category?.toLowerCase().includes('hardware'))
+      .map((item) => {
+        const adjustedRate = getAdjustedItemPrice(item);
+        const basePrice = Number(item.price) || 0;
+        const quantity = Number(item.quantity) || 0;
+        const rate = basePrice + adjustedRate;
+        const amount = rate * quantity;
 
-    const subtotal = selectedProducts.reduce((sum, item) => sum + (item.amount || 0), 0);
+        return {
+          description: item.name || 'Hardware Item',
+          series: item.category || 'Hardware',
+          sapCode: item.id,
+          quantity: item.quantity,
+          rate,
+          per: 'Piece',
+          amount
+        };
+      });
+
+    const profilesSubtotal = profileProducts.reduce((sum, item) => sum + (item.amount || 0), 0);
+    const profilesTotalQuantity = profileProducts.reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+
+    const hardwareSubtotal = hardwareProducts.reduce((sum, item) => sum + (item.amount || 0), 0);
+    const hardwareTotalQuantity = hardwareProducts.reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+
+    const subtotal = profilesSubtotal + hardwareSubtotal;
     const gstHalf = subtotal * 0.09;
     const gstTotal = gstHalf * 2;
     const net = subtotal + gstTotal;
     const roundedNet = Math.round(net);
-    const totalQuantity = selectedProducts.reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+    const totalQuantity = profilesTotalQuantity + hardwareTotalQuantity;
 
-    console.log(selectedProducts, 'selectedProducts');
+    const profileRows = profileProducts.map((p, i) => `
+        <tr>
+          <td style="text-align:center;">${i + 1}</td>
+          <td>${p.description}</td>
+          <td>${p.series}</td>
+          <td>${p.sapCode}</td>
+          <td style="text-align:center;">${p.quantity}</td>
+          <td style="text-align:right;">${formatCurrency(p.rate)}</td>
+          <td style="text-align:center;">${p.per || 'Kg'}</td>
+          <td style="text-align:right;">${formatCurrency(p.amount)}</td>
+        </tr>
+    `).join('');
 
-    const rows = selectedProducts.map((p, i) => `
+    const hardwareRows = hardwareProducts.map((p, i) => `
         <tr>
           <td style="text-align:center;">${i + 1}</td>
           <td>${p.description}</td>
@@ -320,12 +353,26 @@ const CartSidebar: React.FC = () => {
             .info-table td { font-size: 12px; padding: 4px 8px 10px; color: #404040; }
             .info-table { margin-bottom: 6px; }
             .address-table td { width: 50%; vertical-align: top; padding: 4px 8px 10px; }
-            .products thead th {
-              font-size: 12px;
+            .section-banner {
+              color: #d92525;
+              font-size: 13px;
               font-weight: 700;
-              padding: 10px 8px;
+              line-height: 1.3;
+              padding-bottom: 6px;
+              margin-top: 24px;
+              margin-bottom: 12px;
+              border-bottom: 2px solid #d92525;
+              letter-spacing: 0.5px;
+              text-transform: uppercase;
+            }
+            .products { margin-bottom: 12px; }
+            .products thead th {
+              font-size: 11px;
+              font-weight: 700;
+              padding: 8px 6px;
               text-align: left;
               border-bottom: 1px solid #111;
+              background: #fafafa;
             }
             .products thead th:nth-child(1),
             .products tbody td:nth-child(1),
@@ -338,16 +385,23 @@ const CartSidebar: React.FC = () => {
             .products thead th:nth-child(8),
             .products tbody td:nth-child(8) { text-align: right; }
             .products tbody td {
-              font-size: 12px;
-              padding: 10px 8px;
+              font-size: 11px;
+              padding: 8px 6px;
               border-bottom: 1px solid #d8d8d8;
               vertical-align: top;
             }
             .products tbody tr:last-child td { border-bottom: 1px solid #111; }
             .products tbody td:last-child { white-space: nowrap; }
-            .totals-table td { font-size: 12px; padding: 6px 0; }
+            .subtotal-row td {
+              font-weight: 700;
+              background: #f9f9f9;
+              border-top: 1px solid #111 !important;
+              border-bottom: 1px solid #111 !important;
+              padding: 7px 6px !important;
+            }
+            .totals-table td { font-size: 12px; padding: 5px 0; }
             .totals-table td:last-child { text-align: right; font-weight: 700; }
-            .totals-table tr:last-child td { border-top: 1px solid #b8b8b8; padding-top: 10px; }
+            .totals-table tr:last-child td { border-top: 1px solid #b8b8b8; padding-top: 8px; }
             .section-title { font-weight: 700; font-size: 12px; margin-bottom: 6px; }
             .payment-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; }
             .signature-row { display: flex; justify-content: space-between; margin-top: 18px; }
@@ -405,21 +459,34 @@ const CartSidebar: React.FC = () => {
               <tr>
                 <td>
                   <div class="label">Invoice To:</div>
-                  <div class="muted">${user.name || 'Glazia Windoors Pvt. Ltd.'},<br/>
-                  ${user.completeAddress || 'Gurgaon, Haryana - 122001'}<br/>
-                  ${[user.city, user.state].filter(Boolean).join(', ')}${user.pincode ? ' - ' + user.pincode : ''}</div>
+                  <div class="muted">
+                    <strong style="color: #111;">${user.name || 'Glazia Customer'}</strong><br/>
+                    ${user.company ? `${user.company}<br/>` : ''}
+                    ${user.completeAddress ? `${user.completeAddress}<br/>` : ''}
+                    ${[user.city, user.state].filter(Boolean).join(', ')}${user.pincode ? ' - ' + user.pincode : ''}<br/>
+                    ${user.phone ? `Phone: ${user.phone}<br/>` : ''}
+                    ${user.email ? `Email: ${user.email}<br/>` : ''}
+                    ${user.gstNumber ? `GSTIN: ${user.gstNumber}` : ''}
+                  </div>
                 </td>
                 <td>
                   <div class="label">Shipped To:</div>
-                  <div class="muted">${user.name || 'Glazia Windoors Pvt. Ltd.'},<br/>
-                  ${user.completeAddress || 'Gurgaon, Haryana - 122001'}<br/>
-                  ${[user.city, user.state].filter(Boolean).join(', ')}${user.pincode ? ' - ' + user.pincode : ''}</div>
+                  <div class="muted">
+                    <strong style="color: #111;">${user.name || 'Glazia Customer'}</strong><br/>
+                    ${user.company ? `${user.company}<br/>` : ''}
+                    ${user.completeAddress ? `${user.completeAddress}<br/>` : ''}
+                    ${[user.city, user.state].filter(Boolean).join(', ')}${user.pincode ? ' - ' + user.pincode : ''}<br/>
+                    ${user.phone ? `Phone: ${user.phone}` : ''}
+                  </div>
                 </td>
               </tr>
             </table>
 
             <div class="divider"></div>
 
+            ${profileProducts.length > 0 ? `
+            <!-- Section 1: Aluminium Profiles -->
+            <div class="section-banner">1. ALUMINIUM PROFILES</div>
             <table class="products">
               <thead>
                 <tr>
@@ -434,19 +501,52 @@ const CartSidebar: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                ${rows}
-                <tr>
+                ${profileRows}
+                <tr class="subtotal-row">
+                  <td></td>
+                  <td colspan="3" style="font-weight: 700;">Subtotal (Aluminium Profiles)</td>
+                  <td style="text-align: center; font-weight: 700;">${profilesTotalQuantity}</td>
                   <td></td>
                   <td></td>
-                  <td style="font-weight: 700; text-align: center;">Total</td>
-                  <td></td>
-                  <td style="text-align: center; font-weight: 700;">${totalQuantity}</td>
-                  <td></td>
-                  <td></td>
-                  <td style="text-align: right; font-weight: 700;">${formatCurrency(subtotal)}</td>
+                  <td style="text-align: right; font-weight: 700;">${formatCurrency(profilesSubtotal)}</td>
                 </tr>
               </tbody>
             </table>
+            ` : ''}
+
+            ${hardwareProducts.length > 0 ? `
+            <!-- Section 2: Hardware -->
+            <div class="section-banner" style="margin-top: ${profileProducts.length > 0 ? '28px' : '24px'};">${profileProducts.length > 0 ? '2. HARDWARE' : '1. HARDWARE'}</div>
+            <table class="products">
+              <thead>
+                <tr>
+                  <th style="width: 5%;">#</th>
+                  <th style="width: 24%;">Description</th>
+                  <th style="width: 15%;">Series</th>
+                  <th style="width: 15%;">SAP Code</th>
+                  <th style="width: 8%;">Qty.</th>
+                  <th style="width: 12%;">Rate(₹)</th>
+                  <th style="width: 8%;">Per</th>
+                  <th style="width: 13%;">Amt. (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${hardwareRows}
+                <tr class="subtotal-row">
+                  <td></td>
+                  <td colspan="3" style="font-weight: 700;">Subtotal (Hardware)</td>
+                  <td style="text-align: center; font-weight: 700;">${hardwareTotalQuantity}</td>
+                  <td></td>
+                  <td></td>
+                  <td style="text-align: right; font-weight: 700;">${formatCurrency(hardwareSubtotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+            ` : ''}
+
+            ${profileProducts.length === 0 && hardwareProducts.length === 0 ? `
+            <div style="padding: 20px; text-align: center; color: #666;">No items found in invoice</div>
+            ` : ''}
 
             <div class="divider"></div>
 
@@ -454,6 +554,11 @@ const CartSidebar: React.FC = () => {
               <div>
                 <div class="label">Payment Method</div>
                 <div class="muted">${user.paymentMethod || 'Bank Transfer'}</div>
+
+                <div style="margin-top: 10px;">
+                  <div class="label">Total Quantity</div>
+                  <div class="muted">${totalQuantity} items</div>
+                </div>
 
                 <div style="margin-top: 10px;">
                   <div class="label">Rounded Off Amount</div>
@@ -467,7 +572,19 @@ const CartSidebar: React.FC = () => {
               </div>
               <div>
                 <table class="totals-table">
+                  ${profileProducts.length > 0 ? `
                   <tr>
+                    <td class="muted">Aluminium Profiles Subtotal</td>
+                    <td>${formatCurrency(profilesSubtotal)}</td>
+                  </tr>
+                  ` : ''}
+                  ${hardwareProducts.length > 0 ? `
+                  <tr>
+                    <td class="muted">Hardware Subtotal</td>
+                    <td>${formatCurrency(hardwareSubtotal)}</td>
+                  </tr>
+                  ` : ''}
+                  <tr style="${profileProducts.length > 0 && hardwareProducts.length > 0 ? 'border-top: 1px dashed #d8d8d8; padding-top: 4px;' : ''}">
                     <td class="label">Sub Total</td>
                     <td>${formatCurrency(subtotal)}</td>
                   </tr>
@@ -479,9 +596,9 @@ const CartSidebar: React.FC = () => {
                     <td class="label">CGST@9%</td>
                     <td>${formatCurrency(gstHalf)}</td>
                   </tr>
-                  <tr>
-                    <td class="label">Total</td>
-                    <td>${formatCurrency(net)}</td>
+                  <tr style="border-top: 1px solid #111; padding-top: 6px;">
+                    <td class="label" style="font-size: 13px; font-weight: 800;">Total</td>
+                    <td style="font-size: 13px; font-weight: 800;">${formatCurrency(net)}</td>
                   </tr>
                 </table>
               </div>
@@ -542,7 +659,7 @@ const CartSidebar: React.FC = () => {
       },
       pagebreak: {
         mode: ['avoid-all', 'css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
-        avoid: ['img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', '.avoid-break']
+        avoid: ['tr', '.products', '.payment-grid', '.totals-table', '.payment-info', '.terms', '.section-banner', '.info-table', '.address-table', 'img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', '.avoid-break']
       }
     };
 
@@ -686,7 +803,7 @@ const CartSidebar: React.FC = () => {
                         <span className="text-gray-500 text-xs text-center">{item.category}</span>
                       )}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-[#282828] truncate">{item.name}</h4>
                       <p className="text-[10px] font-[400] text-[#282828]">{item.category?.toLowerCase().includes("hardware") ? 'pcs' : 'per kg'}</p>
@@ -699,7 +816,7 @@ const CartSidebar: React.FC = () => {
                           }
                         </span>
                       </div>
-                      
+
                       {/* Quantity Controls */}
                       <div className="flex items-center space-x-2 mt-2">
                         <button
@@ -718,7 +835,7 @@ const CartSidebar: React.FC = () => {
                         </button>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col items-end justify-evenly space-y-6">
                       <button
                         onClick={() => removeFromCart(item.id)}
@@ -751,63 +868,63 @@ const CartSidebar: React.FC = () => {
 
           <div className='p-4'>
             {shippingInfo.nextTier && (
-            <p className="text-[12px] text-[#575757] mb-2">
-              Add ₹{(shippingInfo.nextTier.amount - cart.total).toLocaleString()} more to get ₹{shippingInfo.nextTier.discount.toLocaleString()} shipping discount
-            </p>
-          )}
+              <p className="text-[12px] text-[#575757] mb-2">
+                Add ₹{(shippingInfo.nextTier.amount - cart.total).toLocaleString()} more to get ₹{shippingInfo.nextTier.discount.toLocaleString()} shipping discount
+              </p>
+            )}
             {/* Footer */}
-          {cart.items.length > 0 && (
-            <div className="border-t pt-2 space-y-4">
-              {/* Subtotal */}
-              <div className="flex justify-between items-center">
-                <span className="text-[18px] font-[500] text-gray-900">Total:</span>
-                <span className="text-[18px] font-[500] text-gray-900">₹{cart.total.toLocaleString()}</span>
-              </div>
+            {cart.items.length > 0 && (
+              <div className="border-t pt-2 space-y-4">
+                {/* Subtotal */}
+                <div className="flex justify-between items-center">
+                  <span className="text-[18px] font-[500] text-gray-900">Total:</span>
+                  <span className="text-[18px] font-[500] text-gray-900">₹{cart.total.toLocaleString()}</span>
+                </div>
 
-               
-              
-              {/* Action Buttons */}
-              <div className="space-y-2">
-                {!isAuthenticated && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-2">
-                    <p className="text-sm text-yellow-800 text-center">
-                      Please login to complete your order
-                    </p>
-                  </div>
-                )}
 
-                {/* Proforma Invoice Button */}
-                <button
-                  onClick={generatePerformaInvoice}
-                  className="w-full bg-white hover:bg-[#EE1C25] text-black hover:text-white border border-black font-medium py-3 px-4 transition-colors flex items-center justify-center space-x-2 mb-3"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>{isAuthenticated ? 'Generate Proforma Invoice' : 'Login to Generate Invoice'}</span>
-                </button>
 
-                {isAuthenticated ? (
+                {/* Action Buttons */}
+                <div className="space-y-2">
+                  {!isAuthenticated && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-2">
+                      <p className="text-sm text-yellow-800 text-center">
+                        Please login to complete your order
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Proforma Invoice Button */}
                   <button
-                    onClick={handleQuickOrder}
-                    className="w-full text-white font-medium py-3 px-4 transition-colors flex items-center justify-center space-x-2"
-                    style={{ backgroundColor: '#EE1C25' }}
+                    onClick={generatePerformaInvoice}
+                    className="w-full bg-white hover:bg-[#EE1C25] text-black hover:text-white border border-black font-medium py-3 px-4 transition-colors flex items-center justify-center space-x-2 mb-3"
                   >
-                    <span>Proceed to Checkout</span>
+                    <FileText className="w-4 h-4" />
+                    <span>{isAuthenticated ? 'Generate Proforma Invoice' : 'Login to Generate Invoice'}</span>
                   </button>
-                ) : (
-                  <button
-                    onClick={handleQuickOrder}
-                    className="w-full text-white font-medium py-3 px-4 transition-colors flex items-center justify-center space-x-2"
-                    style={{ backgroundColor: '#EE1C25' }}
-                  >
-                    <LogIn className="w-4 h-4" />
-                    <span>Login to Checkout</span>
-                  </button>
-                )}
+
+                  {isAuthenticated ? (
+                    <button
+                      onClick={handleQuickOrder}
+                      className="w-full text-white font-medium py-3 px-4 transition-colors flex items-center justify-center space-x-2"
+                      style={{ backgroundColor: '#EE1C25' }}
+                    >
+                      <span>Proceed to Checkout</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleQuickOrder}
+                      className="w-full text-white font-medium py-3 px-4 transition-colors flex items-center justify-center space-x-2"
+                      style={{ backgroundColor: '#EE1C25' }}
+                    >
+                      <LogIn className="w-4 h-4" />
+                      <span>Login to Checkout</span>
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </div>
-          
+
         </div>
       </div>
 
