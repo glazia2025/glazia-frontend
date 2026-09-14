@@ -15,7 +15,7 @@ type Fabricator = { _id: string; name: string; email: string; phoneNumber: strin
 type DealerOrder = {
   _id: string; orderId: number; createdAt: string; totalAmount: number; deliveryType?: string; isComplete?: boolean;
   user: { name: string; city: string; phoneNumber: string };
-  products: Array<{ productId: string; description?: string; quantity: number }>;
+  products: Array<{ productId: string; description?: string; quantity: number;amount:number }>;
   payments: Array<{
     isApproved?: boolean;
     proofAdded?: boolean;
@@ -52,6 +52,7 @@ const [orderSearch, setOrderSearch] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<DealerOrder | null>(null);
 
   const request = useCallback(async (path: string, options: RequestInit = {}) => {
     const token = getAuthToken();
@@ -232,39 +233,19 @@ const getOrderStatusLabel = (order: DealerOrder) => {
   return <><Header /><main className="min-h-screen bg-gray-50 py-8"><div className="mx-auto max-w-7xl px-4">
     <div className="mb-7 flex items-center justify-between gap-4"><div><h1 className="flex items-center gap-3 text-3xl font-bold text-gray-900"><Building2 className="text-[#124657]" /> Manage Dealership</h1><p className="mt-2 text-gray-600">Manage your fabricator network and available inventory.</p></div><Link href="/account/dashboard" className="shrink-0 text-sm font-medium text-[#EE1C25]">Back to dashboard</Link></div>
     {error && <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>}{message && <div className="mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">{message}</div>}
-    {loading ? <p className="text-gray-600">Loading dealership…</p> : <div className="space-y-6">
-       {/* <div className="space-y-6">
-      <aside className="h-fit rounded-xl border border-gray-200 bg-white p-3 shadow-sm"><p className="px-3 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-gray-400">Manage dealership</p><nav className="space-y-1">
-        <button onClick={() => setActiveMenu('fabricators')} className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-medium transition-colors ${activeMenu === 'fabricators' ? 'bg-[#124657] text-white' : 'text-gray-700 hover:bg-gray-100'}`}><span className="flex items-center gap-3"><Users size={19}/> Fabricators</span><span className={`rounded-full px-2 py-0.5 text-xs ${activeMenu === 'fabricators' ? 'bg-white/20' : 'bg-gray-100'}`}>{fabricators.length}</span></button>
-        <button onClick={() => setActiveMenu('stock')} className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-medium transition-colors ${activeMenu === 'stock' ? 'bg-[#124657] text-white' : 'text-gray-700 hover:bg-gray-100'}`}><span className="flex items-center gap-3"><PackageCheck size={19}/> Stock</span><span className={`rounded-full px-2 py-0.5 text-xs ${activeMenu === 'stock' ? 'bg-white/20' : 'bg-gray-100'}`}>{inventory.length}</span></button>
-        <button
-  onClick={() => setActiveMenu('orders')}
-  className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-medium transition-colors ${
-    activeMenu === 'orders'
-      ? 'bg-[#124657] text-white'
-      : 'text-gray-700 hover:bg-gray-100'
-  }`}
->
-  <span className="flex items-center gap-3">
-    <ClipboardList size={19} /> Orders
-  </span>
-
-  <span
-    className={`rounded-full px-2 py-0.5 text-xs ${
-      activeMenu === 'orders' ? 'bg-white/20' : 'bg-gray-100'
-    }`}
-  >
-    {orders.length}
-  </span>
-</button>
-      </nav></aside>
-         
-          
-    </div> */}
+    {loading ? (
+  <div className="flex min-h-[300px] items-center justify-center">
+    <div className="flex flex-col items-center gap-3">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#EE1C25]" />
+      <p className="text-sm font-medium text-gray-600">
+        Loading dealership...
+      </p>
+    </div>
+  </div>
+) : (
+  <div className="space-y-6"> 
     <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
   <nav className="flex flex-wrap gap-2">
-
-    {/* Fabricators */}
     <button
       onClick={() => setActiveMenu('fabricators')}
       className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
@@ -287,7 +268,6 @@ const getOrderStatusLabel = (order: DealerOrder) => {
       </span>
     </button>
 
-    {/* Stock */}
     <button
       onClick={() => setActiveMenu('stock')}
       className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
@@ -310,7 +290,6 @@ const getOrderStatusLabel = (order: DealerOrder) => {
       </span>
     </button>
 
-    {/* Orders */}
     <button
       onClick={() => setActiveMenu('orders')}
       className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
@@ -340,58 +319,8 @@ const getOrderStatusLabel = (order: DealerOrder) => {
       <div className="min-w-0">
          {activeMenu === 'orders' && (
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          {/* <h2 className="mb-4 text-xl font-semibold">
-            Fabricator order fulfillment ({orders.length})
-          </h2> */}
-           {/* Order Filters */}
-    {/* <div className="px-6 pt-5">
-      <div className="flex w-fit gap-1 rounded-lg bg-gray-100 p-1">
-
-       
-        <button
-          type="button"
-          onClick={() => setOrderFilter('all')}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-            orderFilter === 'all'
-              ? 'bg-[#0F172A] text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          All Orders
-        </button>
-
-       
-        <button
-          type="button"
-          onClick={() => setOrderFilter('ongoing')}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-            orderFilter === 'ongoing'
-              ? 'bg-[#0F172A] text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Ongoing
-        </button>
-
-       
-        <button
-          type="button"
-          onClick={() => setOrderFilter('completed')}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-            orderFilter === 'completed'
-              ? 'bg-[#0F172A] text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Completed
-        </button>
-
-      </div>
-    </div> */}
-    {/* Search + Order Filters */}
 <div className="flex flex-wrap items-center justify-between gap-4 px-6 pt-5">
 
-  {/* Search */}
   <div className="flex flex-1 items-center gap-2">
     <div className="relative w-full max-w-sm">
       <Search
@@ -426,7 +355,6 @@ const getOrderStatusLabel = (order: DealerOrder) => {
  
   <div className="flex shrink-0 gap-1 rounded-lg bg-gray-100 p-1">
 
-    {/* All Orders */}
     <button
       type="button"
       onClick={() => setOrderFilter('all')}
@@ -438,8 +366,6 @@ const getOrderStatusLabel = (order: DealerOrder) => {
     >
       All Orders
     </button>
-
-    {/* Ongoing */}
     <button
       type="button"
       onClick={() => setOrderFilter('ongoing')}
@@ -451,8 +377,6 @@ const getOrderStatusLabel = (order: DealerOrder) => {
     >
       Ongoing
     </button>
-
-    {/* Completed */}
     <button
       type="button"
       onClick={() => setOrderFilter('completed')}
@@ -467,9 +391,6 @@ const getOrderStatusLabel = (order: DealerOrder) => {
 
   </div>
 </div>
-
-
-    {/* Heading */}
     <div className="border-b border-gray-200 px-6 py-5">
       <h2 className="text-xl font-semibold text-gray-900">
         Fabricator Order Fulfillment ({filteredOrders.length})
@@ -481,67 +402,9 @@ const getOrderStatusLabel = (order: DealerOrder) => {
               No routed orders yet.
             </p>
           ) : (
-            // <div className="space-y-4">
-            //   {orders.map((order) => (
-            //     <article
-            //       key={order._id}
-            //       className="rounded-lg border p-4"
-            //     >
-            //       <div className="flex flex-wrap justify-between gap-3">
-            //         <div>
-            //           <p className="font-semibold">
-            //             Order #{order.orderId} ·{' '}
-            //             {order.orderChannel === 'DEALER_DIRECT_FULFILLMENT'
-            //               ? order.deliveryAddress?.name
-            //               : order.user.name}
-            //           </p>
-
-            //           <p className="text-sm text-gray-500">
-            //             {order.products.length} item(s) · ₹
-            //             {order.totalAmount?.toLocaleString('en-IN')} ·{' '}
-            //             {order.deliveryAddress?.city || order.user.city}
-            //           </p>
-
-            //           {order.orderChannel === 'DEALER_DIRECT_FULFILLMENT' && (
-            //             <p className="mt-1 text-xs font-medium text-blue-700">
-            //               Direct delivery to fabricator — excluded from dealership stock
-            //             </p>
-            //           )}
-            //         </div>
-
-            //         <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium">
-            //           {order.fulfillment?.status?.replaceAll('_', ' ')}
-            //         </span>
-            //       </div>
-
-            //       {order.fulfillment?.status === 'AWAITING_DEALER' && (
-            //         <div className="mt-4 flex flex-wrap gap-2">
-            //           <button
-            //             onClick={() =>
-            //               fulfill(order._id, 'DEALER_STOCK')
-            //             }
-            //             className="rounded-lg bg-green-700 px-3 py-2 text-sm font-medium text-white"
-            //           >
-            //             Dispatch from my stock
-            //           </button>
-
-            //           <button
-            //             onClick={() =>
-            //               fulfill(order._id, 'GLAZIA_VIA_DEALER')
-            //             }
-            //             className="rounded-lg bg-[#124657] px-3 py-2 text-sm font-medium text-white"
-            //           >
-            //             Request from Glazia
-            //           </button>
-            //         </div>
-            //       )}
-            //     </article>
-            //   ))}
-            // </div>
             <div className="overflow-x-auto">
   <table className="w-full min-w-[1000px] text-left">
     
-    {/* Table Header */}
     <thead>
       <tr className="border-b border-gray-200 bg-gray-50">
         <th className="px-4 py-4 text-sm font-semibold text-gray-700">
@@ -578,45 +441,47 @@ const getOrderStatusLabel = (order: DealerOrder) => {
       </tr>
     </thead>
 
-    {/* Table Body */}
     <tbody>
       {filteredOrders.map((order) => (
         <Fragment key={order._id}>
 
           <tr className="border-b border-gray-100 hover:bg-gray-50">
 
-            {/* Order ID */}
             <td className="px-4 py-4 text-sm font-medium text-gray-700">
               #{order.orderId}
             </td>
-
-            {/* User Name */}
             <td className="px-4 py-4 text-sm text-gray-700">
               {order.orderChannel === 'DEALER_DIRECT_FULFILLMENT'
                 ? order.deliveryAddress?.name || '-'
                 : order.user?.name || '-'}
             </td>
+<td className="px-4 py-4 text-sm text-gray-700">
+  {order.products?.length ? (
+    <div>
+      <div className="font-medium text-gray-800">
+        {order.products[0].description || order.products[0].productId}
+      </div>
 
-            {/* Items */}
-            <td className="px-4 py-4 text-sm text-gray-700">
-              {order.products?.length
-                ? order.products
-                    .map(
-                      (product) =>
-                        product.description || product.productId
-                    )
-                    .join(', ')
-                : '-'}
-            </td>
+      {order.products.length > 1 && (
+        <button
+          type="button"
+          onClick={() => setSelectedOrder(order)}
+          className="mt-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          +{order.products.length - 1} more items
+        </button>
+      )}
+    </div>
+  ) : (
+    '-'
+  )}
+</td>
 
-            {/* Delivery Type */}
             <td className="px-4 py-4 text-sm text-gray-700">
               {order.deliveryType === 'SELF'
                 ? 'Self Pickup'
                 : order.deliveryType || '-'}
             </td>
-
-            {/* Status */}
             <td className="px-4 py-4">
              <span
   className={`rounded-full px-3 py-1 text-xs font-medium ${
@@ -638,8 +503,6 @@ const getOrderStatusLabel = (order: DealerOrder) => {
   {getOrderStatusLabel(order)}
 </span>
             </td>
-
-            {/* Order Date */}
             <td className="px-4 py-4 text-sm text-gray-700">
               {order.createdAt
                 ? new Date(order.createdAt).toLocaleDateString('en-IN', {
@@ -649,17 +512,11 @@ const getOrderStatusLabel = (order: DealerOrder) => {
                   })
                 : '-'}
             </td>
-
-            {/* Order Amount */}
             <td className="px-4 py-4 text-sm font-medium text-gray-800">
               ₹{order.totalAmount?.toLocaleString('en-IN') || '0'}
             </td>
-
-            {/* Actions */}
             <td className="px-4 py-4">
               <div className="flex flex-col gap-2">
-
-                {/* VIEW - functionality baad me add karenge */}
                 <button
                   type="button"
                   onClick={() =>
@@ -669,36 +526,10 @@ const getOrderStatusLabel = (order: DealerOrder) => {
                 >
                   VIEW
                 </button>
-
-                {/* Existing fulfillment buttons */}
-                {order.fulfillment?.status === 'AWAITING_DEALER' && (
-                  <>
-                    <button
-                      onClick={() =>
-                        fulfill(order._id, 'DEALER_STOCK')
-                      }
-                      className="rounded-lg bg-green-700 px-3 py-2 text-sm font-medium text-white"
-                    >
-                      Dispatch from my stock
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        fulfill(order._id, 'GLAZIA_VIA_DEALER')
-                      }
-                      className="rounded-lg bg-[#124657] px-3 py-2 text-sm font-medium text-white"
-                    >
-                      Request from Glazia
-                    </button>
-                  </>
-                )}
-
               </div>
             </td>
 
           </tr>
-
-          {/* Existing Direct Delivery message */}
           {order.orderChannel === 'DEALER_DIRECT_FULFILLMENT' && (
             <tr className="border-b border-gray-100">
               <td
@@ -720,8 +551,6 @@ const getOrderStatusLabel = (order: DealerOrder) => {
         </section>
       )}
         {activeMenu === 'fabricators' && <div className="space-y-6">
-          {/* <section className="h-fit rounded-xl border border-gray-200 bg-white p-6 shadow-sm"><h2 className="mb-5 flex items-center gap-2 text-xl font-semibold"><Plus size={20}/> Register fabricator</h2><form onSubmit={register} className="space-y-3">{Object.entries(form).map(([key, value]) => <input key={key} required value={value} onChange={(e) => { setForm({ ...form, [key]: e.target.value }); setReviewAgreement(false); setFabricatorAgreement(null); }} placeholder={key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />)}{!reviewAgreement ? <button type="button" onClick={() => setReviewAgreement(true)} className="w-full rounded-lg border border-[#124657] px-4 py-2.5 font-medium text-[#124657]">Generate partner agreement</button> : <div className="rounded-lg bg-gray-50 p-3"><p className="text-sm font-medium">Dealership–Fabricator Partner Agreement</p><PartnerAgreement agreementType="DEALERSHIP_FABRICATOR" dealership={dealershipParty} userName={form.name} completeAddress={form.address} gstNumber={form.gstNumber} pincode={form.pincode} city={form.city} state={form.state} phoneNumber={form.phoneNumber} email={form.email} setBlob={setFabricatorAgreement}/></div>}<label className="flex items-start gap-2 text-sm text-gray-700"><input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-1" />I confirm the Fabricator has reviewed and accepted the Dealership–Fabricator Partner Agreement.</label><button disabled={!agreed || !fabricatorAgreement} className="w-full rounded-lg bg-[#124657] px-4 py-2.5 font-medium text-white disabled:opacity-50">Register fabricator</button></form></section> */}
-          {/* <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"><h2 className="mb-4 text-xl font-semibold">Registered fabricators</h2>{fabricators.length === 0 ? <p className="text-sm text-gray-500">No fabricators registered yet.</p> : <div className="divide-y">{fabricators.map(f => <div key={f._id} className="flex flex-col justify-between gap-1 py-4 sm:flex-row"><div><p className="font-medium">{f.name}</p><p className="text-sm text-gray-500">{f.email} · {f.phoneNumber}</p></div><span className="text-sm text-gray-500">{f.city}, {f.state}</span></div>)}</div>}</section> */}
           <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
   <div className="mb-4 flex items-center justify-between gap-4">
@@ -863,6 +692,60 @@ const getOrderStatusLabel = (order: DealerOrder) => {
         {activeMenu === 'stock' && <StockManager inventory={inventory} onChanged={load}/>} 
         {activeMenu === 'pricing' && <DynamicPricingManager fabricators={fabricators} request={request} onMessage={setMessage} onError={setError}/>}
       </div>
-    </div>}
-  </div></main></>;
+    </div>)}
+  </div>
+{selectedOrder && (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    onClick={() => setSelectedOrder(null)}
+  >
+    <div
+      className="w-full max-w-md rounded-2xl bg-white shadow-2xl"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+        <h3 className="text-lg font-semibold text-gray-900">
+          Order Items ({selectedOrder.products?.length || 0})
+        </h3>
+
+        <button
+          type="button"
+          onClick={() => setSelectedOrder(null)}
+          className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+        >
+          ×
+        </button>
+      </div>
+      <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+        <div className="space-y-3">
+          {selectedOrder.products?.map((product, index) => (
+            <div
+              key={`${product.productId}-${index}`}
+              className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-600">
+                {index + 1}
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-800">
+                  {product.description || product.productId}
+                </p>
+
+              <p className="mt-1 text-xs text-gray-500">
+  ₹{Number(product.amount || 0).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}
+</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+  
+  </main></>;
 }
