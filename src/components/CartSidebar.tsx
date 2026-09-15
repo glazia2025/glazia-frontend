@@ -340,27 +340,27 @@ const CartSidebar: React.FC = () => {
           <meta charset="UTF-8" />
           <style>
             * { box-sizing: border-box; }
-            body { margin: 0; font-family: Arial, sans-serif; color: #1a1a1a; }
-            .container { width: 100%; max-width: 780px; margin: 0 auto; padding: 28px 30px 36px; background: #fff; }
-            .top-row { display: flex; justify-content: space-between; align-items: flex-start; }
-            .logo { font-size: 36px; font-weight: 700; letter-spacing: 2px; }
-            .title { color: #d92525; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; margin-top: 6px; }
-            .muted { color: #404040; line-height: 1.5; font-size: 12px; }
-            .label { font-weight: 700; font-size: 12px; color: #111; }
-            .divider { border-bottom: 1px solid #b8b8b8; margin: 14px 0 18px; }
+            body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1f2937; font-size: 12px; }
+            .container { width: 100%; max-width: 780px; margin: 0 auto; padding: 24px 28px 30px; background: #fff; }
+            .top-row { display: flex; justify-content: space-between; align-items: center; }
+            .logo { height: 38px; object-fit: contain; }
+            .title { color: #d92525; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; }
+            .muted { color: #4b5563; line-height: 1.5; font-size: 12px; }
+            .label { font-weight: 700; font-size: 12px; color: #111827; }
+            .divider { border-bottom: 1px solid #d1d5db; margin: 14px 0 16px; }
             table { width: 100%; border-collapse: collapse; }
-            .info-table th { text-align: left; font-size: 12px; font-weight: 700; padding: 4px 8px; }
-            .info-table td { font-size: 12px; padding: 4px 8px 10px; color: #404040; }
+            .info-table th { text-align: left; font-size: 11.5px; font-weight: 700; padding: 7px 10px; background: #f3f4f6; border-bottom: 1px solid #d1d5db; color: #111; }
+            .info-table td { font-size: 12px; padding: 7px 10px; color: #374151; }
             .info-table { margin-bottom: 6px; }
-            .address-table td { width: 50%; vertical-align: top; padding: 4px 8px 10px; }
+            .address-table td { width: 50%; vertical-align: top; padding: 4px 8px 8px; }
             .section-banner {
               color: #d92525;
               font-size: 13px;
-              font-weight: 700;
+              font-weight: 800;
               line-height: 1.3;
-              padding-bottom: 6px;
-              margin-top: 24px;
-              margin-bottom: 12px;
+              padding-bottom: 5px;
+              margin-top: 20px;
+              margin-bottom: 10px;
               border-bottom: 2px solid #d92525;
               letter-spacing: 0.5px;
               text-transform: uppercase;
@@ -369,10 +369,11 @@ const CartSidebar: React.FC = () => {
             .products thead th {
               font-size: 11px;
               font-weight: 700;
-              padding: 8px 6px;
+              padding: 8px 8px;
               text-align: left;
-              border-bottom: 1px solid #111;
-              background: #fafafa;
+              border-bottom: 1.5px solid #111827;
+              background: #f3f4f6;
+              text-transform: uppercase;
             }
             .products thead th:nth-child(1),
             .products tbody td:nth-child(1),
@@ -385,35 +386,45 @@ const CartSidebar: React.FC = () => {
             .products thead th:nth-child(8),
             .products tbody td:nth-child(8) { text-align: right; }
             .products tbody td {
-              font-size: 11px;
-              padding: 8px 6px;
-              border-bottom: 1px solid #d8d8d8;
-              vertical-align: top;
+              font-size: 11.5px;
+              padding: 8px 8px;
+              border-bottom: 1px solid #e5e7eb;
+              vertical-align: middle;
             }
-            .products tbody tr:last-child td { border-bottom: 1px solid #111; }
+            .products tbody tr:last-child td { border-bottom: 1.5px solid #111827; }
             .products tbody td:last-child { white-space: nowrap; }
             .subtotal-row td {
               font-weight: 700;
-              background: #f9f9f9;
-              border-top: 1px solid #111 !important;
-              border-bottom: 1px solid #111 !important;
-              padding: 7px 6px !important;
+              font-size: 12px;
+              background: #f9fafb;
+              border-top: 1.5px solid #111827 !important;
+              border-bottom: 1.5px solid #111827 !important;
+              padding: 8px 8px !important;
             }
-            .totals-table td { font-size: 12px; padding: 5px 0; }
+            .totals-table td { font-size: 12px; padding: 4px 0; }
             .totals-table td:last-child { text-align: right; font-weight: 700; }
-            .totals-table tr:last-child td { border-top: 1px solid #b8b8b8; padding-top: 8px; }
-            .section-title { font-weight: 700; font-size: 12px; margin-bottom: 6px; }
-            .payment-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; }
-            .signature-row { display: flex; justify-content: space-between; margin-top: 18px; }
-            .payment-info { margin-top: 24px; }
-            .qr-img { width: 105px; height: 105px; border: 1px solid #cfcfcf; border-radius: 6px; object-fit: contain; background: #f7f7f7; padding: 6px; }
-            .terms { font-size: 12px; line-height: 1.6; color: #2a2a2a; }
+            .totals-table tr:last-child td { border-top: 1.5px solid #111827; padding-top: 6px; }
+            .payment-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 20px; align-items: start; }
+            .payment-info-box { margin-top: 14px; }
+            .terms-section { margin-top: 12px; }
+            .terms-list { font-size: 11.5px; line-height: 1.45; color: #2a2a2a; }
+            .term-item { margin-bottom: 6px; }
+            .term-title { font-weight: 600; color: #111; margin-bottom: 1px; }
+            .term-desc { padding-left: 14px; color: #374151; }
+
+            /* Strict page-break handling to prevent sliced content */
+            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+            .avoid-break { page-break-inside: avoid !important; break-inside: avoid !important; }
+            .totals-table { page-break-inside: avoid !important; break-inside: avoid !important; }
+            .info-table { page-break-inside: avoid !important; break-inside: avoid !important; }
+            .address-table { page-break-inside: avoid !important; break-inside: avoid !important; }
+            .section-banner { page-break-inside: avoid !important; break-inside: avoid !important; page-break-after: avoid !important; break-after: avoid !important; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="top-row">
-              <img src="/Logo.svg" alt="Glazia Logo">
+              <img src="/Logo.svg" alt="Glazia Logo" class="logo" />
               <div class="title">PROFORMA INVOICE</div>
             </div>
 
@@ -421,22 +432,21 @@ const CartSidebar: React.FC = () => {
 
             <table class="info-table">
               <tr>
-                <td>
-                  <div class="label">Glazia Windoors Pvt. Ltd.</div>
-                  <div class="muted">Khata No. 361, Rect. No. 21 4/70,<br/>
-                  Kherki Dhaula Village Road,<br/>
-                  Gurgaon, Haryana - 122001<br/>India</div>
+                <td style="padding: 4px 8px; width: 60%;">
+                  <div class="label" style="font-size: 13px;">Glazia Windoors Pvt. Ltd.</div>
+                  <div class="muted">
+                    Khata No. 361, Rect. No. 21 4/70, Kherki Dhaula Village Road,<br/>
+                    Gurgaon, Haryana - 122001, India
+                  </div>
                 </td>
-                <td style="text-align: right;">
-                  <div class="label">Contact</div>
-                  <div class="muted">www.glazia.in<br/>+91-9958053708<br/>sales@glazia.in</div>
+                <td style="text-align: right; padding: 4px 8px; width: 40%;">
+                  <div class="label" style="font-size: 13px;">Contact</div>
+                  <div class="muted">www.glazia.in &nbsp;|&nbsp; +91-9958053708 &nbsp;|&nbsp; sales@glazia.in</div>
                 </td>
               </tr>
             </table>
 
-            <div class="divider"></div>
-
-            <table class="info-table">
+            <table class="info-table" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; margin-top: 6px;">
               <tr>
                 <th>Invoice #</th>
                 <th>Invoice Date</th>
@@ -445,7 +455,7 @@ const CartSidebar: React.FC = () => {
                 <th>Destination</th>
               </tr>
               <tr>
-                <td>${invoiceNumber}</td>
+                <td style="font-weight: 700; color: #111; font-size: 12.5px;">${invoiceNumber}</td>
                 <td>${invoiceDate}</td>
                 <td>${referenceNumber}</td>
                 <td>${dispatchMode}</td>
@@ -458,31 +468,25 @@ const CartSidebar: React.FC = () => {
             <table class="address-table">
               <tr>
                 <td>
-                  <div class="label">Invoice To:</div>
+                  <div class="label" style="text-transform: uppercase; font-size: 10.5px; color: #6b7280; margin-bottom: 4px;">Invoice To:</div>
                   <div class="muted">
-                    <strong style="color: #111;">${user.name || 'Glazia Customer'}</strong><br/>
+                    <strong style="color: #111; font-size: 13px;">${user.name || 'Glazia Customer'}</strong><br/>
                     ${user.company ? `${user.company}<br/>` : ''}
-                    ${user.completeAddress ? `${user.completeAddress}<br/>` : ''}
-                    ${[user.city, user.state].filter(Boolean).join(', ')}${user.pincode ? ' - ' + user.pincode : ''}<br/>
-                    ${user.phone ? `Phone: ${user.phone}<br/>` : ''}
-                    ${user.email ? `Email: ${user.email}<br/>` : ''}
-                    ${user.gstNumber ? `GSTIN: ${user.gstNumber}` : ''}
+                    ${user.completeAddress ? `${user.completeAddress}, ` : ''}${[user.city, user.state].filter(Boolean).join(', ')}${user.pincode ? ' - ' + user.pincode : ''}<br/>
+                    ${user.phone ? `Phone: ${user.phone}` : ''}${user.email ? ` &nbsp;|&nbsp; Email: ${user.email}` : ''}${user.gstNumber ? `<br/>GSTIN: ${user.gstNumber}` : ''}
                   </div>
                 </td>
                 <td>
-                  <div class="label">Shipped To:</div>
+                  <div class="label" style="text-transform: uppercase; font-size: 10.5px; color: #6b7280; margin-bottom: 4px;">Shipped To:</div>
                   <div class="muted">
-                    <strong style="color: #111;">${user.name || 'Glazia Customer'}</strong><br/>
+                    <strong style="color: #111; font-size: 13px;">${user.name || 'Glazia Customer'}</strong><br/>
                     ${user.company ? `${user.company}<br/>` : ''}
-                    ${user.completeAddress ? `${user.completeAddress}<br/>` : ''}
-                    ${[user.city, user.state].filter(Boolean).join(', ')}${user.pincode ? ' - ' + user.pincode : ''}<br/>
+                    ${user.completeAddress ? `${user.completeAddress}, ` : ''}${[user.city, user.state].filter(Boolean).join(', ')}${user.pincode ? ' - ' + user.pincode : ''}<br/>
                     ${user.phone ? `Phone: ${user.phone}` : ''}
                   </div>
                 </td>
               </tr>
             </table>
-
-            <div class="divider"></div>
 
             ${profileProducts.length > 0 ? `
             <!-- Section 1: Aluminium Profiles -->
@@ -516,7 +520,7 @@ const CartSidebar: React.FC = () => {
 
             ${hardwareProducts.length > 0 ? `
             <!-- Section 2: Hardware -->
-            <div class="section-banner" style="margin-top: ${profileProducts.length > 0 ? '28px' : '24px'};">${profileProducts.length > 0 ? '2. HARDWARE' : '1. HARDWARE'}</div>
+            <div class="section-banner" style="margin-top: ${profileProducts.length > 0 ? '18px' : '12px'};">${profileProducts.length > 0 ? '2. HARDWARE' : '1. HARDWARE'}</div>
             <table class="products">
               <thead>
                 <tr>
@@ -545,96 +549,109 @@ const CartSidebar: React.FC = () => {
             ` : ''}
 
             ${profileProducts.length === 0 && hardwareProducts.length === 0 ? `
-            <div style="padding: 20px; text-align: center; color: #666;">No items found in invoice</div>
+            <div style="padding: 24px; text-align: center; color: #666; font-size: 13px;">No items found in invoice</div>
             ` : ''}
 
-            <div class="divider"></div>
+            <!-- Summary & Payment Details -->
+            <div class="summary-box avoid-break">
+              <div class="divider"></div>
+              <div class="payment-grid">
+                <div>
+                  <div>
+                    <div class="label">Payment Method</div>
+                    <div class="muted">${user.paymentMethod || 'Bank Transfer'}</div>
+                  </div>
 
-            <div class="payment-grid">
-              <div>
-                <div class="label">Payment Method</div>
-                <div class="muted">${user.paymentMethod || 'Bank Transfer'}</div>
+                  <div style="margin-top: 12px;">
+                    <div class="label">Total Quantity</div>
+                    <div class="muted">${totalQuantity} items</div>
+                  </div>
 
-                <div style="margin-top: 10px;">
-                  <div class="label">Total Quantity</div>
-                  <div class="muted">${totalQuantity} items</div>
+                  <div style="margin-top: 12px;">
+                    <div class="label">Rounded Off Amount</div>
+                    <div class="muted">${formatCurrency(roundedNet)}</div>
+                  </div>
+
+                  <div style="margin-top: 12px;">
+                    <div class="label">In Words</div>
+                    <div class="muted">${numberToWordsIndian(Math.round(net))}</div>
+                  </div>
                 </div>
-
-                <div style="margin-top: 10px;">
-                  <div class="label">Rounded Off Amount</div>
-                  <div class="muted">${formatCurrency(roundedNet)}</div>
+                <div>
+                  <table class="totals-table">
+                    ${profileProducts.length > 0 ? `
+                    <tr>
+                      <td class="muted">Aluminium Profiles Subtotal</td>
+                      <td>${formatCurrency(profilesSubtotal)}</td>
+                    </tr>
+                    ` : ''}
+                    ${hardwareProducts.length > 0 ? `
+                    <tr>
+                      <td class="muted">Hardware Subtotal</td>
+                      <td>${formatCurrency(hardwareSubtotal)}</td>
+                    </tr>
+                    ` : ''}
+                    <tr style="${profileProducts.length > 0 && hardwareProducts.length > 0 ? 'border-top: 1px dashed #e5e7eb;' : ''}">
+                      <td class="label">Sub Total</td>
+                      <td>${formatCurrency(subtotal)}</td>
+                    </tr>
+                    <tr>
+                      <td class="label">SGST@9%</td>
+                      <td>${formatCurrency(gstHalf)}</td>
+                    </tr>
+                    <tr>
+                      <td class="label">CGST@9%</td>
+                      <td>${formatCurrency(gstHalf)}</td>
+                    </tr>
+                    <tr style="border-top: 1.5px solid #111827;">
+                      <td class="label" style="font-size: 14px; font-weight: 800; padding-top: 6px;">Total</td>
+                      <td style="font-size: 14px; font-weight: 800; padding-top: 6px;">${formatCurrency(net)}</td>
+                    </tr>
+                  </table>
                 </div>
-
-                <div style="margin-top: 12px;">
-                  <div class="label">In Words</div>
-                  <div class="muted">${numberToWordsIndian(Math.round(net))}</div>
-                </div>
-              </div>
-              <div>
-                <table class="totals-table">
-                  ${profileProducts.length > 0 ? `
-                  <tr>
-                    <td class="muted">Aluminium Profiles Subtotal</td>
-                    <td>${formatCurrency(profilesSubtotal)}</td>
-                  </tr>
-                  ` : ''}
-                  ${hardwareProducts.length > 0 ? `
-                  <tr>
-                    <td class="muted">Hardware Subtotal</td>
-                    <td>${formatCurrency(hardwareSubtotal)}</td>
-                  </tr>
-                  ` : ''}
-                  <tr style="${profileProducts.length > 0 && hardwareProducts.length > 0 ? 'border-top: 1px dashed #d8d8d8; padding-top: 4px;' : ''}">
-                    <td class="label">Sub Total</td>
-                    <td>${formatCurrency(subtotal)}</td>
-                  </tr>
-                  <tr>
-                    <td class="label">SGST@9%</td>
-                    <td>${formatCurrency(gstHalf)}</td>
-                  </tr>
-                  <tr>
-                    <td class="label">CGST@9%</td>
-                    <td>${formatCurrency(gstHalf)}</td>
-                  </tr>
-                  <tr style="border-top: 1px solid #111; padding-top: 6px;">
-                    <td class="label" style="font-size: 13px; font-weight: 800;">Total</td>
-                    <td style="font-size: 13px; font-weight: 800;">${formatCurrency(net)}</td>
-                  </tr>
-                </table>
               </div>
             </div>
 
-            <div class="payment-info">
-              <div class="label">Payment Info</div>
-              <div class="divider" style="margin: 10px 0 12px;"></div>
-              <table class="info-table" style="margin-bottom: 0;">
-                <tr>
-                  <td style="width: 60%; vertical-align: top;">
-                    <div class="muted"><span class="label">Account No: </span>50200084871361</div>
-                    <div class="muted"><span class="label">Account Name: </span>Glazia Windoors Pvt. Ltd.</div>
-                    <div class="muted"><span class="label">IFSC Code: </span>HDFC0004809</div>
-                    <div class="muted"><span class="label">Bank: </span>HDFC Bank</div>
-                  </td>
-                </tr>
-              </table>
+            <!-- Payment Info Section -->
+            <div class="payment-info-box avoid-break" style="margin-top: 16px;">
+              <div class="label" style="font-size: 13px; font-weight: 800;">Payment Info</div>
+              <div class="divider" style="margin: 6px 0 10px;"></div>
+              <div class="muted" style="line-height: 1.55; font-size: 12px;">
+                <div><span class="label">Account No:</span> 50200084871361</div>
+                <div><span class="label">Account Name:</span> Glazia Windoors Pvt. Ltd.</div>
+                <div><span class="label">IFSC Code:</span> HDFC0004809</div>
+                <div><span class="label">Bank:</span> HDFC Bank</div>
+              </div>
             </div>
 
-            <div class="divider" style="margin: 18px 0 12px;"></div>
-
-            <div class="label" style="text-align: center; margin-bottom: 10px;">Terms & Conditions</div>
-            <div class="terms">
-              1. PI Validity Period<br/>
-              &nbsp;&nbsp;a. 15 days from date of issuance irrespective of selling price.<br/>
-              &nbsp;&nbsp;b. PI shall be treated as null and void in all respect in absence of advance payment as per PI items.<br/><br/>
-              2. Selling Price<br/>
-              &nbsp;&nbsp;Selling Price is governed by NALCO Billet price on the date of material dispatch.<br/><br/>
-              3. Supply Schedule<br/>
-              &nbsp;&nbsp;Supply Schedule will be discussed and finalized after advance payment.<br/><br/>
-              4. Advance Payment<br/>
-              &nbsp;&nbsp;a. 100% advance for PI having value Rs. >0 ~ => 2,00,000<br/>
-              &nbsp;&nbsp;b. 50% advance for PI having value Rs. >0 ~ =< 2,00,000<br/><br/>
-              5. Transportation<br/>
-              &nbsp;&nbsp;In customer scope, no claim or responsibility in any form related to transportation will be levied.
+            <!-- Terms & Conditions Section -->
+            <div class="terms-section">
+              <div class="divider" style="margin: 12px 0 8px;"></div>
+              <div class="label" style="text-align: center; margin-bottom: 8px; font-size: 12px;">Terms & Conditions</div>
+              <div class="terms-list">
+                <div class="term-item">
+                  <div class="term-title">1. PI Validity Period</div>
+                  <div class="term-desc">a. 15 days from date of issuance irrespective of selling price.</div>
+                  <div class="term-desc">b. PI shall be treated as null and void in all respect in absence of advance payment as per PI items.</div>
+                </div>
+                <div class="term-item">
+                  <div class="term-title">2. Selling Price</div>
+                  <div class="term-desc">Selling Price is governed by NALCO Billet price on the date of material dispatch.</div>
+                </div>
+                <div class="term-item">
+                  <div class="term-title">3. Supply Schedule</div>
+                  <div class="term-desc">Supply Schedule will be discussed and finalized after advance payment.</div>
+                </div>
+                <div class="term-item">
+                  <div class="term-title">4. Advance Payment</div>
+                  <div class="term-desc">a. 100% advance for PI having value Rs. &gt;0 ~ =&gt; 2,00,000</div>
+                  <div class="term-desc">b. 50% advance for PI having value Rs. &gt;0 ~ =&lt; 2,00,000</div>
+                </div>
+                <div class="term-item">
+                  <div class="term-title">5. Transportation</div>
+                  <div class="term-desc">In customer scope, no claim or responsibility in any form related to transportation will be levied.</div>
+                </div>
+              </div>
             </div>
           </div>
         </body>
@@ -642,14 +659,15 @@ const CartSidebar: React.FC = () => {
     `;
 
     const opt = {
-      margin: [0.3, 0.3, 0.3, 0.3] as [number, number, number, number],
+      margin: [0.35, 0.35, 0.35, 0.35] as [number, number, number, number],
       filename: `Glazia_Proforma_Invoice_${(user.name || 'Customer').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: {
         scale: 2,
         useCORS: true,
         letterRendering: true,
-        allowTaint: false
+        allowTaint: false,
+        scrollY: 0
       },
       jsPDF: {
         unit: 'in',
@@ -658,8 +676,8 @@ const CartSidebar: React.FC = () => {
         compress: true
       },
       pagebreak: {
-        mode: ['avoid-all', 'css', 'legacy'] as Array<'avoid-all' | 'css' | 'legacy'>,
-        avoid: ['tr', '.products', '.payment-grid', '.totals-table', '.payment-info', '.terms', '.section-banner', '.info-table', '.address-table', 'img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', '.avoid-break']
+        mode: ['css', 'legacy'] as Array<'css' | 'legacy'>,
+        avoid: ['tr', '.avoid-break', '.totals-table', '.info-table', '.address-table', '.section-banner']
       }
     };
 
