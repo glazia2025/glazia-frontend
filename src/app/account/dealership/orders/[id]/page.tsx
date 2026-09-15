@@ -81,7 +81,12 @@ type Order = {
             amount: number;
         }>;
     };
-    upstreamOrder?: string | null;
+    upstreamOrder?: string | {
+        _id: string;
+        orderId?: number;
+        isComplete?: boolean;
+        completedAt?: string;
+    } | null;
 };
 
 const checkOrderFirstApprovalPending = (order: Order) => {
@@ -428,21 +433,25 @@ export default function DealershipOrderDetailsPage({
             amount: number;
         }> = [];
 
+        const savedShortages = new Map(
+            (order.fulfillment?.remainingProducts || []).map((product) => [
+                product.productId,
+                product,
+            ])
+        );
+        const hasSavedFulfillment = order.fulfillment?.status === 'GLAZIA_VIA_DEALER';
+
         order.products.forEach((product) => {
-            const stockItem = inventory.find(
-                (item) => item.productId === product.productId
-            );
+            const stockItem = inventory.find((item) => item.productId === product.productId);
+            const savedShortage = savedShortages.get(product.productId);
 
             const orderedQuantity = Number(product.quantity || 0);
-            const availableQuantity = Number(stockItem?.quantity || 0);
-
-            const dealerQuantity = Math.min(
-                orderedQuantity,
-                availableQuantity
-            );
-
-            const remainingQuantity =
-                orderedQuantity - dealerQuantity;
+            const remainingQuantity = hasSavedFulfillment
+                ? Math.min(orderedQuantity, Number(savedShortage?.quantity || 0))
+                : Math.max(0, orderedQuantity - Number(stockItem?.quantity || 0));
+            const dealerQuantity = orderedQuantity - remainingQuantity;
+            const availableQuantity = dealerQuantity;
+            const unitAmount = orderedQuantity > 0 ? Number(product.amount || 0) / orderedQuantity : 0;
 
             const fulfillmentItem = {
                 productId: product.productId,
@@ -451,7 +460,9 @@ export default function DealershipOrderDetailsPage({
                 availableQuantity,
                 dealerQuantity,
                 remainingQuantity,
-                amount: Number(product.amount || 0),
+                amount: savedShortage
+                    ? Number(savedShortage.amount || unitAmount * remainingQuantity)
+                    : unitAmount * remainingQuantity,
             };
 
             if (dealerQuantity > 0) {
@@ -793,6 +804,8 @@ export default function DealershipOrderDetailsPage({
         );
     }
     const glaziaRequestSent = Boolean(order?.upstreamOrder);
+    const glaziaDeliveryReceived = typeof order?.upstreamOrder === 'object'
+        && order.upstreamOrder?.isComplete === true;
     const { stockItems, glaziaItems } = getFulfillmentDetails();
 
     const hasStockItems = stockItems.length > 0;
@@ -908,6 +921,12 @@ export default function DealershipOrderDetailsPage({
                                 >
                                     Request sent to Glazia
                                 </button>
+                            )}
+
+                            {glaziaDeliveryReceived && (
+                                <p className="mt-3 text-sm font-medium text-green-700">
+                                    Glazia has delivered the shortage to your inventory. This order is ready for dealership dispatch.
+                                </p>
                             )}
                         </div>
                     )}
@@ -1780,9 +1799,14 @@ export default function DealershipOrderDetailsPage({
                             id: product.productId,
                             name: product.description || product.productId,
                             quantity: product.remainingQuantity,
-                            price: Number(product.amount || 0),
+                            price: product.remainingQuantity > 0
+                                ? Number(product.amount || 0) / product.remainingQuantity
+                                : 0,
                         }))}
-                        totalAmountOverride={order.totalAmount}
+                        totalAmountOverride={glaziaItems.reduce(
+                            (total, product) => total + Number(product.amount || 0),
+                            0
+                        )}
                         sourceOrderId={order._id}
                         onOrderSuccess={() => {
                             setShowOrderPlacement(false);
