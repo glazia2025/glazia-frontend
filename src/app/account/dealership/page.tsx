@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent,Fragment, useCallback, useEffect, useState } from 'react';
+import { FormEvent,Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Building2, ClipboardList, PackageCheck, Plus,Search,Users, SlidersHorizontal } from 'lucide-react';
@@ -52,41 +52,76 @@ const [orderSearch, setOrderSearch] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const loadedMenus = useRef(new Set<string>());
+  const loadAttempt = useRef(0);
   const [selectedOrder, setSelectedOrder] = useState<DealerOrder | null>(null);
 
   const request = useCallback(async (path: string, options: RequestInit = {}) => {
     const token = getAuthToken();
     const isFormData = options.body instanceof FormData;
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      credentials: 'include',
-      headers: { ...(!isFormData ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(options.headers || {}) },
-    });
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      throw new Error(
-        `Dealership API returned ${response.status} from ${API_BASE_URL}. ` +
-        'Check that backend-main is running and NEXT_PUBLIC_MAIN_API_BASE_URL points to it.'
-      );
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+    const abortFromCaller = () => controller.abort();
+    options.signal?.addEventListener('abort', abortFromCaller, { once: true });
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        signal: controller.signal,
+        credentials: 'include',
+        headers: { ...(!isFormData ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(options.headers || {}) },
+      });
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(
+          `Dealership API returned ${response.status} from ${API_BASE_URL}. ` +
+          'Check that backend-main is running and NEXT_PUBLIC_MAIN_API_BASE_URL points to it.'
+        );
+      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || `Request failed (${response.status})`);
+      return data;
+    } catch (err) {
+      if (controller.signal.aborted && !options.signal?.aborted) {
+        throw new Error(`The dealership service timed out while loading ${path}. Please try again.`);
+      }
+      throw err;
+    } finally {
+      window.clearTimeout(timeoutId);
+      options.signal?.removeEventListener('abort', abortFromCaller);
     }
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || `Request failed (${response.status})`);
-    return data;
   }, []);
 
-  const load = useCallback(async () => {
+  const loadSection = useCallback(async (
+    menu: 'fabricators' | 'stock' | 'orders' | 'pricing',
+    force = false
+  ) => {
+    if (!force && loadedMenus.current.has(menu)) return;
+    const attempt = ++loadAttempt.current;
     try {
       setLoading(true);
-      const [fabricatorData, orderData, inventoryData] = await Promise.all([request('/api/dealership/fabricators'), request('/api/dealership/orders'), request('/api/dealership/inventory')]);
-      setFabricators(fabricatorData.fabricators);
-      setOrders(orderData.orders);
-      setInventory(inventoryData.inventory);
+      setError('');
+      if (menu === 'fabricators' || (menu === 'pricing' && !loadedMenus.current.has('fabricators'))) {
+        const data = await request('/api/dealership/fabricators');
+        setFabricators(data.fabricators || []);
+        loadedMenus.current.add('fabricators');
+      } else if (menu === 'orders') {
+        const data = await request('/api/dealership/orders');
+        setOrders(data.orders || []);
+      } else {
+        const data = await request('/api/dealership/inventory');
+        setInventory(data.inventory || []);
+      }
+      loadedMenus.current.add(menu);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load dealership');
-    } finally { setLoading(false); }
+      if (attempt === loadAttempt.current) {
+        setError(err instanceof Error ? err.message : 'Unable to load dealership');
+      }
+    } finally {
+      if (attempt === loadAttempt.current) setLoading(false);
+    }
   }, [request]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void loadSection(activeMenu); }, [activeMenu, loadSection]);
 
   const register = async (event: FormEvent) => {
     event.preventDefault(); setError(''); setMessage('');
@@ -97,7 +132,7 @@ const [orderSearch, setOrderSearch] = useState('');
       body.append('partnerAgreementAccepted', String(agreed));
       body.append('paPdf', new File([fabricatorAgreement], 'dealership-fabricator-agreement.pdf', { type: 'application/pdf' }));
       await request('/api/dealership/fabricators', { method: 'POST', body });
-      setForm(emptyForm); setAgreed(false); setReviewAgreement(false); setFabricatorAgreement(null);setShowRegisterModal(false); setMessage('Fabricator registered and linked to this dealership.'); await load();
+      setForm(emptyForm); setAgreed(false); setReviewAgreement(false); setFabricatorAgreement(null);setShowRegisterModal(false); setMessage('Fabricator registered and linked to this dealership.'); await loadSection('fabricators', true);
     } catch (err) { setError(err instanceof Error ? err.message : 'Registration failed'); }
   };
 
@@ -208,7 +243,7 @@ const getOrderStatusLabel = (order: DealerOrder) => {
     try {
       setError(''); setMessage('');
       const data = await request(`/api/dealership/orders/${orderId}/fulfillment`, { method: 'PATCH', body: JSON.stringify({ strategy }) });
-      setMessage(data.message); await load();
+      setMessage(data.message); await loadSection('orders', true);
     } catch (err) { setError(err instanceof Error ? err.message : 'Unable to update fulfillment'); }
   };
   const filteredOrders = orders.filter((order) => {
@@ -232,17 +267,7 @@ const getOrderStatusLabel = (order: DealerOrder) => {
 
   return <><Header /><main className="min-h-screen bg-gray-50 py-8"><div className="mx-auto max-w-7xl px-4">
     <div className="mb-7 flex items-center justify-between gap-4"><div><h1 className="flex items-center gap-3 text-3xl font-bold text-gray-900"><Building2 className="text-[#124657]" /> Manage Dealership</h1><p className="mt-2 text-gray-600">Manage your fabricator network and available inventory.</p></div><Link href="/account/dashboard" className="shrink-0 text-sm font-medium text-[#EE1C25]">Back to dashboard</Link></div>
-    {error && <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>}{message && <div className="mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">{message}</div>}
-    {loading ? (
-  <div className="flex min-h-[300px] items-center justify-center">
-    <div className="flex flex-col items-center gap-3">
-      <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#EE1C25]" />
-      <p className="text-sm font-medium text-gray-600">
-        Loading dealership...
-      </p>
-    </div>
-  </div>
-) : (
+    {error && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"><span>{error}</span><button type="button" onClick={() => loadSection(activeMenu, true)} disabled={loading} className="rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60">Retry</button></div>}{message && <div className="mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">{message}</div>}
   <div className="space-y-6"> 
     <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
   <nav className="flex flex-wrap gap-2">
@@ -315,7 +340,16 @@ const getOrderStatusLabel = (order: DealerOrder) => {
   </nav>
 </div>
 
-
+      {loading ? (
+        <div className="flex min-h-[300px] items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#EE1C25]" />
+            <p className="text-sm font-medium text-gray-600">
+              Loading {activeMenu === 'pricing' ? 'pricing' : activeMenu}...
+            </p>
+          </div>
+        </div>
+      ) : (
       <div className="min-w-0">
          {activeMenu === 'orders' && (
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -689,10 +723,11 @@ const getOrderStatusLabel = (order: DealerOrder) => {
     </div>
   </div>
 )}
-        {activeMenu === 'stock' && <StockManager inventory={inventory} onChanged={load}/>} 
-        {activeMenu === 'pricing' && <DynamicPricingManager fabricators={fabricators} request={request} onMessage={setMessage} onError={setError}/>}
+        {activeMenu === 'stock' && <StockManager inventory={inventory} onChanged={() => loadSection('stock', true)}/>} 
+        {activeMenu === 'pricing' && <DynamicPricingManager fabricators={fabricators} request={request} onMessage={setMessage} onError={setError}/>} 
       </div>
-    </div>)}
+      )}
+    </div>
   </div>
 {selectedOrder && (
   <div
