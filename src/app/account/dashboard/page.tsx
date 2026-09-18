@@ -249,7 +249,12 @@ function DashboardContent() {
               <p className="text-gray-600">Welcome back, {user.name}</p>
             </div>
             <div className="flex items-center space-x-4">
-              {user.accountType === 'DEALERSHIP' && (
+              {authUser?.accountType === 'FABRICATOR' && (
+                <Link href="/account/inventory" className="rounded-lg bg-[#124657] px-4 py-2 text-sm font-medium text-white">
+                  My inventory
+                </Link>
+              )}
+              {authUser?.accountType === 'DEALERSHIP' && (
                 <Link href="/account/dealership" className="rounded-lg bg-[#124657] px-4 py-2 text-sm font-medium text-white">
                   Manage dealership
                 </Link>

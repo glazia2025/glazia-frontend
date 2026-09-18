@@ -53,7 +53,7 @@ export default function Header() {
   const [selectedSearchItem, setSelectedSearchItem] = useState<SearchItem | null>(null);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const { cart, toggleCart, addToCart } = useCartState();
-  const { isAuthenticated, clearUser } = useAuth();
+  const { isAuthenticated, clearUser, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -323,6 +323,11 @@ export default function Header() {
                   >
                     Dashboard
                   </Link>
+                  {user?.accountType === 'FABRICATOR' && (
+                    <Link href="/account/inventory" onClick={() => setIsUserDropdownOpen(false)} className="block px-4 py-2 text-sm hover:bg-gray-100">
+                      My inventory
+                    </Link>
+                  )}
                   <div
                     onClick={handleLogout}
                     className="block px-4 py-2 text-sm hover:bg-gray-100"
@@ -573,6 +578,11 @@ export default function Header() {
                 <Link className="w-full px-4 py-2 border border-gray-200 rounded-lg text-center" href="/account/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
                   Dashboard
                 </Link>
+                {user?.accountType === 'FABRICATOR' && (
+                  <Link className="w-full px-4 py-2 border border-gray-200 rounded-lg text-center" href="/account/inventory" onClick={() => setIsMobileMenuOpen(false)}>
+                    My inventory
+                  </Link>
+                )}
                 <button
                   type="button"
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg text-left"
