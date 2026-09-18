@@ -323,11 +323,6 @@ export default function Header() {
                   >
                     Dashboard
                   </Link>
-                  {user?.accountType === 'FABRICATOR' && (
-                    <Link href="/account/inventory" onClick={() => setIsUserDropdownOpen(false)} className="block px-4 py-2 text-sm hover:bg-gray-100">
-                      My inventory
-                    </Link>
-                  )}
                   <div
                     onClick={handleLogout}
                     className="block px-4 py-2 text-sm hover:bg-gray-100"
