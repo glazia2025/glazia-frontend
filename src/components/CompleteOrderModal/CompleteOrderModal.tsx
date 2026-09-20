@@ -46,6 +46,7 @@ const CompleteOrderModal = ({
   const [taxInvoice, setTaxInvoice] = useState<File | null>(null);
 
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const clearModal = () => {
@@ -189,6 +190,7 @@ const CompleteOrderModal = ({
         taxInvoiceBase64 =
           await convertFileToBase64(taxInvoice);
       }
+      setIsSubmitting(true);
 
       onConfirm(
         {
@@ -198,6 +200,7 @@ const CompleteOrderModal = ({
           taxInvoice: taxInvoiceBase64,
         },
         () => {
+          setIsSubmitting(false);
           clearModal();
         }
       );
@@ -462,13 +465,27 @@ const CompleteOrderModal = ({
           </button>
 
           <button
-            type="button"
-            onClick={handleConfirm}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
-          >
-            <Check size={16} />
-            COMPLETE ORDER
-          </button>
+  type="button"
+  onClick={handleConfirm}
+  disabled={isSubmitting}
+  className="inline-flex min-w-[155px] items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-70"
+>
+  {isSubmitting ? (
+    <>
+      <span className="flex items-center gap-1">
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white [animation-delay:-0.3s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white [animation-delay:-0.15s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white" />
+      </span>
+      Processing
+    </>
+  ) : (
+    <>
+      <Check size={16} />
+      COMPLETE ORDER
+    </>
+  )}
+</button>
 
         </div>
       </div>

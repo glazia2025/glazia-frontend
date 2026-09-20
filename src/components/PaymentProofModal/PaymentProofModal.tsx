@@ -73,6 +73,7 @@ const PaymentProofModal = ({
   const [taxInvoice, setTaxInvoice] = useState<File | null>(null);
 
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -258,6 +259,7 @@ const PaymentProofModal = ({
     }
 
     if (!onConfirm) return;
+    setIsSubmitting(true);
 
     onConfirm(
       {
@@ -269,6 +271,7 @@ const PaymentProofModal = ({
         taxInvoice: taxInvoiceBase64,
       },
       () => {
+        setIsSubmitting(false);
         clearModal();
       }
     );
@@ -673,13 +676,27 @@ const PaymentProofModal = ({
 
           {isAdminStyleRole && !payment.isApproved && (
             <button
-              type="button"
-              onClick={doOnConfirm}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#1e293b] px-4 py-2.5 text-xs font-bold uppercase text-white hover:bg-[#111827]"
-            >
-              <Check size={15} />
-              Approve Payment
-            </button>
+  type="button"
+  onClick={doOnConfirm}
+  disabled={isSubmitting}
+  className="inline-flex min-w-[145px] items-center justify-center gap-2 rounded-lg bg-[#1e293b] px-4 py-2.5 text-xs font-bold uppercase text-white hover:bg-[#111827] disabled:cursor-not-allowed disabled:opacity-70"
+>
+  {isSubmitting ? (
+    <>
+      <span className="flex items-center gap-1">
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white [animation-delay:-0.3s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white [animation-delay:-0.15s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white" />
+      </span>
+      Processing
+    </>
+  ) : (
+    <>
+      <Check size={15} />
+      Approve Payment
+    </>
+  )}
+</button>
           )}
         </div>
       </div>
