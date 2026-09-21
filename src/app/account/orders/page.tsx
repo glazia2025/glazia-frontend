@@ -49,6 +49,7 @@ export default function OrdersPage() {
   const getOrderStatus = (order: any) => {
     if (order.isComplete) return 'delivered';
 
+    if (order?.paymentProvider === 'PAYSHARP') return order.paymentStatus === 'PAID' ? 'processing' : 'pending';
     const hasApprovedPayments = order.payments?.some((p: any) => p.isApproved);
     const allPaymentsApproved = order.payments?.every((p: any) => p.isApproved);
 

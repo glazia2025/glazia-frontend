@@ -13,6 +13,7 @@ import DynamicPricingManager from '@/components/dealership/DynamicPricingManager
 
 type Fabricator = { _id: string; name: string; email: string; phoneNumber: string; city: string; state: string };
 type DealerOrder = {
+  paymentProvider?: string; paymentStatus?: string;
   _id: string; orderId: number; createdAt: string; totalAmount: number; deliveryType?: string; isComplete?: boolean;
   user: { name: string; city: string; phoneNumber: string };
   products: Array<{ productId: string; description?: string; quantity: number;amount:number }>;
@@ -200,6 +201,7 @@ const checkOrderDispatchPending = (order: DealerOrder) => {
 };
 
 const getOrderStatus = (order: DealerOrder) => {
+  if (order.paymentProvider === 'PAYSHARP') return order.isComplete ? 'completed' : order.paymentStatus === 'PAID' ? 'dispatch_pending' : 'awaiting_payment';
   if (checkOrderFirstApprovalPending(order)) {
     return 'first_approval_pending';
   }
@@ -226,6 +228,7 @@ const getOrderStatusLabel = (order: DealerOrder) => {
   const status = getOrderStatus(order);
 
   const labels: Record<string, string> = {
+    awaiting_payment: 'Awaiting Paysharp payment',
     first_approval_pending: 'Proof Submitted',
     second_payment_pending: 'Final Payment Pending',
     second_payment_overdue: 'Final Payment Overdue',

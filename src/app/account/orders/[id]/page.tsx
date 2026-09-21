@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
+import { PaysharpPaymentStatus } from '@/components/PaysharpCheckout';
 import { API_BASE_URL } from '@/services/api';
 import { getAuthToken, hasAuthToken } from '@/utils/authCookie';
 
@@ -51,6 +52,8 @@ interface OrderUser {
 }
 
 interface OrderDetails {
+  paymentProvider?: string;
+  paymentStatus?: string;
   _id: string;
   user: OrderUser;
   products: OrderProduct[];
@@ -82,6 +85,7 @@ export default function OrderDetailsPage() {
   const getOrderStatus = (order: OrderDetails) => {
     if (order?.isComplete) return 'delivered';
 
+    if (order?.paymentProvider === 'PAYSHARP') return order.paymentStatus === 'PAID' ? 'processing' : 'pending';
     const hasApprovedPayments = order?.payments?.some(p => p.isApproved);
     const allPaymentsApproved = order?.payments?.every(p => p.isApproved);
 
@@ -489,7 +493,8 @@ export default function OrderDetailsPage() {
                 </div>
                 <div className="p-6">
                   <div className="space-y-4">
-                    {order?.payments?.map((payment, index) => (
+                    {order?.paymentProvider === 'PAYSHARP' && <PaysharpPaymentStatus orderId={order._id} />}
+                    {order?.paymentProvider !== 'PAYSHARP' && order?.payments?.map((payment, index) => (
                       <div key={payment._id} className="border rounded-lg p-4">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
                           <span className="font-medium text-gray-900">Payment Cycle {payment.cycle}</span>
@@ -522,6 +527,7 @@ export default function OrderDetailsPage() {
 
                     {/* Add Proof Button for Next Payment */}
                     {(() => {
+                      if (order?.paymentProvider === 'PAYSHARP') return null;
                       const nextPayment = getNextPaymentCycle(order?.payments);
                       if (nextPayment) {
                         return (

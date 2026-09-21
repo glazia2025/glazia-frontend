@@ -385,9 +385,15 @@ export class DataService {
   }
 
   static async getOrderById(id: string): Promise<any | null> {
-    const orders = await this.getUserOrders();
-    console.log(orders, 'orders main');
-    return orders.find(order => order._id === id) || null;
+    const token = getAuthToken();
+    if (!token) return null;
+    const params = new URLSearchParams({ limit: '1', page: '1', needDocuments: 'true', 'filters[orderId]': id });
+    const response = await fetch(`${API_BASE_URL}/api/user/getOrders?${params}`, {
+      credentials: 'include', headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return (data.orders || []).find((order: { _id: string }) => order._id === id) || null;
   }
 
   // Helper method to map API order status to app status

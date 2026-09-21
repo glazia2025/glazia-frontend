@@ -27,6 +27,7 @@ import {
 import { useAuth, useCartState, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
 import Header from '@/components/Header';
+import { PaysharpAccountCard } from '@/components/PaysharpCheckout';
 import { getAuthToken, hasAuthToken } from '@/utils/authCookie';
 
 // Component to handle search params with Suspense
@@ -150,11 +151,11 @@ function DashboardContent() {
 
         // Get recent 3 orders
         const recent = orders.slice(0, 3).map(order => ({
-          id: order.orderId || 'NA',
+          id: order._id,
           date: order.createdAt,
           items: order.products.length,
           total: order.totalAmount,
-          status: order.deliveryType,
+          status: order.isComplete ? 'delivered' : order.paymentProvider === 'PAYSHARP' ? (order.paymentStatus === 'PAID' ? 'processing' : 'pending') : 'processing',
         }));
 
         console.log('📦 Dashboard - Recent Orders:', recent);
@@ -266,6 +267,7 @@ function DashboardContent() {
         <div className="gap-8">
           {/* Main Content */}
           <div className="flex flex-col gap-8">
+            <PaysharpAccountCard />
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Stats Cards */}
               <div className="w-full lg:w-[35%] grid grid-cols-1 gap-4 sm:gap-6">

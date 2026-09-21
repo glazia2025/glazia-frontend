@@ -27,6 +27,10 @@ import { API_BASE_URL } from '@/services/api';
 import { getAuthToken } from '@/utils/authCookie';
 
 type Order = {
+    paymentProvider?: string;
+    paymentStatus?: string;
+    paidPaise?: number;
+    totalPaise?: number;
     _id: string;
     orderId: number;
     createdAt: string;
@@ -52,6 +56,9 @@ type Order = {
         _id: string;
         amount: number;
         cycle: number;
+        method?: string;
+        reference?: string;
+        utr?: string;
         proof?: string;
         isApproved?: boolean;
         proofAdded?: boolean;
@@ -135,6 +142,7 @@ const checkOrderSecondApprovalPending = (order: Order) => {
 };
 
 const checkOrderDispatchPending = (order: Order) => {
+    if (order.paymentProvider === 'PAYSHARP') return order.paymentStatus === 'PAID' && !order.isComplete;
     return (
         order &&
         order.payments &&
@@ -146,6 +154,7 @@ const checkOrderDispatchPending = (order: Order) => {
 };
 
 const getOrderStatus = (order: Order) => {
+    if (order.paymentProvider === 'PAYSHARP') return order.isComplete ? 'completed' : order.paymentStatus === 'PAID' ? 'dispatch_pending' : 'awaiting_payment';
     if (checkOrderFirstApprovalPending(order)) {
         return 'first_approval_pending';
     }
@@ -173,6 +182,7 @@ const getOrderStatusLabel = (order: Order) => {
     const status = getOrderStatus(order);
 
     const labels: Record<string, string> = {
+        awaiting_payment: 'Awaiting payment through Paysharp',
         first_approval_pending: 'Proof Submitted',
         second_payment_pending: 'Final Payment Pending',
         second_payment_overdue: 'Final Payment Overdue',
@@ -187,6 +197,7 @@ const getOrderStatusLongLabel = (order: Order) => {
     const status = getOrderStatus(order);
 
     const labels: Record<string, string> = {
+        awaiting_payment: 'Awaiting payment through Paysharp',
         first_approval_pending: 'Proof submitted, Waiting for approval.',
         second_payment_pending: 'Final payment pending.',
         second_payment_overdue: 'Final payment overdue.',
@@ -1351,7 +1362,15 @@ export default function DealershipOrderDetailsPage({
                             </div>
                         </>
                     )}
-                    {activeTab === 'payments' && (
+                    {activeTab === 'payments' && order.paymentProvider === 'PAYSHARP' && <section className="space-y-3 rounded-xl bg-white p-6">
+                        <h3 className="font-semibold">Paysharp payments — {order.paymentStatus}</h3>
+                        <p>Received: ₹{((order.paidPaise || 0) / 100).toLocaleString('en-IN')} · Outstanding: ₹{(((order.totalPaise || 0) - (order.paidPaise || 0)) / 100).toLocaleString('en-IN')}</p>
+                        <p>Payments are collected by Paysharp for Glazia and verified automatically.</p>
+                        {order.payments.map(payment => <div className="rounded border p-3" key={payment._id}>
+                            <p>{payment.method}: ₹{payment.amount.toLocaleString('en-IN')}</p><p>UTR: {payment.utr} · Reference: {payment.reference}</p>
+                        </div>)}
+                    </section>}
+                    {activeTab === 'payments' && order.paymentProvider !== 'PAYSHARP' && (
                         <div className="px-6 py-5">
 
                             {/* Status Banner */}
