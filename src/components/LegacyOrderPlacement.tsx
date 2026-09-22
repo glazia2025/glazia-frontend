@@ -133,8 +133,8 @@ const finalTotal = paymentQuote.totalPaise / 100;
         throw new Error(result.message || 'Failed to place the order.');
       }
 
-      if (result.order?.paymentProvider === 'PAYSHARP') {
-        onResumePaysharp(result.order._id);
+      if (result.checkout || result.order?.paymentProvider === 'PAYSHARP') {
+        onResumePaysharp((result.order ?? result.checkout)._id);
         return;
       }
       // Clear cart and show success
