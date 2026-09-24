@@ -23,7 +23,7 @@ const HARDWARE_CATEGORIES = [
 ];
 
 export default function HardwarePage() {
-  const { addToCart, getCartItem, updateCartQuantity, getAdjustedItemPrice } = useCartState();
+  const { addToCart, getCartItem, updateCartQuantity } = useCartState();
 
   // State management
   const [loading, setLoading] = useState(false);
@@ -426,13 +426,7 @@ export default function HardwarePage() {
                 const localQuantity = quantities[productId] || 0;
                 const cartQuantity = getCartQuantityForProduct(product);
                 const displayQuantity = cartQuantity + localQuantity;
-                const adjustedRate = isAuthenticated
-                  ? (Number(product.rate || 0) + getAdjustedItemPrice({
-                      category: 'Hardware',
-                      subCategory: activeCategory,
-                      name: product.perticular || product.description || 'Hardware Item',
-                    }))
-                  : 0;
+                const adjustedRate = isAuthenticated ? Number(product.rate || 0) : 0;
 
                 return (
                   <div key={productId || index} className="bg-white border border-1 border-[#D6DADE] overflow-hidden hover:shadow-md transition-shadow">

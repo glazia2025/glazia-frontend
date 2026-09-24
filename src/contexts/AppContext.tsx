@@ -226,6 +226,8 @@ const initialState: AppState = {
 
 // Helper function to get dynamic pricing adjustment for an item
 const getDynamicPricingAdjustment = (item: PricingLookupItem): number => {
+  // Hardware is always priced at its catalog rate, including before login.
+  if (item.category?.toLowerCase().includes("hardware")) return 0;
   console.log('🔍 getDynamicPricingAdjustment called for item:', item.name, 'category:', item.category, 'subCategory:', item.subCategory);
 
   if (typeof window === 'undefined') {
@@ -258,22 +260,6 @@ const getDynamicPricingAdjustment = (item: PricingLookupItem): number => {
       typeof value === 'number' && !Number.isNaN(value);
     const hasKey = (record: Record<string, number> | undefined, key?: string | null): key is string =>
       !!record && !!key && Object.prototype.hasOwnProperty.call(record, key);
-
-    // Check if it's a hardware item
-    if (item.category?.toLowerCase().includes("hardware")) {
-      // For hardware items, use the subCategory to match against hardware pricing keys
-      const hardwarePricing = dynamicPricing.hardware || {};
-      if (item.subCategory && hasKey(hardwarePricing, item.subCategory) && hasNumberValue(hardwarePricing[item.subCategory])) {
-        console.log(`🎯 Dynamic pricing applied for hardware "${item.subCategory}": +${hardwarePricing[item.subCategory]}`);
-        if (hardwarePricing[item.subCategory] === 0) {
-          return DEFAULT_ADJUSTMENT;
-        }
-        return hardwarePricing[item.subCategory];
-      }
-
-      console.log(`🎯 Default pricing applied for hardware "${item.subCategory || 'unknown'}": +${DEFAULT_ADJUSTMENT} (subcategory not found in pricing)`);
-      return DEFAULT_ADJUSTMENT;
-    }
 
     // For profile/railings items, prefer subcategory-level pricing then category-level
     const profilePricing = dynamicPricing.profiles || {};
@@ -329,14 +315,9 @@ const calculateCartTotal = (items: CartItem[]): number => {
     console.log(`💰 Dynamic adjustment for "${item.name}":`, dynamicAdjustment);
 
     if (item.category?.toLowerCase().includes("hardware")) {
-      // Hardware category → (price + dynamic adjustment) × quantity
-      const basePrice = parseFloat(item.price) || 0; // Handle string prices properly
-      const adjustedPrice = basePrice + dynamicAdjustment;
-      total = total + (adjustedPrice * item.quantity);
-
-      if (dynamicAdjustment > 0) {
-        console.log(`💰 Hardware item "${item.name}": Base price ${basePrice} + Dynamic ${dynamicAdjustment} = ${adjustedPrice} × ${item.quantity}`);
-      }
+      // Hardware uses the catalog price without a user adjustment.
+      const basePrice = parseFloat(item.price) || 0;
+      total += basePrice * item.quantity;
     } else {
       // Other categories → ((nalcoPrice/1000 + 75) + dynamic adjustment) × quantity × (length/1000) × kgm
       const itemLength = parseFloat(item.length) || 1000; // Default to 1000 if invalid

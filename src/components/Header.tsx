@@ -553,7 +553,7 @@ export default function Header() {
             <Link className="text-base" href="/about" onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
             <Link className="text-base" href="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
             {isAuthenticated && (
-              <Link className="text-base" href="/quotations" onClick={() => setIsMobileMenuOpen(false)}>Quotations</Link>
+              <Link className="text-base" href="https://quotation.glazia.in/quotations" onClick={() => setIsMobileMenuOpen(false)}>Quotations</Link>
             )}
           </nav>
           <div className="mt-auto flex flex-col gap-3">

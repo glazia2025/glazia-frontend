@@ -219,7 +219,7 @@ function DashboardContent() {
       title: 'Create Quotation',
       description: 'Generate quotes for customers',
       icon: FileText,
-      href: '/quotations/create',
+      href: 'https://quotation.glazia.in/quotations/new',
       color: 'bg-orange-500'
     },
     {

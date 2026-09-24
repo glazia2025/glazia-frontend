@@ -277,10 +277,9 @@ const CartSidebar: React.FC = () => {
     const hardwareProducts = cart.items
       .filter((item) => item.category?.toLowerCase().includes('hardware'))
       .map((item) => {
-        const adjustedRate = getAdjustedItemPrice(item);
         const basePrice = Number(item.price) || 0;
         const quantity = Number(item.quantity) || 0;
-        const rate = basePrice + adjustedRate;
+        const rate = basePrice;
         const amount = rate * quantity;
 
         return {
@@ -829,7 +828,7 @@ const CartSidebar: React.FC = () => {
                         <span className="text-[10px] font-[400] text-[#282828] ">
                           {
                             item.category?.toLowerCase().includes("hardware") ? (
-                              `₹${(parseFloat(item.price) + getAdjustedItemPrice(item)).toFixed(2)}`
+                              `₹${(parseFloat(item.price) || 0).toFixed(2)}`
                             ) : (`₹${((nalcoPrice / 1000) + getAdjustedItemPrice(item)).toFixed(2)}`)
                           }
                         </span>
@@ -864,8 +863,8 @@ const CartSidebar: React.FC = () => {
                       <span className="text-sm font-semibold text-gray-900">
                         ₹{(() => {
                           if (item.category?.toLowerCase().includes('hardware')) {
-                            // Hardware: (base price + dynamic adjustment) × quantity
-                            const adjustedPrice = parseFloat(item.price) + getAdjustedItemPrice(item);
+                            // Hardware: catalog price × quantity
+                            const adjustedPrice = parseFloat(item.price) || 0;
                             return (adjustedPrice * item.quantity).toLocaleString();
                           } else {
                             // Profiles: ((nalcoPrice/1000) + dynamic adjustment) × quantity × (length/1000) × kgm
