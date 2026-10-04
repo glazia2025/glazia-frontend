@@ -89,6 +89,9 @@ export function PaysharpCheckout({ checkout, onDone, onCancel, renderLegacy }: {
   const [quote, setQuote] = useState<PaymentQuote | null>(null);
   const [orderId, setOrderId] = useState("");
   const [savedProvider, setSavedProvider] = useState("PAYSHARP");
+  const [paymentMethod, setPaymentMethod] = useState<"UPI" | "BANK_TRANSFER">("UPI");
+  const [account, setAccount] = useState<Account | null>(null);
+  const [bankTransferStarted, setBankTransferStarted] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -111,7 +114,45 @@ export function PaysharpCheckout({ checkout, onDone, onCancel, renderLegacy }: {
     void prepare();
     return () => { cancelled = true; };
   }, [serialized]);
-  const place = async () => {
+
+  
+  const loadBankAccount = async () => {
+  try {
+    setBusy(true);
+    setError("");
+
+    const result = await request<{ account: Account }>("/api/payments/account");
+
+    setAccount(result.account);
+  } catch (caught) {
+    setError(
+      caught instanceof Error
+        ? caught.message
+        : "Unable to load bank transfer details"
+    );
+  } finally {
+    setBusy(false);
+  }
+};
+
+const checkBankPaymentStatus = async () => {
+  if (!orderId) return;
+
+  try {
+    const result = await request<PaymentData>(
+      `/api/payments/orders/${orderId}`
+    );
+
+    if (result.order?.paymentStatus === "PAID") {
+      setPaymentComplete(true);
+    }
+  } catch (caught) {
+    console.error("Unable to check bank payment status", caught);
+  }
+};
+
+
+  const place = async (method: "UPI" | "BANK_TRANSFER") => {
     if (!quote || busy || !key) return;
     setBusy(true); setError("");
     try {
@@ -120,11 +161,27 @@ export function PaysharpCheckout({ checkout, onDone, onCancel, renderLegacy }: {
       if (!target) throw new Error("Unable to start payment. Please retry.");
       setOrderId(target._id); setSavedProvider(target.paymentProvider);
       setPaymentComplete(result.order?.paymentStatus === "PAID" || result.order?.paymentProvider === "LEGACY");
+      if (method === "BANK_TRANSFER") {
+      setBankTransferStarted(true);
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to place order");
       try { setQuote(await request<PaymentQuote>("/api/payments/quote", checkout)); } catch { /* Keep the actionable creation error. */ }
     } finally { setBusy(false); }
   };
+
+useEffect(() => {
+  if (!orderId || paymentMethod !== "BANK_TRANSFER" || paymentComplete) {
+    return;
+  }
+
+  const timer = window.setInterval(() => {
+    void checkBankPaymentStatus();
+  }, 10000);
+
+  return () => window.clearInterval(timer);
+}, [orderId, paymentMethod, paymentComplete]);
+
   if (!quote && !orderId) {
     const loading = <div className="space-y-4 p-6" aria-live="polite">
       {error ? <p role="alert" className="text-red-700">{error}</p> : <p>Loading checkout…</p>}
@@ -140,16 +197,150 @@ export function PaysharpCheckout({ checkout, onDone, onCancel, renderLegacy }: {
   return <div className="space-y-4 p-4 sm:p-6">
     <h2 className="text-xl font-semibold">{orderId ? (savedProvider === "LEGACY" ? "Payment proof submitted" : paymentComplete ? "Order placed" : "Complete your payment") : "Review and pay"}</h2>
     {error && <p role="alert" className="rounded bg-red-50 p-3 text-red-700">{error}</p>}
-    {orderId ? <>{savedProvider === "PAYSHARP" ? <PaysharpPaymentStatus orderId={orderId} onPaid={() => setPaymentComplete(true)} /> : <p>Your order is saved. Glazia will review your payment proof.</p>}{paymentComplete && <button type="button" className="rounded-lg bg-slate-900 px-4 py-2 text-white" onClick={finish}>Done</button>}</> : <>
+   
+    {orderId ? (
+  <>
+    {savedProvider === "PAYSHARP" ? (
+      paymentMethod === "BANK_TRANSFER" ? (
+        <div className="space-y-4">
+
+          {account && (
+            <div className="rounded-lg border bg-slate-50 p-4">
+              <h3 className="mb-3 font-semibold">
+                Bank Transfer Details
+              </h3>
+
+              <p>
+                <strong>Account Number:</strong>{" "}
+                {account.virtualAccountNo}
+              </p>
+
+              <p>
+                <strong>IFSC:</strong> {account.ifscCode}
+              </p>
+
+              <p>
+                <strong>Beneficiary Name:</strong>{" "}
+                {account.beneficiaryName}
+              </p>
+
+              <p>
+                <strong>Bank:</strong> {account.bankName}
+              </p>
+
+              <p className="mt-3 font-semibold">
+                Amount to Pay: {money(quote?.totalPaise ?? 0)}
+              </p>
+            </div>
+          )}
+
+          {!paymentComplete && (
+            <p className="text-sm text-slate-600">
+              Transfer the exact amount to the above Virtual Account.
+              Your payment status will be updated automatically after
+              verification.
+            </p>
+          )}
+
+          {paymentComplete && (
+            <p className="font-semibold text-green-700">
+              Payment received successfully.
+            </p>
+          )}
+
+        </div>
+      ) : (
+        <PaysharpPaymentStatus
+          orderId={orderId}
+          onPaid={() => setPaymentComplete(true)}
+        />
+      )
+    ) : (
+      <p>Your order is saved. Glazia will review your payment proof.</p>
+    )}
+
+    {paymentComplete && (
+      <button
+        type="button"
+        className="rounded-lg bg-slate-900 px-4 py-2 text-white"
+        onClick={finish}
+      >
+        Done
+      </button>
+    )}
+  </>
+) : (
+     <>
       {!quote && !error && <p>Calculating current prices…</p>}
       {quote && <>
         <div className="max-h-64 overflow-auto rounded border"><table className="w-full text-left text-sm"><thead><tr><th className="p-2">Item</th><th>Qty</th><th>Amount</th></tr></thead><tbody>{quote.products.map((p, i) => <tr key={`${p.productId}-${i}`}><td className="p-2">{p.description || p.productId}</td><td>{p.quantity}</td><td>{money(Math.round(p.amount * 100))}</td></tr>)}</tbody></table></div>
         <p>Subtotal: {money(quote.subtotalPaise)} · GST: {money(quote.taxPaise)}</p>
         <p className="text-lg font-semibold">Total: {money(quote.totalPaise)}</p>
-        {quote.paymentProvider === "PAYSHARP" && <p className="text-sm">Pay by UPI. Your order is placed only after payment is verified.</p>}
-        <button type="button" disabled={busy || !key} onClick={place} className="rounded-lg bg-red-600 px-4 py-2 text-white disabled:opacity-50">{busy ? "Preparing payment…" : quote.paymentProvider === "LEGACY" ? "Submit proof and place order" : "Continue to UPI payment"}</button>
+        {quote.paymentProvider === "PAYSHARP" ? (
+  <div className="space-y-4">
+    <p className="text-sm">
+      Choose your preferred payment method. Your order is placed only after
+      payment is verified.
+    </p>
+
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={() => setPaymentMethod("UPI")}
+        className={`rounded-lg border px-4 py-2 ${
+          paymentMethod === "UPI"
+            ? "bg-red-600 text-white"
+            : "bg-white text-slate-900"
+        }`}
+      >
+        UPI ID
+      </button>
+
+      <button
+  type="button"
+  onClick={() => {
+    setPaymentMethod("BANK_TRANSFER");
+    void loadBankAccount();
+    void place("BANK_TRANSFER");
+  }}
+  className={`rounded-lg border px-4 py-2 ${
+    paymentMethod === "BANK_TRANSFER"
+      ? "bg-red-600 text-white"
+      : "bg-white text-slate-900"
+  }`}
+>
+  Bank Transfer
+</button>
+    </div>
+
+    {paymentMethod === "UPI" && (
+      <button
+        type="button"
+        disabled={busy || !key}
+      onClick={() => void place("UPI")}
+        className="rounded-lg bg-red-600 px-4 py-2 text-white disabled:opacity-50"
+      >
+        {busy ? "Preparing payment…" : "Continue to UPI payment"}
+      </button>
+    )}
+
+    {paymentMethod === "BANK_TRANSFER" && (
+      <div className="space-y-3">
+      </div>
+    )}
+  </div>
+) : (
+  <button
+    type="button"
+    disabled={busy || !key}
+    onClick={() => void place("UPI")}
+    className="rounded-lg bg-red-600 px-4 py-2 text-white disabled:opacity-50"
+  >
+    {busy ? "Preparing payment…" : "Submit proof and place order"}
+  </button>
+)}
       </>}
-    </>}
+    </>)}
     <button type="button" disabled={busy} onClick={paymentComplete ? finish : onCancel} className="rounded-lg border px-4 py-2 ml-2">{orderId ? "Close" : "Cancel"}</button>
   </div>;
 }
