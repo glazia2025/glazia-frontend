@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ShoppingCart, X, Plus, Minus, Eye } from 'lucide-react';
 import { useAuth, useCartState } from '@/contexts/AppContext';
+import { canAccess } from '@/types/business-access';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -54,7 +55,7 @@ export default function RailingsPage() {
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loadingCategoryData, setLoadingCategoryData] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [nalcoPrice, setNalcoPrice] = useState<number>(0);
@@ -415,7 +416,7 @@ export default function RailingsPage() {
                           </div>
                           <button
                             onClick={() => handleAddToCart(product)}
-                            disabled={localQuantity === 0}
+                            disabled={localQuantity === 0 || !canAccess(user?.access, 'orderPlacement')}
                             className="px-4 py-2 bg-[#EE1C25] text-white rounded-lg hover:bg-[#0f3a4a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                           >
                             <ShoppingCart className="w-4 h-4" />

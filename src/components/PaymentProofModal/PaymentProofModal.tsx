@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useAuth } from '@/contexts/AppContext';
+import { canAccess } from '@/types/business-access';
 import {
   X,
   ArrowLeft,
@@ -56,6 +58,7 @@ const PaymentProofModal = ({
   onClose,
 }: PaymentProofModalProps) => {
   const [userRole, setUserRole] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const [finalPaymentDueDate, setFinalPaymentDueDate] = useState("");
   const [paymentVal, setPaymentVal] = useState<number | string>("");
@@ -321,7 +324,7 @@ const PaymentProofModal = ({
     return null;
   }
 
-  const isAdminStyleRole = true;
+  const isAdminStyleRole = canAccess(user?.access, 'orderPlacement');
 
   return (
     <div

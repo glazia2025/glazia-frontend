@@ -4,6 +4,8 @@ import { use, useEffect, useState } from 'react';
 
 import PaymentProofModal from '@/components/PaymentProofModal/PaymentProofModal';
 import EditPaymentDueDateModal from '@/components/EditPaymentDueDateModal/EditPaymentDueDateModal';
+import { useAuth } from '@/contexts/AppContext';
+import { canAccess } from '@/types/business-access';
 import OrderPlacement from '@/components/OrderPlacement';
 import CompleteOrderModal from '@/components/CompleteOrderModal/CompleteOrderModal';
 import {
@@ -215,6 +217,8 @@ export default function DealershipOrderDetailsPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = use(params);
+    const { user } = useAuth();
+    const mayPlaceOrders = canAccess(user?.access, 'orderPlacement');
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -999,7 +1003,7 @@ export default function DealershipOrderDetailsPage({
                                 <button
                                     type="button"
                                     className="inline-flex items-center gap-2 rounded-lg bg-[#EE1C25] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#EE1C25]"
-                                    onClick={openCompleteOrderModal}
+                                    disabled={!mayPlaceOrders} onClick={openCompleteOrderModal}
                                 >
                                     <Check size={16} />
                                     <span>Complete Order</span>
@@ -1566,7 +1570,7 @@ export default function DealershipOrderDetailsPage({
                                                         <button
                                                             type="button"
                                                             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700"
-                                                            onClick={() => openEditPaymentDueDateModal(payment)}
+                                                            disabled={!mayPlaceOrders} onClick={() => openEditPaymentDueDateModal(payment)}
                                                         >
                                                             <CalendarDays size={14} />
                                                             Edit Due Date

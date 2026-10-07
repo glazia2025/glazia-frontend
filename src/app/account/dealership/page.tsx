@@ -4,6 +4,8 @@ import { FormEvent,Fragment, useCallback, useEffect, useRef, useState } from 're
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Building2, ClipboardList, PackageCheck, Plus,Search,Users, SlidersHorizontal } from 'lucide-react';
+import { useAuth } from '@/contexts/AppContext';
+import { canAccess } from '@/types/business-access';
 import Header from '@/components/Header';
 import { API_BASE_URL } from '@/services/api';
 import { getAuthToken } from '@/utils/authCookie';
@@ -27,12 +29,16 @@ type DealerOrder = {
   inventoryDisposition?: string;
   deliveryAddress?: { name?: string; city?: string; address?: string; state?: string; pincode?: string };
 };
-type InventoryItem = { _id: string; productId: string; description: string; quantity: number; updatedAt: string };
+type InventoryItem = { _id: string; productId: string; description: string; quantity: number; updatedAt: string; productType: 'GLAZIA' | 'OTHER'; imageUrl?: string };
 
 const emptyForm = { name: '', email: '', gstNumber: '', pincode: '', city: '', state: '', address: '', phoneNumber: '', authorizedPerson: '', authorizedPersonDesignation: '' };
 
 export default function DealershipPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const owner = user?.access?.isOwner === true;
+  const inventoryAllowed = canAccess(user?.access, 'inventory');
+  const ordersAllowed = canAccess(user?.access, 'orderHistory');
   const [activeMenu, setActiveMenu] = useState<'fabricators' | 'stock' | 'orders'| 'pricing'>('fabricators');
   const [fabricators, setFabricators] = useState<Fabricator[]>([]);
   const [orders, setOrders] = useState<DealerOrder[]>([]);
@@ -96,6 +102,8 @@ const [orderSearch, setOrderSearch] = useState('');
     menu: 'fabricators' | 'stock' | 'orders' | 'pricing',
     force = false
   ) => {
+    const allowed = menu === 'stock' ? inventoryAllowed : menu === 'orders' ? ordersAllowed : owner;
+    if (!allowed) return;
     if (!force && loadedMenus.current.has(menu)) return;
     const attempt = ++loadAttempt.current;
     try {
@@ -120,8 +128,11 @@ const [orderSearch, setOrderSearch] = useState('');
     } finally {
       if (attempt === loadAttempt.current) setLoading(false);
     }
-  }, [request]);
+  }, [request, owner, inventoryAllowed, ordersAllowed]);
 
+  useEffect(() => {
+    if (!owner && (activeMenu === 'fabricators' || activeMenu === 'pricing')) setActiveMenu(inventoryAllowed ? 'stock' : 'orders');
+  }, [owner, inventoryAllowed, activeMenu]);
   useEffect(() => { void loadSection(activeMenu); }, [activeMenu, loadSection]);
 
   const register = async (event: FormEvent) => {
@@ -275,6 +286,7 @@ const getOrderStatusLabel = (order: DealerOrder) => {
     <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
   <nav className="flex flex-wrap gap-2">
     <button
+      style={{display: owner ? undefined : 'none'}}
       onClick={() => setActiveMenu('fabricators')}
       className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
         activeMenu === 'fabricators'
@@ -297,6 +309,7 @@ const getOrderStatusLabel = (order: DealerOrder) => {
     </button>
 
     <button
+      style={{display: inventoryAllowed ? undefined : 'none'}}
       onClick={() => setActiveMenu('stock')}
       className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
         activeMenu === 'stock'
@@ -319,6 +332,7 @@ const getOrderStatusLabel = (order: DealerOrder) => {
     </button>
 
     <button
+      style={{display: ordersAllowed ? undefined : 'none'}}
       onClick={() => setActiveMenu('orders')}
       className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
         activeMenu === 'orders'
@@ -354,7 +368,7 @@ const getOrderStatusLabel = (order: DealerOrder) => {
         </div>
       ) : (
       <div className="min-w-0">
-         {activeMenu === 'orders' && (
+         {ordersAllowed && activeMenu === 'orders' && (
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 <div className="flex flex-wrap items-center justify-between gap-4 px-6 pt-5">
 
@@ -587,7 +601,7 @@ const getOrderStatusLabel = (order: DealerOrder) => {
           )}
         </section>
       )}
-        {activeMenu === 'fabricators' && <div className="space-y-6">
+        {owner && activeMenu === 'fabricators' && <div className="space-y-6">
           <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 
   <div className="mb-4 flex items-center justify-between gap-4">
@@ -726,8 +740,8 @@ const getOrderStatusLabel = (order: DealerOrder) => {
     </div>
   </div>
 )}
-        {activeMenu === 'stock' && <StockManager inventory={inventory} onChanged={() => loadSection('stock', true)}/>} 
-        {activeMenu === 'pricing' && <DynamicPricingManager fabricators={fabricators} request={request} onMessage={setMessage} onError={setError}/>} 
+        {inventoryAllowed && activeMenu === 'stock' && <StockManager inventory={inventory} onChanged={() => loadSection('stock', true)}/>}
+        {owner && activeMenu === 'pricing' && <DynamicPricingManager fabricators={fabricators} request={request} onMessage={setMessage} onError={setError}/>}
       </div>
       )}
     </div>

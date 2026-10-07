@@ -34,6 +34,7 @@ export const useUserDataRefresh = () => {
         // Transform the API response to match the expected user data format
         const userData = {
           id: response.user._id || response.user.id,
+          access: response.user.access,
           name: response.user.userName || response.user.name,
           email: response.user.email || '',
           phone: response.user.phoneNumber || response.user.phone,

@@ -7,6 +7,7 @@ import CartSidebar from "@/components/CartSidebar";
 import DataInitializer from "@/components/DataInitializer";
 import UserDataRefresher from "@/components/UserDataRefresher";
 import AnalyticsWrapper from "@/components/AnalyticsWrapper";
+import BusinessAccessGate from '@/components/BusinessAccessGate';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -103,7 +104,7 @@ export default function RootLayout({
             <DataInitializer />
             <UserDataRefresher />
             <AnalyticsWrapper>
-              {children}
+              <BusinessAccessGate>{children}</BusinessAccessGate>
             </AnalyticsWrapper>
             <CartSidebar />
           </AdminProvider>
