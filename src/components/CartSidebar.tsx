@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { X, Plus, Minus, ShoppingBag, Trash2, LogIn, FileText } from 'lucide-react';
 import { useCartState, useAuth } from '@/contexts/AppContext';
+import { canAccess } from '@/types/business-access';
 import OrderPlacement from './OrderPlacement';
 import ImageModal from '@/components/ImageModal';
 import LoginModal from './LoginModal';
@@ -723,7 +724,7 @@ const CartSidebar: React.FC = () => {
     setShowSavePrompt(true);
   };
 
-  if (!cart.isOpen) return null;
+  if (!cart.isOpen || (isAuthenticated && !canAccess(user?.access, 'orderPlacement'))) return null;
 
   const handleQuickOrder = () => {
     if (!isAuthenticated) {

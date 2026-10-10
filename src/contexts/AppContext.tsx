@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { clearAuthToken, hasAuthToken } from '@/utils/authCookie';
+import type { BusinessAccess } from '@/types/business-access';
+import { canAccess } from '@/types/business-access';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -52,6 +54,8 @@ export interface HardwareProduct {
 }
 
 export interface User {
+  paymentMethod?: string;
+  access?: BusinessAccess;
   id: string;
   name: string;
   email: string;
@@ -382,6 +386,7 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
     case 'CLEAR_USER':
       return { 
         ...state, 
+        orders: [],
         user: null, 
         isAuthenticated: false 
       };
@@ -685,6 +690,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearUser = useCallback(() => {
     dispatch({ type: 'CLEAR_USER' });
+    dispatch({ type: 'CLEAR_CART' });
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('glazia-proforma-invoices');
+      localStorage.removeItem('glazia-orders');
+    }
     clearAuthToken();
   }, []);
 
@@ -702,8 +712,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Cart Actions
   const addToCart = useCallback((item: Omit<CartItem, 'quantity'>) => {
+    if (state.isAuthenticated && !canAccess(state.user?.access, 'orderPlacement')) {
+      window.alert('Your owner has not enabled order placement for your account.');
+      return;
+    }
     dispatch({ type: 'ADD_TO_CART', payload: item });
-  }, []);
+  }, [state.isAuthenticated, state.user?.access]);
 
   const removeFromCart = useCallback((id: string) => {
     dispatch({ type: 'REMOVE_FROM_CART', payload: id });

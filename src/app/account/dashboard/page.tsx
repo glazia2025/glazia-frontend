@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useAuth, useCartState, useOrders } from '@/contexts/AppContext';
 import { DataService } from '@/services/dataService';
+import { canAccess } from '@/types/business-access';
 import Header from '@/components/Header';
 import { PaysharpAccountCard } from '@/components/PaysharpCheckout';
 import { getAuthToken, hasAuthToken } from '@/utils/authCookie';
@@ -76,6 +77,7 @@ function WelcomeBanner({ onClose }: { onClose: () => void }) {
 
 function DashboardContent() {
   const { user: authUser, isAuthenticated } = useAuth();
+  const access = authUser?.access;
   const { loadCart, openCart } = useCartState();
   const [orders, setOrders] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -115,26 +117,12 @@ function DashboardContent() {
     }
   }, [isAuthenticated]);
 
-  // Load partner agreement URL from localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const userData = localStorage.getItem('glazia-user');
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          if (user.paUrl) {
-            setPartnerAgreementUrl(user.paUrl);
-          }
-        } catch (error) {
-          console.error('Error parsing user data from localStorage:', error);
-        }
-      }
-    }
-  }, []);
+  useEffect(() => { setPartnerAgreementUrl(access?.isOwner ? authUser?.paUrl || null : null); }, [access?.isOwner, authUser?.paUrl]);
 
   // Load real orders from API
   useEffect(() => {
     const loadOrders = async () => {
+      if (!access?.isOwner && !access?.permissions.orderHistory) { setOrders([]); setRecentOrders([]); setLoadingOrders(false); return; }
       const token = getAuthToken();
       if (!token) {
         console.log('No auth token, skipping orders load');
@@ -168,7 +156,7 @@ function DashboardContent() {
     };
 
     loadOrders();
-  }, []);
+  }, [access?.actorId, access?.isOwner, access?.permissions.orderHistory]);
 
   // Load recent proforma invoices from localStorage
   useEffect(() => {
@@ -250,12 +238,12 @@ function DashboardContent() {
               <p className="text-gray-600">Welcome back, {user.name}</p>
             </div>
             <div className="flex items-center space-x-4">
-              {authUser?.accountType === 'FABRICATOR' && (
+              {authUser?.accountType === 'FABRICATOR' && canAccess(access, 'inventory') && (
                 <Link href="/account/inventory" className="rounded-lg bg-[#124657] px-4 py-2 text-sm font-medium text-white">
                   My inventory
                 </Link>
               )}
-              {authUser?.accountType === 'DEALERSHIP' && (
+              {authUser?.accountType === 'DEALERSHIP' && (access?.isOwner || canAccess(access, 'inventory') || canAccess(access, 'orderHistory')) && (
                 <Link href="/account/dealership" className="rounded-lg bg-[#124657] px-4 py-2 text-sm font-medium text-white">
                   Manage dealership
                 </Link>
@@ -272,8 +260,8 @@ function DashboardContent() {
         <div className="gap-8">
           {/* Main Content */}
           <div className="flex flex-col gap-8">
-            <PaysharpAccountCard />
-            <div className="flex flex-col lg:flex-row gap-4">
+            {access?.isOwner && <><PaysharpAccountCard /><Link href="/account/team" className="rounded-lg border bg-white p-4 font-semibold">Manage business members</Link></>}
+            {canAccess(access, 'orderHistory') && <div className="flex flex-col lg:flex-row gap-4">
               {/* Stats Cards */}
               <div className="w-full lg:w-[35%] grid grid-cols-1 gap-4 sm:gap-6">
                 <div className="bg-white border border-[3px] border-[#D6DADE] p-4 sm:p-6 flex items-center">
@@ -354,9 +342,10 @@ function DashboardContent() {
                 )}
               </div>
 
-            </div>
+            </div>}
 
             {/* Recent Proforma Invoices */}
+            {canAccess(access, 'orderHistory') &&
             <div className="w-full bg-white border border-[3px] border-[#D6DADE] p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 sm:mb-6">
                 <h2 className="text-lg font-semibold text-gray-900">Recent Proforma Invoices</h2>
@@ -386,6 +375,7 @@ function DashboardContent() {
                           <p className="text-xs text-gray-500">{invoice.customerName || 'Customer'}</p>
                         </div>
                         <button
+                          disabled={!canAccess(access, 'orderPlacement')}
                           onClick={() => handleOrderFromProforma(invoice)}
                           className="bg-[#EE1C25] text-white px-3 py-2 text-sm font-medium"
                         >
@@ -402,10 +392,10 @@ function DashboardContent() {
                   <p className="text-sm text-gray-500">Generate a proforma invoice from your cart to see it here.</p>
                 </div>
               )}
-            </div>
+            </div>}
 
             {/* Partner Agreement Section */}
-            {partnerAgreementUrl && (
+            {access?.isOwner && partnerAgreementUrl && (
               <div className="bg-white border border-[3px] border-[#D6DADE] p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
                   <h2 className="text-lg font-semibold text-gray-900 flex items-center">

@@ -94,7 +94,6 @@ const UserRegistrationForm: React.FC<UserRegistrationFormProps> = ({ phoneNumber
         registrationData.append('state', state);
         registrationData.append('address', completeAddress);
         registrationData.append('phoneNumber', phoneNumber || '');
-        registrationData.append('phoneNumbers', phoneNumber || '');
         registrationData.append('pincode', pincode);
         registrationData.append('authorizedPerson', authorisedPerson);
         registrationData.append('authorizedPersonDesignation', designation);

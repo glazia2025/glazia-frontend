@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { User, ChevronDown, Menu, Search, X } from "lucide-react";
 import { useCartState, useAuth } from "@/contexts/AppContext";
+import { canAccess } from '@/types/business-access';
 import { API_CONFIG } from "@/services";
 import NalcoPriceDisplay from "./NalcoPriceDisplay";
 import NalcoGraphModal from "./NalcoGraphModal";
@@ -273,7 +274,7 @@ export default function Header() {
             <Link className="nav-link" href="/contact">Contact</Link>
              <Link className="nav-link" href="/blogs">Blogs</Link>
 
-            {isAuthenticated && (
+            {isAuthenticated && canAccess(user?.access, 'quotation') && (
               <a
                 className="nav-link"
                 href="https://quotation.glazia.in"
@@ -331,7 +332,7 @@ export default function Header() {
                   </div>
                 </div>
               </div>
-              <div className="relative" onClick={toggleCart}>
+              <div hidden={!canAccess(user?.access, 'orderPlacement')} className="relative" onClick={toggleCart}>
                 <Image width={20} height={20} src="/cart.svg" alt="Cart Logo" />
                 {cart.itemCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[12px] rounded-full w-4 h-4 flex items-center justify-center">
@@ -365,6 +366,7 @@ export default function Header() {
             className="relative inline-flex items-center justify-center"
             onClick={toggleCart}
             aria-label="Cart"
+            style={{ display: isAuthenticated && !canAccess(user?.access, 'orderPlacement') ? 'none' : undefined }}
           >
             <Image width={22} height={22} src="/cart.svg" alt="Cart" />
             {cart.itemCount > 0 && (
@@ -552,7 +554,7 @@ export default function Header() {
             </div>
             <Link className="text-base" href="/about" onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
             <Link className="text-base" href="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
-            {isAuthenticated && (
+            {isAuthenticated && canAccess(user?.access, 'quotation') && (
               <Link className="text-base" href="https://quotation.glazia.in/quotations" onClick={() => setIsMobileMenuOpen(false)}>Quotations</Link>
             )}
           </nav>
@@ -573,7 +575,8 @@ export default function Header() {
                 <Link className="w-full px-4 py-2 border border-gray-200 rounded-lg text-center" href="/account/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
                   Dashboard
                 </Link>
-                {user?.accountType === 'FABRICATOR' && (
+                {user?.access?.isOwner && <Link className="w-full px-4 py-2 border rounded-lg" href="/account/team">Business members</Link>}
+                {user?.accountType === 'FABRICATOR' && canAccess(user?.access, 'inventory') && (
                   <Link className="w-full px-4 py-2 border border-gray-200 rounded-lg text-center" href="/account/inventory" onClick={() => setIsMobileMenuOpen(false)}>
                     My inventory
                   </Link>

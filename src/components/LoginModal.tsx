@@ -126,6 +126,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         }
         const userData = {
           id: existingUser._id || existingUser.id,
+          access: existingUser.access,
           name: existingUser.userName || existingUser.name,
           email: existingUser.email || '',
           phone: existingUser.phoneNumber || phoneNumber,
