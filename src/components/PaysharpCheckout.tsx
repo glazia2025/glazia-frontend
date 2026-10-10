@@ -117,22 +117,8 @@ export function PaysharpCheckout({ checkout, onDone, onCancel, renderLegacy }: {
 
   
   const loadBankAccount = async () => {
-  try {
-    setBusy(true);
-    setError("");
-
     const result = await request<{ account: Account }>("/api/payments/account");
-
     setAccount(result.account);
-  } catch (caught) {
-    setError(
-      caught instanceof Error
-        ? caught.message
-        : "Unable to load bank transfer details"
-    );
-  } finally {
-    setBusy(false);
-  }
 };
 
 const checkBankPaymentStatus = async () => {
@@ -156,6 +142,7 @@ const checkBankPaymentStatus = async () => {
     if (!quote || busy || !key) return;
     setBusy(true); setError("");
     try {
+      if (method === "BANK_TRANSFER") await loadBankAccount();
       const result = await request<{ order: Order | null; checkout?: Order }>("/api/user/pi-generate", { ...checkout, checkoutKey: key, expectedTotalPaise: quote.totalPaise, paymentProvider: quote.paymentProvider });
       const target = result.order ?? result.checkout;
       if (!target) throw new Error("Unable to start payment. Please retry.");
@@ -298,9 +285,9 @@ useEffect(() => {
 
       <button
   type="button"
+  disabled={busy || !quote || !key}
   onClick={() => {
     setPaymentMethod("BANK_TRANSFER");
-    void loadBankAccount();
     void place("BANK_TRANSFER");
   }}
   className={`rounded-lg border px-4 py-2 ${
