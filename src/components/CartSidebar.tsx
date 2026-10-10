@@ -314,6 +314,7 @@ const CartSidebar: React.FC = () => {
           <td>${p.series}</td>
           <td>${p.sapCode}</td>
           <td style="text-align:center;">${p.quantity}</td>
+          <td style="text-align:center;">pcs</td>
           <td style="text-align:right;">${formatCurrency(p.rate)}</td>
           <td style="text-align:center;">${p.per || 'Kg'}</td>
           <td style="text-align:right;">${formatCurrency(p.amount)}</td>
@@ -327,6 +328,7 @@ const CartSidebar: React.FC = () => {
           <td>${p.series}</td>
           <td>${p.sapCode}</td>
           <td style="text-align:center;">${p.quantity}</td>
+          <td style="text-align:center;">pcs</td>
           <td style="text-align:right;">${formatCurrency(p.rate)}</td>
           <td style="text-align:center;">${p.per || 'Piece'}</td>
           <td style="text-align:right;">${formatCurrency(p.amount)}</td>
@@ -379,12 +381,14 @@ const CartSidebar: React.FC = () => {
             .products tbody td:nth-child(1),
             .products thead th:nth-child(5),
             .products tbody td:nth-child(5),
-            .products thead th:nth-child(7),
-            .products tbody td:nth-child(7) { text-align: center; }
             .products thead th:nth-child(6),
             .products tbody td:nth-child(6),
             .products thead th:nth-child(8),
-            .products tbody td:nth-child(8) { text-align: right; }
+            .products tbody td:nth-child(8) { text-align: center; }
+            .products thead th:nth-child(7),
+            .products tbody td:nth-child(7),
+            .products thead th:nth-child(9),
+            .products tbody td:nth-child(9) { text-align: right; }
             .products tbody td {
               font-size: 11.5px;
               padding: 8px 8px;
@@ -499,6 +503,7 @@ const CartSidebar: React.FC = () => {
                   <th style="width: 15%;">Series</th>
                   <th style="width: 15%;">SAP Code</th>
                   <th style="width: 8%;">Qty.</th>
+                  <th style="width: 7%;">Unit</th>
                   <th style="width: 12%;">Rate(₹)</th>
                   <th style="width: 8%;">Per</th>
                   <th style="width: 13%;">Amt. (₹)</th>
@@ -510,6 +515,7 @@ const CartSidebar: React.FC = () => {
                   <td></td>
                   <td colspan="3" style="font-weight: 700;">Subtotal (Aluminium Profiles)</td>
                   <td style="text-align: center; font-weight: 700;">${profilesTotalQuantity}</td>
+                  <td style="text-align: center; font-weight: 700;">pcs</td>
                   <td></td>
                   <td></td>
                   <td style="text-align: right; font-weight: 700;">${formatCurrency(profilesSubtotal)}</td>
@@ -529,6 +535,7 @@ const CartSidebar: React.FC = () => {
                   <th style="width: 15%;">Series</th>
                   <th style="width: 15%;">SAP Code</th>
                   <th style="width: 8%;">Qty.</th>
+                  <th style="width: 7%;">Unit</th>
                   <th style="width: 12%;">Rate(₹)</th>
                   <th style="width: 8%;">Per</th>
                   <th style="width: 13%;">Amt. (₹)</th>
@@ -540,6 +547,7 @@ const CartSidebar: React.FC = () => {
                   <td></td>
                   <td colspan="3" style="font-weight: 700;">Subtotal (Hardware)</td>
                   <td style="text-align: center; font-weight: 700;">${hardwareTotalQuantity}</td>
+                  <td style="text-align: center; font-weight: 700;">pcs</td>
                   <td></td>
                   <td></td>
                   <td style="text-align: right; font-weight: 700;">${formatCurrency(hardwareSubtotal)}</td>
